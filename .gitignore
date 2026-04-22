@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Geodaten – NIE ins Repo!
+# Grosse Downloads bleiben lokal, werden zur Laufzeit geholt.
+daten/geo/
+daten/downloads/
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+*.gpkg
+*.tif
+*.tiff
+*.zip
+
+# Eigene Konfiguration / Secrets
+.env
+config.local.json
+
+# Logs
+*.log
+
+# Cache / Zwischenablagen
+cache/
+tmp/
