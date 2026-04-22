@@ -5,6 +5,14 @@ Definiert die zentralen Klassen, die Parzellen und ihre OEREB-Informationen
 strukturiert halten. Alle Datenquellen (Bern, spaeter Zuerich, etc.)
 liefern ihre Resultate in Form dieser Klassen.
 
+Der Parser erkennt die SubCodes gemaess OEREB-Schema V2.0:
+  - ch.NutzungsplanungGrundnutzung (+ Subtypen Nutzungszonen, Bauklassen)
+  - ch.NutzungsplanungUeberlagerung
+  - ch.NutzungsplanungSondernutzung
+  - ch.NutzungsplanungGefahrengebiete
+  - ch.NutzungsplanungFlaecheAndere
+  - ch.NutzungsplanungLinie
+
 Wir nutzen dataclasses, weil sie wenig Boilerplate haben und automatisch
 eine huebsche Textausgabe produzieren (nuetzlich fuer Debugging).
 """
@@ -13,18 +21,22 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 
+# ---------------------------------------------------------------------------
+# Lawstatus
+# ---------------------------------------------------------------------------
+
 class Lawstatus(Enum):
     """
     Rechtsstatus einer OEREB-Beschraenkung gemaess OEREB-Schema V2.0.
 
     IN_FORCE ist der Normalfall (rechtskraeftig).
-    Die anderen drei Werte sind euer 'Zukunfts-Layer':
+    Die anderen drei Werte sind der 'Zukunfts-Layer':
     Parzellen mit diesem Status haben laufende oder projektierte Aenderungen.
     """
-    IN_FORCE = "inForce"                            # rechtskraeftig
-    CHANGE_WITH_PRE_EFFECT = "changeWithPreEffect"  # Aenderung mit Vorwirkung
-    CHANGE_WITHOUT_PRE_EFFECT = "changeWithoutPreEffect"  # Aenderung ohne Vorwirkung
-    RUNNING_MODIFICATIONS = "runningModifications"  # laufende Verfahren
+    IN_FORCE = "inForce"                                   # rechtskraeftig
+    CHANGE_WITH_PRE_EFFECT = "changeWithPreEffect"         # Aenderung mit Vorwirkung
+    CHANGE_WITHOUT_PRE_EFFECT = "changeWithoutPreEffect"   # Aenderung ohne Vorwirkung
+    RUNNING_MODIFICATIONS = "runningModifications"         # laufende Verfahren
 
     @classmethod
     def from_string(cls, code: str) -> "Lawstatus":
@@ -35,13 +47,19 @@ class Lawstatus(Enum):
         return cls.IN_FORCE
 
 
+# ---------------------------------------------------------------------------
+# Restriction (eine einzelne OEREB-Beschraenkung)
+# ---------------------------------------------------------------------------
+
 @dataclass
 class Restriction:
     """
     Eine einzelne OEREB-Beschraenkung auf der Parzelle.
 
-    Beispiel: 'Altstadtperimeter BO.06' (Nutzungsplanung) -
-    Rechtskraeftig, betrifft 236 m^2 (100% der Parzelle).
+    Beispiele:
+        - Altstadtperimeter BO.06 (Grundnutzung, rechtskraeftig, 236 m^2)
+        - Hochwassergefahrengebiet mittel (Gefahrengebiet)
+        - Baulinie Strasse (Linie)
     """
     thema_code: str              # z.B. "ch.Nutzungsplanung"
     thema_text: str              # z.B. "Kommunale Nutzungsplanung"
@@ -54,45 +72,68 @@ class Restriction:
     symbol_url: str | None       # URL zu Legenden-Symbol
     karten_wms_url: str | None   # Vorgefertigte WMS-URL fuer Kartenansicht
 
+    # ----- Kategorie-Properties (basierend auf sub_code) -----
+
     @property
     def ist_grundnutzung(self) -> bool:
-        """True, wenn die Restriction zur Grundnutzung zaehlt."""
+        """Grundnutzung (eigentliche Bauzone). AZ wird darauf angewendet."""
         if not self.sub_code:
             return False
         return "Grundnutzung" in self.sub_code
 
     @property
     def ist_nutzungszone(self) -> bool:
-        """True, wenn dies eine Nutzungszone ist (z.B. Wohnzone W2)."""
+        """Nutzungszone im Stadt-Bern-Dialekt (z.B. Wohnzone W)."""
         if not self.sub_code:
             return False
         return "GrundnutzungNutzungszonen" in self.sub_code
 
     @property
     def ist_bauklasse(self) -> bool:
-        """True, wenn dies eine Bauklasse ist (bestimmt Dichte/Ausnuetzung)."""
+        """Bauklasse im Stadt-Bern-Dialekt (bestimmt Dichte)."""
         if not self.sub_code:
             return False
         return "GrundnutzungBauklassen" in self.sub_code
 
     @property
     def ist_ueberlagerung(self) -> bool:
-        """True, wenn dies eine ueberlagernde Nutzung ist."""
+        """Ueberlagernde Nutzung (Ortsbildschutz, Erhaltungszone, etc.)."""
         if not self.sub_code:
             return False
-        return "Ueberlagernd" in self.sub_code or "Überlagernd" in self.sub_code
+        return (
+            "Ueberlagerung" in self.sub_code
+            or "Ueberlagernd" in self.sub_code
+            or "Überlagerung" in self.sub_code
+            or "Überlagernd" in self.sub_code
+        )
+
+    @property
+    def ist_gefahrengebiet(self) -> bool:
+        """Naturgefahren-Zone (Hochwasser, Rutschung, Sturz)."""
+        if not self.sub_code:
+            return False
+        return "Gefahrengebiet" in self.sub_code
+
+    @property
+    def ist_flaeche_andere(self) -> bool:
+        """Weitere Flaechen-Information (z.B. Gewaesser, Waldabstand)."""
+        if not self.sub_code:
+            return False
+        return "FlaecheAndere" in self.sub_code
+
+    @property
+    def ist_linie(self) -> bool:
+        """Lineare Beschraenkungen (Baulinien, Erschliessungslinien)."""
+        if not self.sub_code:
+            return False
+        return "Linie" in self.sub_code
 
     @property
     def ist_sondernutzung(self) -> bool:
-        """True bei Sondernutzung (Gestaltungsplan etc.)."""
+        """Sondernutzung (Gestaltungsplan, Ueberbauungsordnung)."""
         if not self.sub_code:
             return False
         return "Sondernutzung" in self.sub_code
-
-    @property
-    def ist_nutzungsplanung(self) -> bool:
-        """True, wenn dies irgendeine Nutzungsplanung-Kategorie ist."""
-        return self.thema_code == "ch.Nutzungsplanung"
 
     @property
     def ist_nutzungsplanung(self) -> bool:
@@ -105,14 +146,17 @@ class Restriction:
         return self.lawstatus != Lawstatus.IN_FORCE
 
 
+# ---------------------------------------------------------------------------
+# Parzelle
+# ---------------------------------------------------------------------------
+
 @dataclass
 class Parzelle:
     """
     Eine Schweizer Parzelle mit allen relevanten OEREB-Informationen.
 
-    Das ist das zentrale Datenobjekt eures Tools. Datenquellen
-    liefern Parzelle-Objekte, die Analyse-Module rechnen darauf,
-    Ausgabe-Module formatieren sie.
+    Zentrale Datenklasse: Datenquellen liefern Parzelle-Objekte,
+    Analyse-Module rechnen darauf, Ausgabe-Module formatieren sie.
     """
     egrid: str                         # eidgenoessische Grundstuecks-ID
     nummer: str                        # lokale Parzellennummer (z.B. "575")
@@ -124,51 +168,64 @@ class Parzelle:
     koordinaten_lv95: tuple[float, float] | None = None  # (E, N)
     restrictions: list[Restriction] = field(default_factory=list)
 
+    # ----- Filter-Methoden nach Kategorie -----
+
     def nutzungszonen(self) -> list[Restriction]:
-        """Gibt die Nutzungszonen zurueck (z.B. Wohnzone W2)."""
+        """Nutzungszonen im Stadt-Bern-Dialekt (z.B. Wohnzone W)."""
         return [r for r in self.restrictions if r.ist_nutzungszone]
 
     def bauklassen(self) -> list[Restriction]:
-        """Gibt die Bauklassen zurueck (bestimmen Ausnuetzung)."""
+        """Bauklassen im Stadt-Bern-Dialekt (bestimmen Ausnuetzung)."""
         return [r for r in self.restrictions if r.ist_bauklasse]
 
+    def grundnutzungen(self) -> list[Restriction]:
+        """Alle Grundnutzungen (Nutzungszone + Bauklasse + allgemein)."""
+        return [r for r in self.restrictions if r.ist_grundnutzung]
+
+    def grundnutzungen_allgemein(self) -> list[Restriction]:
+        """
+        Grundnutzungen ohne spezifische Unterkategorie.
+        Fuer Gemeinden ohne feine Unterteilung (z.B. Koeniz, Thun).
+        """
+        return [
+            r for r in self.restrictions
+            if r.ist_grundnutzung
+            and not r.ist_nutzungszone
+            and not r.ist_bauklasse
+        ]
+
     def ueberlagerungen(self) -> list[Restriction]:
-        """Ueberlagernde Nutzungen (Ortsbildschutz, Erhaltungszonen, etc.)."""
+        """Ueberlagernde Nutzungen (Ortsbildschutz, Erhaltungszonen)."""
         return [r for r in self.restrictions if r.ist_ueberlagerung]
 
     def sondernutzungen(self) -> list[Restriction]:
         """Sondernutzungen (Gestaltungsplaene, Ueberbauungsordnungen)."""
         return [r for r in self.restrictions if r.ist_sondernutzung]
 
-    def grundnutzungen(self) -> list[Restriction]:
-        """Alle Grundnutzungen (Nutzungszone + Bauklasse + ggf. weitere)."""
-        return [r for r in self.restrictions if r.ist_grundnutzung]
+    def gefahrengebiete(self) -> list[Restriction]:
+        """Naturgefahren-Zonen (Hochwasser, Rutschung, Sturz)."""
+        return [r for r in self.restrictions if r.ist_gefahrengebiet]
 
-    def grundnutzungen_allgemein(self) -> list[Restriction]:
-        """
-        Gibt alle Grundnutzungen zurueck, die WEDER spezifisch
-        als Nutzungszone NOCH als Bauklasse erkannt wurden.
-        Fuer Gemeinden, die keine feine Unterteilung haben (z.B. Koeniz).
-        """
-        return [r for r in self.restrictions
-                if r.ist_grundnutzung
-                and not r.ist_nutzungszone
-                and not r.ist_bauklasse]
-    
-    def bauzonen(self) -> list[Restriction]:
-        """Alle Nutzungsplanung-Eintraege (Grund + Ueberlagerung + Sonder)."""
-        return [r for r in self.restrictions if r.ist_nutzungsplanung]
+    def flaechen_andere(self) -> list[Restriction]:
+        """Weitere Flaechen-Informationen."""
+        return [r for r in self.restrictions if r.ist_flaeche_andere]
+
+    def linien(self) -> list[Restriction]:
+        """Lineare Einschraenkungen (Baulinien)."""
+        return [r for r in self.restrictions if r.ist_linie]
 
     def bauzonen(self) -> list[Restriction]:
-        """Alle Nutzungsplanung-Eintraege (Grund + Ueberlagerung + Sonder)."""
+        """Alle Nutzungsplanung-Eintraege (alle Kategorien zusammen)."""
         return [r for r in self.restrictions if r.ist_nutzungsplanung]
 
     def laufende_aenderungen(self) -> list[Restriction]:
         """
-        Gibt alle Beschraenkungen zurueck, die NICHT mehr den aktuellen
-        Rechtsstand haben. Das ist der Zukunfts-Layer fuer euer Tool.
+        Alle Beschraenkungen, die NICHT mehr den aktuellen Rechtsstand
+        haben. Das ist der Zukunfts-Layer fuer das Tool.
         """
         return [r for r in self.restrictions if r.ist_in_aenderung]
+
+    # ----- Uebersicht -----
 
     def themen_uebersicht(self) -> dict[str, int]:
         """Zaehlt Beschraenkungen pro Thema."""
@@ -177,8 +234,10 @@ class Parzelle:
             zaehler[r.thema_code] = zaehler.get(r.thema_code, 0) + 1
         return zaehler
 
+    # ----- Textausgabe -----
+
     def kurzbericht(self) -> str:
-        """Erzeugt eine kurze Textuebersicht der Parzelle."""
+        """Erzeugt eine strukturierte Textuebersicht der Parzelle."""
         zeilen = [
             f"Parzelle {self.nummer} ({self.gemeinde}, {self.kanton})",
             f"EGRID:    {self.egrid}",
@@ -188,60 +247,14 @@ class Parzelle:
         if self.adresse:
             zeilen.append(f"Adresse:  {self.adresse}")
 
-        nutzungszonen = self.nutzungszonen()
-        if nutzungszonen:
-            zeilen.append("")
-            zeilen.append("Nutzungszone(n):")
-            for n in nutzungszonen:
-                zeile = f"  - {n.legende}"
-                if n.prozent_anteil is not None:
-                    zeile += f" ({n.prozent_anteil:.0f}%, {n.flaeche_m2:.0f} m^2)"
-                zeilen.append(zeile)
-
-        bauklassen = self.bauklassen()
-        if bauklassen:
-            zeilen.append("")
-            zeilen.append("Bauklasse(n):")
-            for b in bauklassen:
-                zeilen.append(f"  - {b.legende}")
-
-        grundnutzungen_allgemein = self.grundnutzungen_allgemein()
-        if grundnutzungen_allgemein:
-            zeilen.append("")
-            zeilen.append("Grundnutzung (Bauzone):")
-            for g in grundnutzungen_allgemein:
-                zeile = f"  - {g.legende}"
-                if g.prozent_anteil is not None:
-                    zeile += f" ({g.prozent_anteil:.0f}%, {g.flaeche_m2:.0f} m^2)"
-                zeilen.append(zeile)
-                
-        ueberlagerungen = self.ueberlagerungen()
-        if ueberlagerungen:
-            zeilen.append("")
-            zeilen.append("Ueberlagerungen:")
-            for u in ueberlagerungen:
-                zeilen.append(f"  - {u.legende}")
-
-        sondernutzungen = self.sondernutzungen()
-        if sondernutzungen:
-            zeilen.append("")
-            zeilen.append("Sondernutzungen:")
-            for s in sondernutzungen:
-                zeilen.append(f"  - {s.legende}")
-
-        ueberlagerungen = self.ueberlagerungen()
-        if ueberlagerungen:
-            zeilen.append("")
-            zeilen.append("Ueberlagerungen:")
-            for u in ueberlagerungen:
-                zeilen.append(f"  - {u.legende}")
-
-        sondernutzungen = self.sondernutzungen()
-        if sondernutzungen:
-            zeilen.append("")
-            zeilen.append("Sondernutzungen:")
-            for s in sondernutzungen:
-                zeilen.append(f"  - {s.legende}")
+        self._block_mit_flaeche(zeilen, "Nutzungszone(n)", self.nutzungszonen())
+        self._block_einfach(zeilen, "Bauklasse(n)", self.bauklassen())
+        self._block_mit_flaeche(zeilen, "Grundnutzung (Bauzone)", self.grundnutzungen_allgemein())
+        self._block_einfach(zeilen, "Ueberlagerungen", self.ueberlagerungen())
+        self._block_einfach(zeilen, "Sondernutzungen", self.sondernutzungen())
+        self._block_einfach(zeilen, "Naturgefahren", self.gefahrengebiete(), praefix="! ")
+        self._block_einfach(zeilen, "Baulinien", self.linien())
+        self._block_einfach(zeilen, "Weitere Flaechen", self.flaechen_andere())
 
         aenderungen = self.laufende_aenderungen()
         if aenderungen:
@@ -258,3 +271,39 @@ class Parzelle:
                 zeilen.append(f"  - {thema} ({anzahl} Eintrag/Eintraege)")
 
         return "\n".join(zeilen)
+
+    # ----- Interne Hilfsmethoden fuer den Kurzbericht -----
+
+    @staticmethod
+    def _block_einfach(zeilen: list[str], titel: str,
+                       items: list[Restriction], praefix: str = "") -> None:
+        """Haengt einen einfachen Block 'Titel: - Item - Item' an."""
+        if not items:
+            return
+        zeilen.append("")
+        zeilen.append(f"{titel}:")
+        # Duplikate entfernen (gleiche Legende), Reihenfolge behalten
+        gesehen: set[str] = set()
+        for item in items:
+            if item.legende in gesehen:
+                continue
+            gesehen.add(item.legende)
+            zeilen.append(f"  - {praefix}{item.legende}")
+
+    @staticmethod
+    def _block_mit_flaeche(zeilen: list[str], titel: str,
+                           items: list[Restriction]) -> None:
+        """Haengt einen Block mit Flaechen-/Prozent-Angabe an."""
+        if not items:
+            return
+        zeilen.append("")
+        zeilen.append(f"{titel}:")
+        gesehen: set[str] = set()
+        for item in items:
+            if item.legende in gesehen:
+                continue
+            gesehen.add(item.legende)
+            zeile = f"  - {item.legende}"
+            if item.prozent_anteil is not None and item.flaeche_m2 is not None:
+                zeile += f" ({item.prozent_anteil:.0f}%, {item.flaeche_m2:.0f} m^2)"
+            zeilen.append(zeile)
