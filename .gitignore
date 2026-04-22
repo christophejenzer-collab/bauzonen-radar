@@ -46,3 +46,5 @@ config.local.json
 # Cache / Zwischenablagen
 cache/
 tmp/
+
+extract_beispiel.xml
