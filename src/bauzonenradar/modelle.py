@@ -55,11 +55,49 @@ class Restriction:
     karten_wms_url: str | None   # Vorgefertigte WMS-URL fuer Kartenansicht
 
     @property
-    def ist_nutzungsplanung(self) -> bool:
-        """True, wenn dies eine Bauzone (Grundnutzung) ist."""
+    def ist_grundnutzung(self) -> bool:
+        """True, wenn die Restriction zur Grundnutzung zaehlt."""
         if not self.sub_code:
             return False
-        return "Grundnutzung" in self.sub_code or "Nutzungszonen" in self.sub_code
+        return "Grundnutzung" in self.sub_code
+
+    @property
+    def ist_nutzungszone(self) -> bool:
+        """True, wenn dies eine Nutzungszone ist (z.B. Wohnzone W2)."""
+        if not self.sub_code:
+            return False
+        return "GrundnutzungNutzungszonen" in self.sub_code
+
+    @property
+    def ist_bauklasse(self) -> bool:
+        """True, wenn dies eine Bauklasse ist (bestimmt Dichte/Ausnuetzung)."""
+        if not self.sub_code:
+            return False
+        return "GrundnutzungBauklassen" in self.sub_code
+
+    @property
+    def ist_ueberlagerung(self) -> bool:
+        """True, wenn dies eine ueberlagernde Nutzung ist."""
+        if not self.sub_code:
+            return False
+        return "Ueberlagernd" in self.sub_code or "Überlagernd" in self.sub_code
+
+    @property
+    def ist_sondernutzung(self) -> bool:
+        """True bei Sondernutzung (Gestaltungsplan etc.)."""
+        if not self.sub_code:
+            return False
+        return "Sondernutzung" in self.sub_code
+
+    @property
+    def ist_nutzungsplanung(self) -> bool:
+        """True, wenn dies irgendeine Nutzungsplanung-Kategorie ist."""
+        return self.thema_code == "ch.Nutzungsplanung"
+
+    @property
+    def ist_nutzungsplanung(self) -> bool:
+        """True, wenn dies irgendeine Nutzungsplanung-Kategorie ist."""
+        return self.thema_code == "ch.Nutzungsplanung"
 
     @property
     def ist_in_aenderung(self) -> bool:
@@ -86,8 +124,43 @@ class Parzelle:
     koordinaten_lv95: tuple[float, float] | None = None  # (E, N)
     restrictions: list[Restriction] = field(default_factory=list)
 
+    def nutzungszonen(self) -> list[Restriction]:
+        """Gibt die Nutzungszonen zurueck (z.B. Wohnzone W2)."""
+        return [r for r in self.restrictions if r.ist_nutzungszone]
+
+    def bauklassen(self) -> list[Restriction]:
+        """Gibt die Bauklassen zurueck (bestimmen Ausnuetzung)."""
+        return [r for r in self.restrictions if r.ist_bauklasse]
+
+    def ueberlagerungen(self) -> list[Restriction]:
+        """Ueberlagernde Nutzungen (Ortsbildschutz, Erhaltungszonen, etc.)."""
+        return [r for r in self.restrictions if r.ist_ueberlagerung]
+
+    def sondernutzungen(self) -> list[Restriction]:
+        """Sondernutzungen (Gestaltungsplaene, Ueberbauungsordnungen)."""
+        return [r for r in self.restrictions if r.ist_sondernutzung]
+
+    def grundnutzungen(self) -> list[Restriction]:
+        """Alle Grundnutzungen (Nutzungszone + Bauklasse + ggf. weitere)."""
+        return [r for r in self.restrictions if r.ist_grundnutzung]
+
+    def grundnutzungen_allgemein(self) -> list[Restriction]:
+        """
+        Gibt alle Grundnutzungen zurueck, die WEDER spezifisch
+        als Nutzungszone NOCH als Bauklasse erkannt wurden.
+        Fuer Gemeinden, die keine feine Unterteilung haben (z.B. Koeniz).
+        """
+        return [r for r in self.restrictions
+                if r.ist_grundnutzung
+                and not r.ist_nutzungszone
+                and not r.ist_bauklasse]
+    
     def bauzonen(self) -> list[Restriction]:
-        """Gibt nur die Nutzungsplanung-Eintraege (Grundnutzung) zurueck."""
+        """Alle Nutzungsplanung-Eintraege (Grund + Ueberlagerung + Sonder)."""
+        return [r for r in self.restrictions if r.ist_nutzungsplanung]
+
+    def bauzonen(self) -> list[Restriction]:
+        """Alle Nutzungsplanung-Eintraege (Grund + Ueberlagerung + Sonder)."""
         return [r for r in self.restrictions if r.ist_nutzungsplanung]
 
     def laufende_aenderungen(self) -> list[Restriction]:
@@ -115,15 +188,60 @@ class Parzelle:
         if self.adresse:
             zeilen.append(f"Adresse:  {self.adresse}")
 
-        bauzonen = self.bauzonen()
-        if bauzonen:
+        nutzungszonen = self.nutzungszonen()
+        if nutzungszonen:
             zeilen.append("")
-            zeilen.append("Bauzone(n):")
-            for b in bauzonen:
-                zeile = f"  - {b.legende}"
-                if b.prozent_anteil is not None:
-                    zeile += f" ({b.prozent_anteil:.0f}%, {b.flaeche_m2:.0f} m^2)"
+            zeilen.append("Nutzungszone(n):")
+            for n in nutzungszonen:
+                zeile = f"  - {n.legende}"
+                if n.prozent_anteil is not None:
+                    zeile += f" ({n.prozent_anteil:.0f}%, {n.flaeche_m2:.0f} m^2)"
                 zeilen.append(zeile)
+
+        bauklassen = self.bauklassen()
+        if bauklassen:
+            zeilen.append("")
+            zeilen.append("Bauklasse(n):")
+            for b in bauklassen:
+                zeilen.append(f"  - {b.legende}")
+
+        grundnutzungen_allgemein = self.grundnutzungen_allgemein()
+        if grundnutzungen_allgemein:
+            zeilen.append("")
+            zeilen.append("Grundnutzung (Bauzone):")
+            for g in grundnutzungen_allgemein:
+                zeile = f"  - {g.legende}"
+                if g.prozent_anteil is not None:
+                    zeile += f" ({g.prozent_anteil:.0f}%, {g.flaeche_m2:.0f} m^2)"
+                zeilen.append(zeile)
+                
+        ueberlagerungen = self.ueberlagerungen()
+        if ueberlagerungen:
+            zeilen.append("")
+            zeilen.append("Ueberlagerungen:")
+            for u in ueberlagerungen:
+                zeilen.append(f"  - {u.legende}")
+
+        sondernutzungen = self.sondernutzungen()
+        if sondernutzungen:
+            zeilen.append("")
+            zeilen.append("Sondernutzungen:")
+            for s in sondernutzungen:
+                zeilen.append(f"  - {s.legende}")
+
+        ueberlagerungen = self.ueberlagerungen()
+        if ueberlagerungen:
+            zeilen.append("")
+            zeilen.append("Ueberlagerungen:")
+            for u in ueberlagerungen:
+                zeilen.append(f"  - {u.legende}")
+
+        sondernutzungen = self.sondernutzungen()
+        if sondernutzungen:
+            zeilen.append("")
+            zeilen.append("Sondernutzungen:")
+            for s in sondernutzungen:
+                zeilen.append(f"  - {s.legende}")
 
         aenderungen = self.laufende_aenderungen()
         if aenderungen:
