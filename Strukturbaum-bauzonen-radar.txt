@@ -1,0 +1,34 @@
+bauzonen-radar/
+├── README.md
+├── LICENSE
+├── .gitignore
+├── requirements.txt
+├── docs/
+│   ├── konzept.md
+│   ├── datenquellen.md
+│   └── entscheidungen.md
+├── src/
+│   └── bauzonenradar/
+│       ├── __init__.py
+│       ├── main.py
+│       ├── datenquellen/
+│       │   ├── __init__.py
+│       │   ├── bern.py
+│       │   └── base.py
+│       ├── analyse/
+│       │   ├── __init__.py
+│       │   └── potenzial.py
+│       ├── ausgabe/
+│       │   ├── __init__.py
+│       │   └── dossier.py
+│       └── gui/
+│           ├── __init__.py
+│           └── app.py
+├── tests/
+│   ├── __init__.py
+│   └── test_potenzial.py
+├── daten/
+│   └── baureglemente/
+│       └── bern.json
+└── beispiele/
+    └── beispielparzelle.png
