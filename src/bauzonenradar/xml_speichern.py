@@ -21,19 +21,19 @@ def main() -> int:
 
     quelle = BernOerebQuelle()
 
-    koord = quelle._geocode(adresse)
+    koord = quelle.geocode(adresse)
     if not koord:
         print("FEHLER: Geocoding fehlgeschlagen")
         return 1
     print(f"Koordinaten: E={koord[0]:.1f}, N={koord[1]:.1f}")
 
-    egrid = quelle._getegrid(*koord)
+    egrid = quelle.getegrid(*koord)
     if not egrid:
         print("FEHLER: Kein EGRID gefunden")
         return 1
     print(f"EGRID: {egrid}")
 
-    xml = quelle._get_extract(egrid)
+    xml = quelle.get_extract_xml(egrid)
     if not xml:
         print("FEHLER: Extract fehlgeschlagen")
         return 1

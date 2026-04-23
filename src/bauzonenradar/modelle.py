@@ -288,7 +288,11 @@ class Parzelle:
             if item.legende in gesehen:
                 continue
             gesehen.add(item.legende)
-            zeilen.append(f"  - {praefix}{item.legende}")
+            # Wenn ein Praefix gesetzt ist, nur das Praefix nutzen - sonst Bindestrich
+            if praefix:
+                zeilen.append(f"  {praefix}{item.legende}")
+            else:
+                zeilen.append(f"  - {item.legende}")
 
     @staticmethod
     def _block_mit_flaeche(zeilen: list[str], titel: str,

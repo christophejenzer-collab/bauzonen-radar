@@ -55,7 +55,20 @@ class BernOerebQuelle:
             parzelle.adresse = adresse
             parzelle.koordinaten_lv95 = koord
         return parzelle
+# ----- Oeffentliche Zugriffe fuer Diagnose/Tools -------------------
 
+    def geocode(self, adresse: str) -> tuple[float, float] | None:
+        """Oeffentlicher Geocoding-Aufruf: Adresse -> LV95-Koordinaten."""
+        return self._geocode(adresse)
+
+    def getegrid(self, east: float, north: float) -> str | None:
+        """Oeffentlicher GetEGRID-Aufruf: Koordinaten -> EGRID."""
+        return self._getegrid(east, north)
+
+    def get_extract_xml(self, egrid: str) -> bytes | None:
+        """Oeffentlicher Extract-Aufruf: EGRID -> OEREB-XML (Bytes)."""
+        return self._get_extract(egrid)
+    
     # ----- Interne Schritte ----------------------------------------------
 
     def _geocode(self, adresse: str) -> tuple[float, float] | None:
