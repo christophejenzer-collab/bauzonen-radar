@@ -25,6 +25,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
+from unicodedata import name
 
 from modelle import Parzelle, Restriction
 
@@ -105,7 +106,12 @@ class Baureglement:
         else:
             basis_pfad = Path(basis_pfad)
 
-        dateiname = gemeinde.lower().replace(" ", "_") + ".json"
+        # Umlaute fuer dateisystem-sichere Namen ersetzen
+        umlaute = {"ä": "ae", "ö": "oe", "ü": "ue", "Ä": "Ae", "Ö": "Oe", "Ü": "Ue"}
+        name = gemeinde
+        for alt, neu in umlaute.items():
+            name = name.replace(alt, neu)
+        dateiname = name.lower().replace(" ", "_") + ".json"
         pfad = basis_pfad / dateiname
 
         if not pfad.exists():
