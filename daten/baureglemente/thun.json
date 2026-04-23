@@ -1,0 +1,53 @@
+{
+  "gemeinde": "Thun",
+  "bfs_nr": 942,
+  "kanton": "BE",
+  "stand": "2025-12-31",
+  "quelle": "Baureglement der Stadt Thun",
+  "quelle_url": "https://www.thun.ch/verwaltung/stadtplanung",
+  "struktur": "kombiniert",
+  "hinweis": "Thun nutzt den Berner Oberland-Stil mit kombinierten Grundnutzungs-Eintraegen. Die aufgelisteten Zonennamen stammen aus realen OEREB-Abfragen und sind mit dem Thuner Baureglement (BauR) zu verifizieren. AZ-Werte sind mit Architekturbuero oder Stadt Thun zu klaeren.",
+
+  "nutzungszonen": {
+    "Bestandeszone": {
+      "nutzung": "Bestand",
+      "mischnutzung_erlaubt": true,
+      "ausnuetzungsziffer": null,
+      "max_geschosse": null,
+      "max_gebaeudehoehe_m": null,
+      "hinweise": "Erhaltungszone. Bestehende Volumetrie ist Richtgroesse, echte AZ gemaess BauR."
+    },
+    "Uferzone": {
+      "nutzung": "Freihalte",
+      "mischnutzung_erlaubt": false,
+      "ausnuetzungsziffer": null,
+      "max_geschosse": null,
+      "max_gebaeudehoehe_m": null,
+      "hinweise": "Uferbereich Aare/Thunersee. Bauverbot oder sehr eingeschraenkte Bebauung."
+    },
+    "Wohnen/Arbeiten WA5": {
+      "nutzung": "Wohnen + Arbeiten",
+      "mischnutzung_erlaubt": true,
+      "ausnuetzungsziffer": null,
+      "max_geschosse": 5,
+      "max_gebaeudehoehe_m": null,
+      "hinweise": "Mischzone fuer Wohnen und stilles Arbeiten, hoechste Dichtestufe in Thun. AZ aus BauR."
+    },
+    "Zone mit Überbauungsordnung": {
+      "nutzung": "Sondernutzung",
+      "mischnutzung_erlaubt": true,
+      "ausnuetzungsziffer": null,
+      "max_geschosse": null,
+      "max_gebaeudehoehe_m": null,
+      "hinweise": "Eigene Ueberbauungsordnung definiert die Parameter. Nicht aus allgemeinem Baureglement ableitbar."
+    }
+  },
+
+  "_todo": [
+    "Ausnuetzungsziffern der Thuner Zonen aus BauR uebertragen.",
+    "Weitere Zonennamen ergaenzen, sobald neue Gebiete in Thun getestet wurden.",
+    "WA-Zonen (WA1 bis WA5) vollstaendig erfassen.",
+    "Spezialzonen (Altstadt-Baelliz, Panorama-Zonen) pruefen und ergaenzen.",
+    "Grenzabstaende ergaenzen."
+  ]
+}

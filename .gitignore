@@ -48,3 +48,11 @@ cache/
 tmp/
 
 extract_beispiel.xml
+
+# Entwicklungs-XML-Dateien (ueberall im Projekt)
+**/*.xml
+extract_*.xml
+
+# Persoenliche Notizen und Arbeitsdokumente
+WORK SHEET*.txt
+persoenlich/

@@ -1,0 +1,97 @@
+{
+  "gemeinde": "Bern",
+  "bfs_nr": 351,
+  "kanton": "BE",
+  "stand": "2025-12-31",
+  "quelle": "Baurechtliche Grundordnung (BGO) der Stadt Bern",
+  "quelle_url": "https://www.bern.ch/themen/planen-und-bauen/nutzungsplanung/baurechtliche-grundordnung",
+  "struktur": "bauklassen",
+  "hinweis": "Stadt Bern trennt Nutzungszone (was darf hier sein) und Bauklasse (wie dicht darf gebaut werden). Die Ausnuetzungsziffer sitzt typischerweise auf der Bauklasse, kann aber je nach Zone-Bauklasse-Kombination variieren. Werte mit 'null' sind noch mit BGO zu verifizieren.",
+
+  "bauklassen": {
+    "Bauklasse A": {
+      "ausnuetzungsziffer": null,
+      "max_geschosse": 2,
+      "max_gebaeudehoehe_m": 7.5,
+      "grenzabstand_klein_m": null,
+      "grenzabstand_gross_m": null,
+      "hinweise": "Kleinste Bauklasse. Typisch fuer Einfamilienhaus-Quartiere. AZ pro Zone aus BGO zu entnehmen."
+    },
+    "Bauklasse B": {
+      "ausnuetzungsziffer": null,
+      "max_geschosse": 3,
+      "max_gebaeudehoehe_m": 10.5,
+      "grenzabstand_klein_m": null,
+      "grenzabstand_gross_m": null,
+      "hinweise": "Mittlere Dichte. Reihen- und Mehrfamilienhaeuser. AZ pro Zone aus BGO."
+    },
+    "Bauklasse C": {
+      "ausnuetzungsziffer": null,
+      "max_geschosse": 4,
+      "max_gebaeudehoehe_m": 13.5,
+      "grenzabstand_klein_m": null,
+      "grenzabstand_gross_m": null,
+      "hinweise": "Urbane Dichte. Mehrfamilienhaeuser, oft mit Gewerbe im EG. AZ pro Zone aus BGO."
+    },
+    "Bauklasse D": {
+      "ausnuetzungsziffer": null,
+      "max_geschosse": 5,
+      "max_gebaeudehoehe_m": 16.5,
+      "grenzabstand_klein_m": null,
+      "grenzabstand_gross_m": null,
+      "hinweise": "Hohe Dichte. Grossere Gebaeudevolumen. AZ pro Zone aus BGO."
+    },
+    "Bauklasse E": {
+      "ausnuetzungsziffer": null,
+      "max_geschosse": null,
+      "max_gebaeudehoehe_m": null,
+      "grenzabstand_klein_m": null,
+      "grenzabstand_gross_m": null,
+      "hinweise": "Erhaltungsbauklasse: Bestandesgarantie, aber erhebliche Erweiterungseinschraenkungen. Keine fixe AZ - bestehende Volumetrie ist Richtgroesse."
+    },
+    "Bauklasse E, Erhaltung der best. Bebauungsstruktur": {
+      "ausnuetzungsziffer": null,
+      "max_geschosse": null,
+      "max_gebaeudehoehe_m": null,
+      "grenzabstand_klein_m": null,
+      "grenzabstand_gross_m": null,
+      "hinweise": "Synonym zu 'Bauklasse E'. Erhaltungsregime - Potenzial ergibt sich nur aus genauer Analyse der Bestandsbauten."
+    }
+  },
+
+  "nutzungszonen": {
+    "Wohnzone (W)": {
+      "nutzung": "Wohnen",
+      "mischnutzung_erlaubt": false,
+      "hinweise": "Reine Wohnzone. Stilles Gewerbe im Wohnumfeld begrenzt zulaessig."
+    },
+    "Wohn- und Gewerbezone (WG)": {
+      "nutzung": "Wohnen + Gewerbe",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "Laermunempfindliches Gewerbe zugelassen."
+    },
+    "Kernzone (K)": {
+      "nutzung": "Wohnen + Gewerbe + Oeffentlich",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "Ortskerne mit hoeherer Nutzungsvielfalt und Schutzcharakter."
+    },
+    "Altstadtperimeter BO.06": {
+      "nutzung": "Altstadt-Spezialregime",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "UNESCO-Weltkulturerbe. Strenge Erhaltungsvorschriften, Denkmalpflege zwingend einzubeziehen."
+    },
+    "Untere Altstadt und Wohngebiet Matte": {
+      "nutzung": "Altstadt-Spezialregime",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "Teil der Berner Altstadt (UNESCO). Erhaltungspflichten, detaillierte BGO-Anhaenge konsultieren."
+    }
+  },
+
+  "_todo": [
+    "Ausnuetzungsziffern pro Bauklasse x Zone-Kombination aus BGO einpflegen (mit Architekturbuero verifizieren).",
+    "Weitere Nutzungszonen ergaenzen (ZPP, ZoeN, Gruenzonen, Zonen fuer oeffentliche Nutzungen).",
+    "Grenzabstaende (klein/gross) pro Bauklasse ergaenzen.",
+    "Dachform-Vorgaben aus den Bauvorschriften einbauen.",
+    "Laermempfindlichkeitsstufe pro Zone ergaenzen fuer die Potenzial-Validierung."
+  ]
+}
