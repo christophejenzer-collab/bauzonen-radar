@@ -2,10 +2,10 @@
 
 **Analysewerkzeug für ungenutztes Bebauungspotenzial auf Schweizer Grundstücken.**
 
-Ein Python-Tool, das für eine beliebige Adresse im Kanton Bern in Sekunden die aktuelle Nutzungsplanung, Überlagerungen, Naturgefahren und Baulinien ausliest — und aufzeigt, wo Verdichtungspotenzial brachliegt.
+Ein Python-Tool, das für eine beliebige Adresse im Kanton Bern in Sekunden die aktuelle Nutzungsplanung, Überlagerungen, Naturgefahren und Baulinien ausliest — und unter Berücksichtigung des jeweils geltenden Bemessungssystems (AZ, GFZo oder Höhen + Grünflächenziffer) aufzeigt, wo Verdichtungspotenzial brachliegt.
 
 > Abschlussprojekt im Python-Kurs, Frühjahr 2026.
-> Entwickelt von Christophe Jenzer und Fabienne Schmid.
+> Entwickelt von Christophe Jenzer und [Name Teampartner:in].
 
 ---
 
@@ -13,15 +13,16 @@ Ein Python-Tool, das für eine beliebige Adresse im Kanton Bern in Sekunden die 
 
 1. [Motivation](#motivation)
 2. [Funktionsumfang](#funktionsumfang)
-3. [Schnellstart](#schnellstart)
-4. [Projektstruktur](#projektstruktur)
-5. [Technischer Ansatz](#technischer-ansatz)
-6. [Datenquellen](#datenquellen)
-7. [Beispielausgabe](#beispielausgabe)
-8. [Minimalziel und Roadmap](#minimalziel-und-roadmap)
-9. [Entwicklung](#entwicklung)
-10. [Hinweise zu Daten und Recht](#hinweise-zu-daten-und-recht)
-11. [Kontakt](#kontakt)
+3. [Der Systemwechsel im Berner Baurecht](#der-systemwechsel-im-berner-baurecht)
+4. [Schnellstart](#schnellstart)
+5. [Projektstruktur](#projektstruktur)
+6. [Technischer Ansatz](#technischer-ansatz)
+7. [Datenquellen](#datenquellen)
+8. [Beispielausgabe](#beispielausgabe)
+9. [Minimalziel und Roadmap](#minimalziel-und-roadmap)
+10. [Entwicklung](#entwicklung)
+11. [Hinweise zu Daten und Recht](#hinweise-zu-daten-und-recht)
+12. [Kontakt](#kontakt)
 
 ---
 
@@ -29,7 +30,7 @@ Ein Python-Tool, das für eine beliebige Adresse im Kanton Bern in Sekunden die 
 
 Die Schweizer Raumplanung fordert Siedlungsentwicklung nach innen. Neueinzonungen sind politisch weitgehend blockiert, der Wert eines Grundstücks entsteht heute durch **bessere Ausschöpfung bestehender Bauzonen**: Aufstockungen, Ersatzneubauten, Umnutzungen bei Zonenänderungen.
 
-Die dafür relevanten Daten sind **öffentlich zugänglich**, aber über viele Portale verstreut und nur mit Fachwissen interpretierbar. Der Bauzonen-Radar führt diese Daten zu einer einheitlichen, maschinenlesbaren Gesamtsicht zusammen.
+Die dafür relevanten Daten sind **öffentlich zugänglich**, aber über viele Portale verstreut und nur mit Fachwissen interpretierbar. Der Bauzonen-Radar führt diese Daten zu einer einheitlichen, maschinenlesbaren Gesamtsicht zusammen und berücksichtigt dabei den laufenden Systemwechsel im Berner Baurecht.
 
 Zielgruppen sind **Architekturbüros** (für Akquise und Vorprüfung), **Gemeinden und Kantone** (für die gesetzlich vorgeschriebene Innenentwicklungs-Analyse) und **Immobilienentwickler** (für Deal-Identifikation).
 
@@ -47,16 +48,61 @@ Zielgruppen sind **Architekturbüros** (für Akquise und Vorprüfung), **Gemeind
   - Sondernutzungen (Gestaltungspläne)
   - Gefahrengebiete (Hochwasser, Rutschung, Sturz)
   - Baulinien und weitere Flächen-Informationen
-- **Zukunfts-Layer:** Erkennung projektierter Zonenänderungen via `Lawstatus` (rechtskräftig / Änderung mit Vorwirkung / Änderung ohne Vorwirkung / laufende Verfahren).
+- **Zukunfts-Layer:** Erkennung projektierter Zonenänderungen via `Lawstatus` (rechtskräftig, Änderung mit Vorwirkung, Änderung ohne Vorwirkung, laufende Verfahren).
+- **Mehrsystem-Modell:** Unterstützung für die drei Bemessungssysteme des Kantons Bern:
+  - Klassische Ausnützungsziffer (AZ)
+  - Geschossflächenziffer oberirdisch (GFZo, IVHB-konform)
+  - Steuerung über Gebäudehöhen + Grünflächenziffer (z.B. Thun BR 2022)
+- **Dualitäts-Behandlung:** In Übergangsphasen (z.B. Thun seit März 2022) werden altes und neues Recht parallel berücksichtigt.
 - **Robustheit gegenüber Gemeindedialekten:** Der Parser erkennt sowohl den Stadt-Bern-Stil (feine Unterscheidung in Nutzungszone und Bauklasse) als auch den im Berner Oberland verbreiteten Stil mit kombinierter Grundnutzung.
+- **Automatische Warnhinweise:** Überlagerungen, Naturgefahren, Baulinien und laufende Zonenplanänderungen werden als qualitative Risikohinweise ausgegeben, auch ohne berechenbare Kennzahl.
 - **Übersichtsbericht** als strukturierte Textausgabe im Terminal.
 
 ### In Entwicklung
 
-- Baureglement-JSON-Struktur für gemeindespezifische Ausnützungsziffern, Gebäudehöhen und Grenzabstände.
-- Potenzialberechnung: theoretisch zulässige Geschossfläche vs. realisierte Bebauung.
-- Rangliste über mehrere Parzellen.
-- Einfache grafische Oberfläche und Kartenansicht.
+- Integration der Ist-Bebauung via swissBUILDINGS3D
+- Rangliste über mehrere Parzellen nach ungenutztem Potenzial
+- Einfache grafische Oberfläche und Kartenansicht
+- PDF-Export des Parzellen-Dossiers für Kundengespräche
+
+---
+
+## Der Systemwechsel im Berner Baurecht
+
+Das Tool unterstützt bewusst mehrere parallele Bemessungssysteme, weil der Kanton Bern mitten in einer Rechtsreform steht.
+
+### Kantonaler Systemwechsel
+
+Gemäss der kantonalen **Verordnung über die Begriffe und Messweisen im Bauwesen (BMBV)** — abgeleitet aus der interkantonalen Vereinbarung **IVHB** — wurde die klassische Ausnützungsziffer im Kanton Bern durch die **Geschossflächenziffer oberirdisch (GFZo)** ersetzt.
+
+Der Unterschied: Während die alte AZ auch unterirdische Wohnräume mitzählte, bezieht sich die GFZo nur auf Flächen oberhalb des massgebenden Terrains. In der Praxis erlaubt dies oft eine leicht höhere Nutzbarkeit, weil Untergeschosse nicht mehr das Kontingent belasten.
+
+### Gemeinden auf unterschiedlichem Stand
+
+Jede Berner Gemeinde muss ihre baurechtliche Grundordnung (BNO) an die BMBV anpassen. Solange die Revision nicht erfolgt ist, gilt das alte AZ-Regime gemäss BauV Art. 93–98 weiter. Das heisst: Innerhalb des gleichen Kantons stehen Gemeinden gleichzeitig auf unterschiedlichen Rechtsständen.
+
+### Stadt Thun: Drei-Schritte weiter
+
+Thun hat mit der Ortsplanungsrevision (BR 2022, schrittweise in Kraft ab Februar 2025) einen weiteren Schritt gemacht und in den meisten Wohnzonen **auch auf die GFZo verzichtet**. Die bauliche Dichte wird dort primär über:
+
+- Gebäude- und Fassadenhöhen
+- Grenzabstände (z.B. 6 m grosser Grenzabstand in W2 und W3)
+- Grünflächenziffer (unversiegelt zu haltender Anteil)
+
+gesteuert. Seit März 2022 gilt in Thun **Dualität**: Baugesuche werden sowohl nach altem BR 2002 als auch nach neuem BR 2022 geprüft.
+
+### Wie das Tool damit umgeht
+
+Jede Zone in den Baureglement-JSON-Dateien trägt ein `system`-Feld mit einem der folgenden Werte:
+
+| System | Bedeutung |
+|---|---|
+| `AZ` | Klassische Ausnützungsziffer (altes Recht) |
+| `GFZo` | Geschossflächenziffer oberirdisch (IVHB-konform) |
+| `hoehen_und_gz` | Steuerung über Gebäudehöhen und Grünflächenziffer |
+| `dualitaet` | Übergangsphase, altes und neues Recht gelten parallel |
+
+Der `PotenzialBerechner` wählt die passende Logik automatisch und gibt das verwendete System in der Ausgabe explizit aus. Historische AZ-Werte bleiben in den JSONs als `ausnuetzungsziffer_historisch` erhalten, damit der Vergleich zwischen altem und neuem Recht möglich ist.
 
 ---
 
@@ -91,17 +137,23 @@ pip install -r requirements.txt
 
 ```bash
 cd src/bauzonenradar
-python bern.py "Kramgasse 49, 3011 Bern"
+python analyse_adresse.py "Kramgasse 49, 3011 Bern"
 ```
 
-Nach 3–5 Sekunden erhält man ein strukturiertes Dossier der Parzelle im Terminal.
+Nach 3–5 Sekunden erhält man ein strukturiertes Dossier der Parzelle im Terminal, inklusive Potenzialanalyse auf Basis des für diese Zone geltenden Bemessungssystems.
 
 ### Weitere Beispiele
 
 ```bash
-python bern.py "Thunstrasse 40, 3005 Bern"
-python bern.py "Dorfstrasse 10, 3095 Spiegel"
-python bern.py "Rathausplatz 1, 3600 Thun"
+python analyse_adresse.py "Thunstrasse 40, 3005 Bern"
+python analyse_adresse.py "Dorfstrasse 10, 3095 Spiegel"
+python analyse_adresse.py "Rathausplatz 1, 3600 Thun"
+```
+
+Alternativ nur die Bauparameter-Diagnose ohne Potenzialberechnung:
+
+```bash
+python baureglement.py "Rathausplatz 1, 3600 Thun"
 ```
 
 ---
@@ -113,15 +165,20 @@ bauzonen-radar/
 ├── README.md                     Diese Anleitung
 ├── requirements.txt              Python-Abhängigkeiten
 ├── .gitignore                    Versionierungs-Ausschlüsse
-├── docs/                         Konzept- und Architektur-Dokumentation
+├── docs/                         Konzept- und Fach-Dokumentation
 ├── daten/
 │   └── baureglemente/            Gemeindespezifische Reglement-Parameter (JSON)
+│       ├── bern.json
+│       └── thun.json
 ├── src/
 │   └── bauzonenradar/
 │       ├── modelle.py            Datenmodell (Parzelle, Restriction, Lawstatus)
 │       ├── bern.py               Datenquelle Kanton Bern (ÖREB-Webservice)
+│       ├── baureglement.py       Reglement-Lader mit Bemessungssystem-Unterstützung
+│       ├── analyse_adresse.py    CLI-Hauptschnittstelle (vollständige Analyse)
 │       ├── xml_speichern.py      Hilfsskript zur Analyse neuer Gemeinden
-│       ├── analyse/              Potenzialberechnung (in Entwicklung)
+│       ├── analyse/
+│       │   └── potenzial.py      Potenzialberechnung (AZ, GFZo, Höhen+GZ)
 │       ├── ausgabe/              Report-Generierung (in Entwicklung)
 │       ├── datenquellen/         Weitere Kantone (in Entwicklung)
 │       └── gui/                  Benutzeroberfläche (in Entwicklung)
@@ -161,6 +218,17 @@ bauzonen-radar/
   └──────────┬───────────┘
              │
              ▼
+  ┌──────────────────────┐
+  │ Baureglement-Loader  │  Bauparameter (AZ / GFZo / Höhen+GZ)
+  │ (JSON-basiert)       │
+  └──────────┬───────────┘
+             │
+             ▼
+  ┌──────────────────────┐
+  │ Potenzialberechner   │  Systemspezifische Analyse
+  └──────────┬───────────┘
+             │
+             ▼
   Strukturierte Ausgabe
 ```
 
@@ -170,7 +238,9 @@ bauzonen-radar/
 
 **Dialekt-Robustheit.** Berner Gemeinden verwenden zwei unterschiedliche SubCode-Konventionen innerhalb des einheitlichen OEREB-Schemas. Der Parser erkennt beide Varianten über fallback-fähige Kategorisierung in der `Restriction`-Klasse.
 
-**Typisierte Datenmodelle.** Parzellen und ihre Beschränkungen werden als Python-Dataclasses abgebildet. Filter- und Aggregations-Methoden sind direkt am Modell verankert (`parzelle.grundnutzungen()`, `parzelle.gefahrengebiete()`, `parzelle.laufende_aenderungen()`).
+**Bemessungssystem als explizites Konzept.** Der Systemwechsel AZ → GFZo → Höhen+GZ wird im Datenmodell explizit über die Enum-Klasse `BemessungsSystem` abgebildet. Jede Zone trägt das für sie geltende System, der Berechner wählt automatisch den passenden Algorithmus.
+
+**Typisierte Datenmodelle.** Parzellen, Beschränkungen und Bauparameter werden als Python-Dataclasses abgebildet. Filter- und Aggregations-Methoden sind direkt am Modell verankert.
 
 **Minimale externe Abhängigkeiten für die Kernlogik.** XML-Parsing erfolgt mit der Python-Standardbibliothek, um die Einstiegshürde niedrig zu halten. Geopandas und Folium werden nur für Kartenvisualisierung und Potenzialberechnung nachgezogen.
 
@@ -185,7 +255,8 @@ Alle verwendeten Daten sind **Open Government Data** und entsprechen den Vorgabe
 | swisstopo SearchAPI | Adress-Geocoding nach LV95 | Bundesamt für Landestopografie |
 | ÖREB-Webservice Kanton Bern | Grundstück- und Nutzungsplanung-Daten | Kanton Bern, Amt für Geoinformation |
 | ÖREB-Schema V2.0 | Datenformat-Spezifikation | Bundesamt swisstopo |
-| Baureglemente der Gemeinden | Ausnützungsziffern, Bauvorschriften | Manuell erfasst in `daten/baureglemente/` |
+| BMBV des Kantons Bern | Rechtsgrundlage für IVHB-konforme Begriffe | Kanton Bern |
+| Baureglemente der Gemeinden | Ausnützungsziffern, GFZo, Gebäudehöhen, Grünflächenziffern | Manuell erfasst in `daten/baureglemente/` |
 
 Die offiziellen Dienste werden zur Laufzeit abgerufen, es wird kein lokaler Datenbestand gepflegt.
 
@@ -193,13 +264,12 @@ Die offiziellen Dienste werden zur Laufzeit abgerufen, es wird kein lokaler Date
 
 ## Beispielausgabe
 
-### Rathausplatz 1, 3600 Thun
+### Rathausplatz 1, 3600 Thun (BR 2022, Höhen+GZ-System)
 
 ```
 Parzelle 713 (Thun, BE)
 EGRID:    CH600235884687
 Flaeche:  3410 m^2
-Adresse:  Rathausplatz 1, 3600 Thun
 
 Grundnutzung (Bauzone):
   - Bestandeszone (76%, 2587 m^2)
@@ -210,31 +280,30 @@ Ueberlagerungen:
   - Gefahrengebiet mit Grundwasseraufstoss
 
 Naturgefahren:
-  - ! Gefahrengebiet erhebliche Gefährdung
-  - ! Gefahrengebiet mittlere Gefährdung
-  - ! Gefahrengebiet geringe Gefährdung
-  - ! Gefahrengebiet Restgefährdung
+  ! Gefahrengebiet erhebliche Gefährdung
+  ! Gefahrengebiet mittlere Gefährdung
+  ! Gefahrengebiet geringe Gefährdung
+  ! Gefahrengebiet Restgefährdung
 
 Baulinien:
-  - bestehend
-  - Altstadt
-  - nationale Bedeutung
+  - bestehend, Altstadt, nationale Bedeutung
 
-Weitere Flaechen:
-  - Altstadtgebiet
-  - Archäologisches Schutzgebiet
+Potenzialanalyse
+----------------------------------------
+Parzellenflaeche:  3410 m^2
+Zone(n):           Bestandeszone [hoehen_und_gz], Uferzone [hoehen_und_gz]
+Status:            NICHT_BERECHENBAR
 
-OEREB-Themen auf dieser Parzelle:
-  - ch.BE.ArchaeologischesInventar (1 Eintrag)
-  - ch.BE.Bauinventar (3 Einträge)
-  - ch.BE.Denkmalschutzobjekte (1 Eintrag)
-  - ch.BE.Gewaesserschutzbereiche (1 Eintrag)
-  - ch.BE.Naturgefahren (4 Einträge)
-  - ch.Gewaesserraum (1 Eintrag)
-  - ch.Nutzungsplanung (13 Einträge)
+Bemerkungen:
+  - In keiner der Zonen ist eine Kennzahl (AZ oder GFZo) zur Potenzialberechnung hinterlegt.
+  - Zone 'Bestandeszone' [hoehen_und_gz]: Erhaltungszone. Bestehende Volumetrie ist Richtgroesse.
+  - Zone 'Uferzone' [hoehen_und_gz]: Uferbereich Aare/Thunersee. Bauverbot oder sehr eingeschraenkte Bebauung.
+  - Parzelle hat Ueberlagerungen (z.B. Ortsbildschutz). Theoretisches Potenzial in der Praxis stark eingeschraenkt.
+  - Parzelle liegt in 4 Naturgefahrengebiet(en). Bebaubarkeit im Detail zu pruefen.
+  - Baulinien auf der Parzelle - effektive Bauflaeche ist kleiner als die Gesamtflaeche.
 ```
 
-Diese Übersicht fasst Informationen zusammen, die manuell aus mindestens sieben verschiedenen Datenquellen recherchiert werden müssten.
+Die qualitativen Bemerkungen sind genauso wertvoll wie eine harte Zahl: Sie identifizieren die relevanten Risiken und Fachthemen für eine Parzelle.
 
 ---
 
@@ -247,19 +316,22 @@ Diese Übersicht fasst Informationen zusammen, die manuell aus mindestens sieben
 - [x] Parser für alle sechs Kategorien des OEREB-Schemas V2.0
 - [x] Robustheit gegenüber Gemeindedialekten (Stadt Bern, Berner Oberland)
 - [x] Strukturierte Textausgabe
-- [ ] Baureglement-Integration für mindestens zwei Gemeinden (Bern, Thun)
-- [ ] Potenzialberechnung: theoretisch zulässige vs. realisierte Geschossfläche
-- [ ] Einfache grafische Oberfläche (guizero oder Streamlit)
+- [x] Baureglement-Integration für Stadt Bern und Thun
+- [x] Drei-System-Modell (AZ, GFZo, Höhen+GZ) gemäss Berner Rechtsstand
+- [x] Potenzialberechnung mit systemspezifischer Logik
+- [x] Automatische Warnhinweise zu OEREB-Einschränkungen
+- [ ] Konkrete Kennzahlen (AZ, GFZo, Höhen, GZ) pro Zone einpflegen
+- [ ] Einfache grafische Oberfläche
 - [ ] Rangliste mehrerer Adressen nach ungenutztem Potenzial
 
 ### Geplante Erweiterungen nach Minimalziel
 
-- Integration des schweizweit harmonisierten Bauzonen-Datensatzes des Bundesamts für Raumentwicklung für überschlägige Abdeckung der gesamten Schweiz
+- Berücksichtigung der Gebäudegrundflächen aus swissBUILDINGS3D für die Ist-Bebauung
 - Erweiterung auf Kanton Zürich (Validierung der Kanton-Abstraktion)
 - PDF-Export des Parzellen-Dossiers für Kundengespräche
 - Kartenvisualisierung mit folium (inkl. eingebundener WMS-Overlays)
 - Filter für "Parzellen mit laufenden Änderungen" über ein ganzes Gemeindegebiet
-- Berücksichtigung der Gebäudegrundflächen aus swissBUILDINGS3D für die Ist-Bebauung
+- Integration weiterer Gemeinde-Baureglemente (Köniz, Steffisburg, Münsingen)
 
 ---
 
@@ -275,6 +347,16 @@ python xml_speichern.py "Eine Adresse, 1234 Ortsname" extract_test.xml
 ```
 
 Anschliessend lassen sich die im XML verwendeten Kategorien untersuchen, um den Parser bei Bedarf zu erweitern.
+
+### Baureglement-JSON pflegen
+
+Ein neues Gemeinde-Baureglement folgt dem Schema aus `daten/baureglemente/bern.json` oder `thun.json`. Pflichtfelder:
+
+- `gemeinde`, `bfs_nr`, `kanton`, `stand`
+- `struktur`: entweder `"bauklassen"` (Stadt-Stil) oder `"kombiniert"` (Land-Stil)
+- `system_default`: das typische Bemessungssystem der Gemeinde
+
+Pro Zone sind je nach System die passenden Kennzahlen einzutragen. Unbekannte Werte bleiben `null`, das Tool meldet dann präzise, was fehlt.
 
 ### Git-Workflow
 
@@ -294,7 +376,7 @@ pytest tests/
 
 ## Hinweise zu Daten und Recht
 
-Die Analyse dient der **theoretischen Potenzialabschätzung** auf Basis offizieller öffentlicher Datenquellen. Sie ersetzt keine rechtsverbindliche baurechtliche Abklärung durch die zuständige Gemeinde oder ein Architekturbüro.
+Die Analyse dient der **theoretischen Potenzialabschätzung** auf Basis offizieller öffentlicher Datenquellen. Sie ersetzt keine rechtsverbindliche baurechtliche Abklärung durch die zuständige Gemeinde oder ein Architekturbüro. Insbesondere in der Übergangsphase des Berner Rechtssystems (Stichwort Dualität) sind die Ergebnisse als Näherung zu verstehen.
 
 Alle verwendeten Daten sind unter den jeweiligen Open-Data-Lizenzen der Anbieter zugänglich. Der Bauzonen-Radar speichert keine Daten dauerhaft, sondern ruft die amtlichen Dienste zur Laufzeit ab. Grosse Geodaten-Dateien und XML-Auszüge aus Entwicklungsläufen werden per `.gitignore` aus der Versionierung ausgeschlossen.
 
@@ -304,11 +386,8 @@ Alle verwendeten Daten sind unter den jeweiligen Open-Data-Lizenzen der Anbieter
 
 Bei Fragen zum Projekt oder für Feedback:
 
-Fabienne Schmid
-fabienneschmid@gmx.ch
-
 Christophe Jenzer
-christophejenzer@icloud.com
+[E-Mail-Adresse einfügen]
 
 ---
 
