@@ -49,7 +49,7 @@
       "mischnutzung_erlaubt": true,
       "hinweise": "Eigene Ueberbauungsordnung (UeO) definiert die Parameter individuell. Nicht aus allgemeinem Baureglement ableitbar - UeO-Dokumente pro Gebiet konsultieren."
     },
-    "Wohnzone W2": {
+    "Wohnen W2": {
       "system": "hoehen_und_gz",
       "nutzung": "Wohnen",
       "mischnutzung_erlaubt": false,
@@ -58,11 +58,11 @@
       "max_fassadenhoehe_m": null,
       "grenzabstand_gross_m": 6.0,
       "gruenflaechenziffer": null,
-      "hinweise": "Im alten BR 2002 galt AZ=0.5 (als 'ausnuetzungsziffer_historisch' hinterlegt, nicht fuer Berechnung). Im BR 2022 wird die Dichte ueber Gebaeudehoehen, Grenzabstaende (6 m grosser Grenzabstand) und Gruenflaechenziffer gesteuert. Konkrete Werte aus BR 2022 zu ergaenzen.",
+      "hinweise": "OEREB-Schreibweise des Kantons Bern: 'Wohnen W2' (entspricht 'Wohnzone W2' im Baureglement). Im alten BR 2002 galt AZ=0.5. Im BR 2022 Steuerung ueber Hoehen, Grenzabstaende und Gruenflaechenziffer.",
       "rechtsgrundlage": "BR 2022, Wohnzonen-Artikel",
       "gueltig_ab": "2025-02-01"
     },
-    "Wohnzone W3": {
+    "Wohnen W3": {
       "system": "hoehen_und_gz",
       "nutzung": "Wohnen",
       "mischnutzung_erlaubt": false,
@@ -71,7 +71,7 @@
       "max_fassadenhoehe_m": null,
       "grenzabstand_gross_m": 6.0,
       "gruenflaechenziffer": null,
-      "hinweise": "Im alten BR 2002 galt AZ=0.7 (historisch). Im BR 2022 Dichtesteuerung ueber Hoehen, Grenzabstaende und Gruenflaechenziffer.",
+      "hinweise": "OEREB-Schreibweise des Kantons Bern: 'Wohnen W3' (entspricht 'Wohnzone W3' im Baureglement).",
       "rechtsgrundlage": "BR 2022, Wohnzonen-Artikel",
       "gueltig_ab": "2025-02-01"
     }
