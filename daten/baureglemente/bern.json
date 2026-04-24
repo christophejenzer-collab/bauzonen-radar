@@ -2,12 +2,12 @@
   "gemeinde": "Bern",
   "bfs_nr": 351,
   "kanton": "BE",
-  "stand": "2026-04-24",
+  "stand": "2026-04-25",
   "quelle": "Baurechtliche Grundordnung (BGO) der Stadt Bern",
   "quelle_url": "https://www.bern.ch/themen/planen-und-bauen/nutzungsplanung/baurechtliche-grundordnung",
   "struktur": "bauklassen",
   "system_default": "AZ",
-  "hinweis": "Stadt Bern trennt Nutzungszone und Bauklasse. Die klassische Ausnuetzungsziffer (AZ) sitzt auf der Bauklasse und variiert je nach Zone-Bauklasse-Kombination. Der Kanton Bern hat mit der BMBV den Wechsel zu GFZo vorgegeben - der Umstellungsstand der Stadt Bern ist mit Architekturbuero oder Amt fuer Hochbau zu verifizieren. Werte mit 'null' sind noch zu erheben.",
+  "hinweis": "Stadt Bern trennt Nutzungszone und Bauklasse. Die klassische Ausnuetzungsziffer (AZ) sitzt auf der Bauklasse und variiert je nach Zone-Bauklasse-Kombination. Der Kanton Bern hat mit der BMBV den Wechsel zu GFZo vorgegeben - der Umstellungsstand der Stadt Bern ist mit Architekturbuero oder Amt fuer Hochbau zu verifizieren. Die Berner Altstadt verwendet statt der numerischen Bauklassen A-E gebietsspezifische Spezialregime mit eigenen Schutzauflagen (UNESCO-Weltkulturerbe). Zonen mit Planungspflicht erfordern eine Ueberbauungsordnung (UeO) vor Bebauung.",
 
   "bauklassen": {
     "Bauklasse A": {
@@ -69,6 +69,65 @@
       "max_gebaeudehoehe_m": null,
       "hinweise": "Langform-Synonym zu 'Bauklasse E'. Erhaltungsregime - Potenzial ergibt sich nur aus genauer Analyse der Bestandsbauten.",
       "rechtsgrundlage": "BGO Stadt Bern"
+    },
+
+    "Untere Altstadt und Wohngebiet Matte": {
+      "system": "hoehen_und_gz",
+      "ausnuetzungsziffer": null,
+      "max_geschosse": null,
+      "max_gebaeudehoehe_m": null,
+      "hinweise": "Spezialregime der Stadt Bern fuer die Untere Altstadt und das Wohngebiet Matte. UNESCO-Weltkulturerbe. Erhaltungsregime mit strengen Schutzauflagen. Keine fixe Kennzahl - die Bebauung folgt dem historischen Bestand. Konkrete Vorgaben zu Geschossigkeit und Hoehen aus den BGO-Anhaengen.",
+      "rechtsgrundlage": "BGO Stadt Bern, Altstadt-Regelungen"
+    },
+    "Obere Altstadt": {
+      "system": "hoehen_und_gz",
+      "ausnuetzungsziffer": null,
+      "max_geschosse": null,
+      "max_gebaeudehoehe_m": null,
+      "hinweise": "Spezialregime der Stadt Bern fuer die Obere Altstadt. UNESCO-Weltkulturerbe. Erhaltungsregime - bestehende Volumetrie ist Richtgroesse. BGO-Anhaenge konsultieren.",
+      "rechtsgrundlage": "BGO Stadt Bern, Altstadt-Regelungen"
+    },
+    "Innere Neustadt": {
+      "system": "hoehen_und_gz",
+      "ausnuetzungsziffer": null,
+      "max_geschosse": null,
+      "max_gebaeudehoehe_m": null,
+      "hinweise": "Spezialregime der Stadt Bern fuer die Innere Neustadt. Teil des historischen Stadtkerns. Erhaltungsregime mit denkmalpflegerischen Auflagen.",
+      "rechtsgrundlage": "BGO Stadt Bern, Altstadt-Regelungen"
+    },
+    "Aeussere Neustadt": {
+      "system": "hoehen_und_gz",
+      "ausnuetzungsziffer": null,
+      "max_geschosse": null,
+      "max_gebaeudehoehe_m": null,
+      "hinweise": "Spezialregime der Stadt Bern fuer die Aeussere Neustadt. Erweiterung des historischen Stadtkerns. Erhaltungsregime mit denkmalpflegerischen Auflagen.",
+      "rechtsgrundlage": "BGO Stadt Bern, Altstadt-Regelungen"
+    },
+
+    "Untere Altstadt und Wohngebiet Matte, Zone mit Planungspflicht": {
+      "system": "hoehen_und_gz",
+      "ausnuetzungsziffer": null,
+      "max_geschosse": null,
+      "max_gebaeudehoehe_m": null,
+      "hinweise": "Spezialregime der Stadt Bern fuer die Untere Altstadt und das Wohngebiet Matte mit zusaetzlicher Planungspflicht. UNESCO-Weltkulturerbe. Vor einer Bebauung ist eine Ueberbauungsordnung (UeO) zu erstellen. Strenge Erhaltungs- und Schutzauflagen.",
+      "rechtsgrundlage": "BGO Stadt Bern, Altstadt-Regelungen mit Planungspflicht"
+    },
+    "Obere Altstadt, Zone mit Planungspflicht": {
+      "system": "hoehen_und_gz",
+      "ausnuetzungsziffer": null,
+      "max_geschosse": null,
+      "max_gebaeudehoehe_m": null,
+      "hinweise": "Spezialregime der Stadt Bern fuer die Obere Altstadt mit zusaetzlicher Planungspflicht. UNESCO-Weltkulturerbe. Vor einer Bebauung ist eine Ueberbauungsordnung (UeO) zu erstellen. Strenge Erhaltungs- und Schutzauflagen.",
+      "rechtsgrundlage": "BGO Stadt Bern, Altstadt-Regelungen mit Planungspflicht"
+    },
+
+    "Zone im öffentlichen Interesse": {
+      "system": "hoehen_und_gz",
+      "ausnuetzungsziffer": null,
+      "max_geschosse": null,
+      "max_gebaeudehoehe_m": null,
+      "hinweise": "Spezialzone fuer oeffentliche Bauten und Anlagen (Schulen, Verwaltung, Spitaeler, Kirchen, Sportanlagen). Bebauung folgt dem oeffentlichen Bedarf, nicht einer fixen Kennzahl. Konkrete Vorgaben sind im jeweiligen Sondernutzungsplan oder in der Ueberbauungsordnung zu finden.",
+      "rechtsgrundlage": "BGO Stadt Bern, ZoeN-Regelungen"
     }
   },
 
@@ -97,6 +156,41 @@
       "nutzung": "Altstadt-Spezialregime",
       "mischnutzung_erlaubt": true,
       "hinweise": "Teil der Berner Altstadt (UNESCO). Erhaltungspflichten, detaillierte BGO-Anhaenge konsultieren."
+    },
+    "Obere Altstadt": {
+      "nutzung": "Altstadt-Spezialregime",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "Teil der Berner Altstadt (UNESCO). Erhaltungspflichten, detaillierte BGO-Anhaenge konsultieren."
+    },
+    "Innere Neustadt": {
+      "nutzung": "Altstadt-Spezialregime",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "Teil des historischen Stadtkerns. Denkmalpflege bei Bauvorhaben einzubeziehen."
+    },
+    "Aeussere Neustadt": {
+      "nutzung": "Altstadt-Spezialregime",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "Teil des historischen Stadtkerns. Denkmalpflege bei Bauvorhaben einzubeziehen."
+    },
+    "Schutzzone A (SZA) Landschafts- + Ortsbildschutzareal": {
+      "nutzung": "Schutzzone",
+      "mischnutzung_erlaubt": false,
+      "hinweise": "Landschafts- und Ortsbildschutzareal. Strenge Schutzauflagen, Bebauung in der Regel ausgeschlossen oder stark eingeschraenkt."
+    },
+    "ZPP Obere Altstadt": {
+      "nutzung": "Zone mit Planungspflicht",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "Zone mit Planungspflicht in der Oberen Altstadt. UeO erforderlich vor Bebauung."
+    },
+    "Obere Altstadt, Zone mit Planungspflicht": {
+      "nutzung": "Zone mit Planungspflicht",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "Zone mit Planungspflicht in der Oberen Altstadt. Ueberbauungsordnung (UeO) erforderlich."
+    },
+    "UeO Laubenlinien Marktgasse": {
+      "nutzung": "Ueberbauungsordnung",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "Spezielle Ueberbauungsordnung zu den Laubenlinien an der Marktgasse. Detaillierte Vorgaben zur Lauben-Architektur."
     }
   },
 
@@ -104,8 +198,10 @@
     "Umstellungsstand der Stadt Bern auf GFZo verifizieren (Amt fuer Hochbau oder Architekturbuero).",
     "AZ-Werte pro Bauklasse x Zone-Kombination aus BGO einpflegen.",
     "GFZo-Werte ergaenzen, sobald Stadt Bern die entsprechenden Artikel in Kraft gesetzt hat.",
-    "Weitere Nutzungszonen ergaenzen (ZPP, ZoeN, Gruenzonen, Zonen fuer oeffentliche Nutzungen).",
+    "Weitere Nutzungszonen ergaenzen (ZPP, ZoeN, Gruenzonen).",
     "Grenzabstaende pro Bauklasse ergaenzen.",
-    "Laermempfindlichkeitsstufe pro Zone ergaenzen."
+    "Laermempfindlichkeitsstufe pro Zone ergaenzen.",
+    "Spezifische Hoehen- und Geschoss-Vorgaben fuer die Altstadt-Bereiche aus BGO-Anhaengen recherchieren.",
+    "Weitere ZoeN-Spezifika (Schulen, Spitaeler, Kirchen) bei Bedarf detaillieren."
   ]
 }

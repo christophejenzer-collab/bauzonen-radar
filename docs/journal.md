@@ -13,6 +13,11 @@ Format pro Session:
 
 ## 24. April 2026 (Abend, ~3 Stunden)
 
+- Test mit Kramgasse 1, Bern: Bug entdeckt — Berner Altstadt verwendet Spezialnamen statt numerischer Bauklassen
+- Fix: bern.json um vier Altstadt-Bereiche erweitert (Untere/Obere Altstadt, Innere/Aeussere Neustadt)
+- Fix in beiden Blöcken (bauklassen und nutzungszonen), weil OEREB beide Felder mit gleichem Namen befüllt
+- Erkenntnis: Praxistests in verschiedenen Stadtteilen sind unverzichtbar
+
 ### Kontext
 Nach Recherche zum Berner Baurecht (Systemwechsel AZ → GFZo, Thun-Spezialfall BR 2022): komplette Umstellung des Datenmodells auf Mehrsystem-Unterstützung.
 

@@ -1,0 +1,1333 @@
+PowerShell 7.6.0
+
+   A new PowerShell stable release is available: v7.6.1
+   Upgrade now, or check out the release page at:
+     https://aka.ms/PowerShell-Release?tag=v7.6.1
+
+PS C:\Windows\System32> cd..
+PS C:\Windows> cd..
+PS C:\> ls
+
+    Directory: C:\
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+d----          24.01.2026    12:38                GitHub
+d----          25.04.2025    17:59                inetpub
+d----          01.04.2024    09:26                PerfLogs
+d-r--          21.04.2026    14:06                Program Files
+d-r--          06.02.2026    20:18                Program Files (x86)
+d----          20.03.2026    18:05                Projekte
+d----          12.07.2025    13:40                temp
+d----          22.04.2026    19:20                Tools
+d-r--          12.10.2025    20:43                Users
+d----          21.04.2026    01:02                Windows
+-a---          28.06.2025    07:48             90 logUploaderSettings_temp.ini
+-a---          28.06.2025    07:48             90 logUploaderSettings.ini
+
+PS C:\> cd tools
+PS C:\Tools> cd .\bauzonen-radar\
+PS C:\Tools\bauzonen-radar> git add proof_of_concept.py
+>> git commit -m "Fuege funktionierenden Proof-of-Concept mit OEREB-Service hinzu"
+>> git push
+warning: in the working copy of 'proof_of_concept.py', LF will be replaced by CRLF the next time Git touches it
+[main 71a734c] Fuege funktionierenden Proof-of-Concept mit OEREB-Service hinzu
+ 1 file changed, 290 insertions(+)
+ create mode 100644 proof_of_concept.py
+Enumerating objects: 4, done.
+Counting objects: 100% (4/4), done.
+Delta compression using up to 22 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 3.13 KiB | 3.13 MiB/s, done.
+Total 3 (delta 1), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+To https://github.com/christophejenzer-collab/bauzonen-radar.git
+   c8fb261..71a734c  main -> main
+PS C:\Tools\bauzonen-radar> Get-Content extract_beispiel.xml -TotalCount 100
+<?xml version="1.0" encoding="UTF-8" ?>
+<extract:GetExtractByIdResponse
+                        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                        xmlns:data="http://schemas.geo.admin.ch/V_D/OeREB/2.0/ExtractData"
+                        xmlns:extract="http://schemas.geo.admin.ch/V_D/OeREB/2.0/Extract"
+                        xmlns:geometry="http://www.interlis.ch/geometry/1.0"
+                        xsi:schemaLocation="http://schemas.geo.admin.ch/V_D/OeREB/2.0/Extract http://schemas.geo.admin.ch/V_D/OeREB/2.0/Extract.xsd
+                                            http://schemas.geo.admin.ch/V_D/OeREB/2.0/ExtractData http://schemas.geo.admin.ch/V_D/OeREB/2.0/ExtractData.xsd
+                                            http://www.interlis.ch/geometry/1.0 http://models.interlis.ch/refhb24/geometry.xsd">
+
+
+
+    <data:Extract>
+        <data:CreationDate>2026-04-22T21:02:44</data:CreationDate>
+        <data:ConcernedTheme>
+
+<data:Code>ch.Nutzungsplanung</data:Code>
+<data:Text>
+
+
+<data:LocalisedText>
+    <data:Language>de</data:Language>
+    <data:Text>Kommunale Nutzungsplanung</data:Text>
+</data:LocalisedText>
+
+</data:Text>
+
+        </data:ConcernedTheme>
+        <data:ConcernedTheme>
+
+<data:Code>ch.BE.Gewaesserschutzbereiche</data:Code>
+<data:Text>
+
+
+<data:LocalisedText>
+    <data:Language>de</data:Language>
+    <data:Text>Gewässerschutzbereiche (Zusatzinformation nach Art. 8b Abs. 1 Bst. b ÖREBKV)</data:Text>
+</data:LocalisedText>
+
+</data:Text>
+
+        </data:ConcernedTheme>
+        <data:ConcernedTheme>
+
+<data:Code>ch.Laermempfindlichkeitsstufen</data:Code>
+<data:Text>
+
+
+<data:LocalisedText>
+    <data:Language>de</data:Language>
+    <data:Text>Lärmempfindlichkeitsstufen (in kommunalen Nutzungszonen)</data:Text>
+</data:LocalisedText>
+
+</data:Text>
+
+        </data:ConcernedTheme>
+        <data:ConcernedTheme>
+
+<data:Code>ch.BE.ArchaeologischesInventar</data:Code>
+<data:Text>
+
+
+<data:LocalisedText>
+    <data:Language>de</data:Language>
+    <data:Text>Archäologisches Inventar (Zusatzinformation nach Art. 8b Abs. 1 Bst. b ÖREBKV)</data:Text>
+</data:LocalisedText>
+
+</data:Text>
+
+        </data:ConcernedTheme>
+        <data:NotConcernedTheme>
+
+<data:Code>ch.Planungszonen</data:Code>
+<data:Text>
+
+
+<data:LocalisedText>
+    <data:Language>de</data:Language>
+    <data:Text>Kommunale Planungszonen</data:Text>
+</data:LocalisedText>
+
+</data:Text>
+
+        </data:NotConcernedTheme>
+        <data:NotConcernedTheme>
+
+<data:Code>ch.BE.RegionalePlanungszonen</data:Code>
+<data:Text>
+
+
+<data:LocalisedText>
+    <data:Language>de</data:Language>
+    <data:Text>Regionale Planungszonen</data:Text>
+</data:LocalisedText>
+
+</data:Text>
+
+        </data:NotConcernedTheme>
+        <data:NotConcernedTheme>
+PS C:\Tools\bauzonen-radar> Select-String -Path extract_beispiel.xml -Pattern "RestrictionOnLandownership" -Context 0,30 | Select-Object -First 2
+
+> extract_beispiel.xml:1690:<data:RestrictionOnLandownership>
+  extract_beispiel.xml:1691:    <data:LegendText>
+  extract_beispiel.xml:1692:
+  extract_beispiel.xml:1693:
+  extract_beispiel.xml:1694:<data:LocalisedText>
+  extract_beispiel.xml:1695:    <data:Language>de</data:Language>
+  extract_beispiel.xml:1696:    <data:Text>Altstadtperimeter BO.06</data:Text>
+  extract_beispiel.xml:1697:</data:LocalisedText>
+  extract_beispiel.xml:1698:
+  extract_beispiel.xml:1699:    </data:LegendText>
+  extract_beispiel.xml:1700:    <data:Theme>
+  extract_beispiel.xml:1701:
+  extract_beispiel.xml:1702:<data:Code>ch.Nutzungsplanung</data:Code>
+  extract_beispiel.xml:1703:    <data:SubCode>ch.NutzungsplanungGrundnutzungNutzungszonen</data:SubCode>
+  extract_beispiel.xml:1704:<data:Text>
+  extract_beispiel.xml:1705:
+  extract_beispiel.xml:1706:
+  extract_beispiel.xml:1707:<data:LocalisedText>
+  extract_beispiel.xml:1708:    <data:Language>de</data:Language>
+  extract_beispiel.xml:1709:    <data:Text>Zonenflächen Grundnutzung (Nutzungszonen)</data:Text>
+  extract_beispiel.xml:1710:</data:LocalisedText>
+  extract_beispiel.xml:1711:
+  extract_beispiel.xml:1712:</data:Text>
+  extract_beispiel.xml:1713:
+  extract_beispiel.xml:1714:    </data:Theme>
+  extract_beispiel.xml:1715:    <data:TypeCode>217_309</data:TypeCode>
+  extract_beispiel.xml:1716:    <data:TypeCodelist>c4d46091-411f-40a1-8770-070934ebb083</data:TypeCodelist>
+  extract_beispiel.xml:1717:    <data:Lawstatus>
+  extract_beispiel.xml:1718:
+  extract_beispiel.xml:1719:<data:Code>inForce</data:Code>
+  extract_beispiel.xml:1720:<data:Text>
+> extract_beispiel.xml:2157:</data:RestrictionOnLandownership>
+  extract_beispiel.xml:2158:
+  extract_beispiel.xml:2159:
+  extract_beispiel.xml:2160:
+
+PS C:\Tools\bauzonen-radar> Get-Content extract_beispiel.xml | Select-Object -Skip 1688 -First 80
+
+<data:RestrictionOnLandownership>
+    <data:LegendText>
+
+
+<data:LocalisedText>
+    <data:Language>de</data:Language>
+    <data:Text>Altstadtperimeter BO.06</data:Text>
+</data:LocalisedText>
+
+    </data:LegendText>
+    <data:Theme>
+
+<data:Code>ch.Nutzungsplanung</data:Code>
+    <data:SubCode>ch.NutzungsplanungGrundnutzungNutzungszonen</data:SubCode>
+<data:Text>
+
+
+<data:LocalisedText>
+    <data:Language>de</data:Language>
+    <data:Text>Zonenflächen Grundnutzung (Nutzungszonen)</data:Text>
+</data:LocalisedText>
+
+</data:Text>
+
+    </data:Theme>
+    <data:TypeCode>217_309</data:TypeCode>
+    <data:TypeCodelist>c4d46091-411f-40a1-8770-070934ebb083</data:TypeCodelist>
+    <data:Lawstatus>
+
+<data:Code>inForce</data:Code>
+<data:Text>
+
+
+<data:LocalisedText>
+    <data:Language>de</data:Language>
+    <data:Text>Rechtskräftig</data:Text>
+</data:LocalisedText>
+
+</data:Text>
+
+    </data:Lawstatus>
+    <data:AreaShare>236</data:AreaShare>
+    <data:PartInPercent>100.0</data:PartInPercent>
+    <data:SymbolRef>https://www.oereb2.apps.be.ch/image/symbol/ch.Nutzungsplanung/legend_entry.png?identifier=6e40e42d-3b23-4ad8-ba24-e31197861336</data:SymbolRef>
+
+<data:Geometry>
+    <data:Lawstatus>
+
+<data:Code>inForce</data:Code>
+<data:Text>
+
+
+<data:LocalisedText>
+    <data:Language>de</data:Language>
+    <data:Text>Rechtskräftig</data:Text>
+</data:LocalisedText>
+
+</data:Text>
+
+    </data:Lawstatus>
+</data:Geometry>
+
+    <data:Map>
+
+<data:ReferenceWMS>
+
+
+<data:LocalisedText>
+    <data:Language>de</data:Language>
+    <data:Text>https://oerebservice.apps.be.ch/cgi-bin/mapserv.fcgi?MAP=oereb_de&amp;VERSION=1.3.0&amp;REQUEST=GetMap&amp;SERVICE=WMS&amp;CRS=EPSG%3A2056&amp;BBOX=2600812.174028065%2C1199594.6827857154%2C2600914.7909719385%2C1199652.9642142844&amp;WIDTH=493&amp;HEIGHT=280&amp;EXCEPTIONS=xml&amp;FORMAT=image%2Fpng&amp;BGCOLOR=0xFFFFFF&amp;TRANSPARENT=TRUE&amp;LAYERS=geodb.nupla_gnnutzbk_nzp%2Cgeodb.nupla_gnzppueo%2Cgeodb.nupla_abgrz_zoen&amp;SRS=EPSG%3A2056</data:Text>
+</data:LocalisedText>
+
+</data:ReferenceWMS>
+<data:min>
+
+<geometry:c1>2600812.174028065</geometry:c1><geometry:c2>1199594.6827857154</geometry:c2>
+</data:min>
+<data:max>
+
+PS C:\Tools\bauzonen-radar> python bern.py
+C:\Users\chris\AppData\Local\Programs\Python\Python313\python.exe: can't open file 'C:\\Tools\\bauzonen-radar\\bern.py': [Errno 2] No such file or directory
+PS C:\Tools\bauzonen-radar> cd C:\Tools\bauzonen-radar
+PS C:\Tools\bauzonen-radar> python -m src.bauzonenradar.bern
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Tools\bauzonen-radar\src\bauzonenradar\bern.py", line 10, in <module>
+    import requests
+ModuleNotFoundError: No module named 'requests'
+PS C:\Tools\bauzonen-radar> .venv\Scripts\activate
+(.venv) PS C:\Tools\bauzonen-radar> cd src\bauzonenradar
+>> python bern.py
+Suche Parzelle fuer: Kramgasse 49, 3011 Bern
+======================================================================
+Parzelle 575 (Bern, )
+EGRID:    CH427636463563
+Flaeche:  236 m^2
+Adresse:  Kramgasse 49, 3011 Bern
+
+Bauzone(n):
+  - Altstadtperimeter BO.06 (100%, 236 m^2)
+  - Untere Altstadt und Wohngebiet Matte (100%, 236 m^2)
+  - Untere Altstadt und Wohngebiet Matte (100%, 236 m^2)
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.ArchaeologischesInventar (1 Eintrag/Eintraege)
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Laermempfindlichkeitsstufen (1 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (3 Eintrag/Eintraege)
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> cd C:\Tools\bauzonen-radar
+>> .venv\Scripts\activate
+>> cd src\bauzonenradar
+>> python bern.py
+Suche Parzelle fuer: Kramgasse 49, 3011 Bern
+======================================================================
+Parzelle 575 (Bern, )
+EGRID:    CH427636463563
+Flaeche:  236 m^2
+Adresse:  Kramgasse 49, 3011 Bern
+
+Bauzone(n):
+  - Altstadtperimeter BO.06 (100%, 236 m^2)
+  - Untere Altstadt und Wohngebiet Matte (100%, 236 m^2)
+  - Untere Altstadt und Wohngebiet Matte (100%, 236 m^2)
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.ArchaeologischesInventar (1 Eintrag/Eintraege)
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Laermempfindlichkeitsstufen (1 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (3 Eintrag/Eintraege)
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> cd C:\Tools\bauzonen-radar
+>> Select-String -Path extract_beispiel.xml -Pattern "Canton" -Context 0,2
+
+> extract_beispiel.xml:634:        <data:CantonalLogoRef>https://www.oereb2.apps.be.ch/image/logo/canton/de.png</data:CantonalLogoRef>
+  extract_beispiel.xml:635:        <data:MunicipalityLogoRef>https://www.oereb2.apps.be.ch/image/logo/municipality/de.png?fosnr=351</data:MunicipalityLogoRef>
+  extract_beispiel.xml:636:        <data:ExtractIdentifier>e43db0fa-442b-4b72-90b7-716f452b9527</data:ExtractIdentifier>
+> extract_beispiel.xml:1682:    <data:Canton>BE</data:Canton>
+  extract_beispiel.xml:1683:    <data:MunicipalityName>Bern</data:MunicipalityName>
+  extract_beispiel.xml:1684:    <data:MunicipalityCode>351</data:MunicipalityCode>
+
+(.venv) PS C:\Tools\bauzonen-radar> cd C:\Tools\bauzonen-radar\src\bauzonenradar
+>> python bern.py "Thunstrasse 40, 3005 Bern"
+Suche Parzelle fuer: Thunstrasse 40, 3005 Bern
+======================================================================
+Parzelle 337 (Bern, )
+EGRID:    CH773576674635
+Flaeche:  237 m^2
+Adresse:  Thunstrasse 40, 3005 Bern
+
+Bauzone(n):
+  - Wohnzone (W) (100%, 237 m^2)
+  - Bauklasse E, Erhaltung der best. Bebauungsstruktur (100%, 237 m^2)
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Laermempfindlichkeitsstufen (2 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (2 Eintrag/Eintraege)
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> python bern.py "Dorfstrasse 10, 3095 Spiegel"
+Suche Parzelle fuer: Dorfstrasse 10, 3095 Spiegel
+======================================================================
+Parzelle 6986 (Köniz, )
+EGRID:    CH534697356815
+Flaeche:  2672 m^2
+Adresse:  Dorfstrasse 10, 3095 Spiegel
+
+Bauzone(n):
+  - Wohnzone (Art. 29 BauR), Bauklasse IIIa (Art. 53 BauR) (100%, 2672 m^2)
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (1 Eintrag/Eintraege)
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> python bern.py "Untere Stadelstrasse 1, 3653 Oberhofen"
+Suche Parzelle fuer: Untere Stadelstrasse 1, 3653 Oberhofen
+======================================================================
+Parzelle 762 (Oberhofen am Thunersee, )
+EGRID:    CH769646354401
+Flaeche:  1063 m^2
+Adresse:  Untere Stadelstrasse 1, 3653 Oberhofen
+
+Bauzone(n):
+  - Wohnzone W1 (100%, 1063 m^2)
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.BE.Naturgefahren (2 Eintrag/Eintraege)
+  - ch.Gewaesserraum (1 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (3 Eintrag/Eintraege)
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> cd C:\Tools\bauzonen-radar\src\bauzonenradar
+>> python bern.py
+Suche Parzelle fuer: Kramgasse 49, 3011 Bern
+======================================================================
+Parzelle 575 (Bern, BE)
+EGRID:    CH427636463563
+Flaeche:  236 m^2
+Adresse:  Kramgasse 49, 3011 Bern
+
+Bauzone(n):
+  - Altstadtperimeter BO.06 (100%, 236 m^2)
+  - Untere Altstadt und Wohngebiet Matte (100%, 236 m^2)
+  - Untere Altstadt und Wohngebiet Matte (100%, 236 m^2)
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.ArchaeologischesInventar (1 Eintrag/Eintraege)
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Laermempfindlichkeitsstufen (1 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (3 Eintrag/Eintraege)
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> cd C:\Tools\bauzonen-radar
+>> git add .
+>> git commit -m "Fuege Datenmodell und Bern-OEREB-Datenquelle hinzu"
+>> git push
+warning: in the working copy of 'extract_beispiel.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/bauzonenradar/bern.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/bauzonenradar/modelle.py', LF will be replaced by CRLF the next time Git touches it
+[main 5954320] Fuege Datenmodell und Bern-OEREB-Datenquelle hinzu
+ 4 files changed, 5364 insertions(+)
+ create mode 100644 Strukturbaum-bauzonen-radar.txt
+ create mode 100644 extract_beispiel.xml
+ create mode 100644 src/bauzonenradar/bern.py
+ create mode 100644 src/bauzonenradar/modelle.py
+Enumerating objects: 11, done.
+Counting objects: 100% (11/11), done.
+Delta compression using up to 22 threads
+Compressing objects: 100% (7/7), done.
+Writing objects: 100% (8/8), 17.03 KiB | 5.68 MiB/s, done.
+Total 8 (delta 1), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+To https://github.com/christophejenzer-collab/bauzonen-radar.git
+   71a734c..5954320  main -> main
+(.venv) PS C:\Tools\bauzonen-radar> cd C:\Tools\bauzonen-radar
+>> git rm --cached extract_beispiel.xml
+>> Add-Content .gitignore "`nextract_beispiel.xml"
+>> git add .gitignore
+>> git commit -m "Entferne Beispiel-XML aus Repo, bleibt lokal als Arbeitsdatei"
+>> git push
+rm 'extract_beispiel.xml'
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+[main ad3cb96] Entferne Beispiel-XML aus Repo, bleibt lokal als Arbeitsdatei
+ 2 files changed, 2 insertions(+), 4923 deletions(-)
+ delete mode 100644 extract_beispiel.xml
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 22 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 373 bytes | 373.00 KiB/s, done.
+Total 3 (delta 2), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+To https://github.com/christophejenzer-collab/bauzonen-radar.git
+   5954320..ad3cb96  main -> main
+(.venv) PS C:\Tools\bauzonen-radar> cd C:\Tools\bauzonen-radar\src\bauzonenradar
+>> python bern.py
+Suche Parzelle fuer: Kramgasse 49, 3011 Bern
+======================================================================
+Traceback (most recent call last):
+  File "C:\Tools\bauzonen-radar\src\bauzonenradar\bern.py", line 263, in <module>
+    print(parzelle.kurzbericht())
+          ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Tools\bauzonen-radar\src\bauzonenradar\modelle.py", line 183, in kurzbericht
+    if aenderungen:
+       ^^^^^^^^^^^
+NameError: name 'aenderungen' is not defined
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> python bern.py
+Traceback (most recent call last):
+  File "C:\Tools\bauzonen-radar\src\bauzonenradar\bern.py", line 13, in <module>
+    from modelle import Parzelle, Restriction, Lawstatus
+  File "C:\Tools\bauzonen-radar\src\bauzonenradar\modelle.py", line 183
+    aenderungen = self.laufende_aenderungen()if aenderungen:
+                                                           ^
+SyntaxError: invalid syntax
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> python bern.py
+Suche Parzelle fuer: Kramgasse 49, 3011 Bern
+======================================================================
+Parzelle 575 (Bern, BE)
+EGRID:    CH427636463563
+Flaeche:  236 m^2
+Adresse:  Kramgasse 49, 3011 Bern
+
+Grundnutzung (Bauzone):
+  - Altstadtperimeter BO.06 (100%, 236 m^2)
+  - Untere Altstadt und Wohngebiet Matte (100%, 236 m^2)
+  - Untere Altstadt und Wohngebiet Matte (100%, 236 m^2)
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.ArchaeologischesInventar (1 Eintrag/Eintraege)
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Laermempfindlichkeitsstufen (1 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (3 Eintrag/Eintraege)
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> cd C:\Tools\bauzonen-radar
+>> Select-String -Path extract_beispiel.xml -Pattern "SubCode"
+
+extract_beispiel.xml:1703:    <data:SubCode>ch.NutzungsplanungGrundnutzungNutzungszonen</data:SubCode>
+extract_beispiel.xml:2174:    <data:SubCode>ch.NutzungsplanungGrundnutzungNutzungszonen</data:SubCode>
+extract_beispiel.xml:2645:    <data:SubCode>ch.NutzungsplanungGrundnutzungBauklassen</data:SubCode>
+
+(.venv) PS C:\Tools\bauzonen-radar> cd C:\Tools\bauzonen-radar\src\bauzonenradar
+>> python bern.py
+Suche Parzelle fuer: Kramgasse 49, 3011 Bern
+======================================================================
+Parzelle 575 (Bern, BE)
+EGRID:    CH427636463563
+Flaeche:  236 m^2
+Adresse:  Kramgasse 49, 3011 Bern
+
+Nutzungszone(n):
+  - Altstadtperimeter BO.06 (100%, 236 m^2)
+  - Untere Altstadt und Wohngebiet Matte (100%, 236 m^2)
+
+Bauklasse(n):
+  - Untere Altstadt und Wohngebiet Matte
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.ArchaeologischesInventar (1 Eintrag/Eintraege)
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Laermempfindlichkeitsstufen (1 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (3 Eintrag/Eintraege)
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> python bern.py "Thunstrasse 40, 3005 Bern"
+Suche Parzelle fuer: Thunstrasse 40, 3005 Bern
+======================================================================
+Parzelle 337 (Bern, BE)
+EGRID:    CH773576674635
+Flaeche:  237 m^2
+Adresse:  Thunstrasse 40, 3005 Bern
+
+Nutzungszone(n):
+  - Wohnzone (W) (100%, 237 m^2)
+
+Bauklasse(n):
+  - Bauklasse E, Erhaltung der best. Bebauungsstruktur
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Laermempfindlichkeitsstufen (2 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (2 Eintrag/Eintraege)
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> python bern.py "Dorfstrasse 10, 3095 Spiegel"
+Suche Parzelle fuer: Dorfstrasse 10, 3095 Spiegel
+======================================================================
+Parzelle 6986 (Köniz, BE)
+EGRID:    CH534697356815
+Flaeche:  2672 m^2
+Adresse:  Dorfstrasse 10, 3095 Spiegel
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (1 Eintrag/Eintraege)
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> cd C:\Tools\bauzonen-radar\src\bauzonenradar
+>> python xml_speichern.py "Dorfstrasse 10, 3095 Spiegel" extract_koeniz.xml
+>> Select-String -Path extract_koeniz.xml -Pattern "SubCode"
+C:\Tools\bauzonen-radar\.venv\Scripts\python.exe: can't open file 'C:\\Tools\\bauzonen-radar\\src\\bauzonenradar\\xml_speichern.py': [Errno 2] No such file or directory
+Select-String:
+Line |
+   3 |  Select-String -Path extract_koeniz.xml -Pattern "SubCode"
+     |  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Cannot find path 'C:\Tools\bauzonen-radar\src\bauzonenradar\extract_koeniz.xml' because it does not exist.
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> cd C:\Tools\bauzonen-radar\src\bauzonenradar
+>> dir *.py
+
+    Directory: C:\Tools\bauzonen-radar\src\bauzonenradar
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          22.04.2026    20:00              0 __init__.py
+-a---          22.04.2026    21:32           9262 bern.py
+-a---          22.04.2026    21:58           9276 modelle.py
+-a---          22.04.2026    22:07           1182 xml_speichern.py
+
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> python xml_speichern.py "Dorfstrasse 10, 3095 Spiegel" extract_koeniz.xml
+Adresse:  Dorfstrasse 10, 3095 Spiegel
+Ausgabe:  extract_koeniz.xml
+
+Koordinaten: E=2599029.8, N=1196661.4
+EGRID: CH534697356815
+Gespeichert: extract_koeniz.xml (75047 Bytes)
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> Select-String -Path extract_koeniz.xml -Pattern "SubCode"
+
+extract_koeniz.xml:1702:    <data:SubCode>ch.NutzungsplanungGrundnutzung</data:SubCode>
+extract_koeniz.xml:1781:    <data:SubCode>ch.NutzungsplanungGrundnutzung</data:SubCode>
+extract_koeniz.xml:1813:    <data:SubCode>ch.NutzungsplanungGrundnutzung</data:SubCode>
+extract_koeniz.xml:1845:    <data:SubCode>ch.NutzungsplanungGrundnutzung</data:SubCode>
+
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> python bern.py "Kramgasse 49, 3011 Bern"
+>> python bern.py "Thunstrasse 40, 3005 Bern"
+>> python bern.py "Dorfstrasse 10, 3095 Spiegel"
+Suche Parzelle fuer: Kramgasse 49, 3011 Bern
+======================================================================
+Parzelle 575 (Bern, BE)
+EGRID:    CH427636463563
+Flaeche:  236 m^2
+Adresse:  Kramgasse 49, 3011 Bern
+
+Nutzungszone(n):
+  - Altstadtperimeter BO.06 (100%, 236 m^2)
+  - Untere Altstadt und Wohngebiet Matte (100%, 236 m^2)
+
+Bauklasse(n):
+  - Untere Altstadt und Wohngebiet Matte
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.ArchaeologischesInventar (1 Eintrag/Eintraege)
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Laermempfindlichkeitsstufen (1 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (3 Eintrag/Eintraege)
+Suche Parzelle fuer: Thunstrasse 40, 3005 Bern
+======================================================================
+Parzelle 337 (Bern, BE)
+EGRID:    CH773576674635
+Flaeche:  237 m^2
+Adresse:  Thunstrasse 40, 3005 Bern
+
+Nutzungszone(n):
+  - Wohnzone (W) (100%, 237 m^2)
+
+Bauklasse(n):
+  - Bauklasse E, Erhaltung der best. Bebauungsstruktur
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Laermempfindlichkeitsstufen (2 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (2 Eintrag/Eintraege)
+Suche Parzelle fuer: Dorfstrasse 10, 3095 Spiegel
+======================================================================
+Parzelle 6986 (Köniz, BE)
+EGRID:    CH534697356815
+Flaeche:  2672 m^2
+Adresse:  Dorfstrasse 10, 3095 Spiegel
+
+Grundnutzung (Bauzone):
+  - Wohnzone (Art. 29 BauR), Bauklasse IIIa (Art. 53 BauR) (100%, 2672 m^2)
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (1 Eintrag/Eintraege)
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> cd C:\Tools\bauzonen-radar
+>> git add .
+>> git commit -m "Parser erkennt auch vereinfachte Grundnutzung (z.B. Koeniz)"
+>> git push
+warning: in the working copy of 'src/bauzonenradar/modelle.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/bauzonenradar/extract_koeniz.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/bauzonenradar/xml_speichern.py', LF will be replaced by CRLF the next time Git touches it
+[main 4bb9499] Parser erkennt auch vereinfachte Grundnutzung (z.B. Koeniz)
+ 3 files changed, 3113 insertions(+), 11 deletions(-)
+ create mode 100644 src/bauzonenradar/extract_koeniz.xml
+ create mode 100644 src/bauzonenradar/xml_speichern.py
+Enumerating objects: 11, done.
+Counting objects: 100% (11/11), done.
+Delta compression using up to 22 threads
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (7/7), 11.98 KiB | 5.99 MiB/s, done.
+Total 7 (delta 3), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (3/3), completed with 3 local objects.
+To https://github.com/christophejenzer-collab/bauzonen-radar.git
+   ad3cb96..4bb9499  main -> main
+(.venv) PS C:\Tools\bauzonen-radar> cd C:\Tools\bauzonen-radar\src\bauzonenradar
+>> python xml_speichern.py "Rathausplatz 1, 3600 Thun" extract_thun.xml
+>> Select-String -Path extract_thun.xml -Pattern "SubCode"
+Adresse:  Rathausplatz 1, 3600 Thun
+Ausgabe:  extract_thun.xml
+
+Koordinaten: E=2614497.0, N=1178717.8
+EGRID: CH600235884687
+Gespeichert: extract_thun.xml (354550 Bytes)
+
+extract_thun.xml:1703:    <data:SubCode>ch.NutzungsplanungGrundnutzung</data:SubCode>
+extract_thun.xml:1782:    <data:SubCode>ch.NutzungsplanungGrundnutzung</data:SubCode>
+extract_thun.xml:1814:    <data:SubCode>ch.NutzungsplanungGrundnutzung</data:SubCode>
+extract_thun.xml:1846:    <data:SubCode>ch.NutzungsplanungGrundnutzung</data:SubCode>
+extract_thun.xml:1878:    <data:SubCode>ch.NutzungsplanungGrundnutzung</data:SubCode>
+extract_thun.xml:2378:    <data:SubCode>ch.NutzungsplanungGrundnutzung</data:SubCode>
+extract_thun.xml:2457:    <data:SubCode>ch.NutzungsplanungGrundnutzung</data:SubCode>
+extract_thun.xml:2489:    <data:SubCode>ch.NutzungsplanungGrundnutzung</data:SubCode>
+extract_thun.xml:2521:    <data:SubCode>ch.NutzungsplanungGrundnutzung</data:SubCode>
+extract_thun.xml:2553:    <data:SubCode>ch.NutzungsplanungGrundnutzung</data:SubCode>
+extract_thun.xml:3053:    <data:SubCode>ch.NutzungsplanungUeberlagerung</data:SubCode>
+extract_thun.xml:3132:    <data:SubCode>ch.NutzungsplanungUeberlagerung</data:SubCode>
+extract_thun.xml:3632:    <data:SubCode>ch.NutzungsplanungUeberlagerung</data:SubCode>
+extract_thun.xml:3711:    <data:SubCode>ch.NutzungsplanungUeberlagerung</data:SubCode>
+extract_thun.xml:4211:    <data:SubCode>ch.NutzungsplanungGefahrengebiete</data:SubCode>
+extract_thun.xml:4832:    <data:SubCode>ch.NutzungsplanungGefahrengebiete</data:SubCode>
+extract_thun.xml:5453:    <data:SubCode>ch.NutzungsplanungGefahrengebiete</data:SubCode>
+extract_thun.xml:6074:    <data:SubCode>ch.NutzungsplanungGefahrengebiete</data:SubCode>
+extract_thun.xml:6695:    <data:SubCode>ch.NutzungsplanungFlaecheAndere</data:SubCode>
+extract_thun.xml:6774:    <data:SubCode>ch.NutzungsplanungFlaecheAndere</data:SubCode>
+extract_thun.xml:6806:    <data:SubCode>ch.NutzungsplanungFlaecheAndere</data:SubCode>
+extract_thun.xml:7306:    <data:SubCode>ch.NutzungsplanungFlaecheAndere</data:SubCode>
+extract_thun.xml:7385:    <data:SubCode>ch.NutzungsplanungFlaecheAndere</data:SubCode>
+extract_thun.xml:7417:    <data:SubCode>ch.NutzungsplanungFlaecheAndere</data:SubCode>
+extract_thun.xml:7992:    <data:SubCode>ch.NutzungsplanungLinie</data:SubCode>
+extract_thun.xml:8537:    <data:SubCode>ch.NutzungsplanungLinie</data:SubCode>
+extract_thun.xml:9082:    <data:SubCode>ch.NutzungsplanungLinie</data:SubCode>
+
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> python bern.py "Rathausplatz 1, 3600 Thun"
+>> python bern.py "Bahnhofstrasse 2, 3600 Thun"
+Suche Parzelle fuer: Rathausplatz 1, 3600 Thun
+======================================================================
+Parzelle 713 (Thun, BE)
+EGRID:    CH600235884687
+Flaeche:  3410 m^2
+Adresse:  Rathausplatz 1, 3600 Thun
+
+Grundnutzung (Bauzone):
+  - Bestandeszone (76%, 2587 m^2)
+  - Uferzone (24%, 823 m^2)
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.ArchaeologischesInventar (1 Eintrag/Eintraege)
+  - ch.BE.Bauinventar (3 Eintrag/Eintraege)
+  - ch.BE.Denkmalschutzobjekte (1 Eintrag/Eintraege)
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.BE.Naturgefahren (4 Eintrag/Eintraege)
+  - ch.Gewaesserraum (1 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (13 Eintrag/Eintraege)
+Suche Parzelle fuer: Bahnhofstrasse 2, 3600 Thun
+======================================================================
+Parzelle 1250 (Thun, BE)
+EGRID:    CH243546075219
+Flaeche:  3822 m^2
+Adresse:  Bahnhofstrasse 2, 3600 Thun
+
+Grundnutzung (Bauzone):
+  - Wohnen/Arbeiten WA5 (53%, 2020 m^2)
+  - Zone mit Überbauungsordnung (47%, 1802 m^2)
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.Bauinventar (1 Eintrag/Eintraege)
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.BE.Naturgefahren (2 Eintrag/Eintraege)
+  - ch.Gewaesserraum (2 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (13 Eintrag/Eintraege)
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> Copy-Item C:\Users\chris\Downloads\modelle.py C:\Tools\bauzonen-radar\src\bauzonenradar\ -Force
+Copy-Item: Cannot find path 'C:\Users\chris\Downloads\modelle.py' because it does not exist.
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> cd C:\Tools\bauzonen-radar\src\bauzonenradar
+>> python bern.py "Kramgasse 49, 3011 Bern"
+>> python bern.py "Thunstrasse 40, 3005 Bern"
+>> python bern.py "Dorfstrasse 10, 3095 Spiegel"
+>> python bern.py "Rathausplatz 1, 3600 Thun"
+Suche Parzelle fuer: Kramgasse 49, 3011 Bern
+======================================================================
+Parzelle 575 (Bern, BE)
+EGRID:    CH427636463563
+Flaeche:  236 m^2
+Adresse:  Kramgasse 49, 3011 Bern
+
+Nutzungszone(n):
+  - Altstadtperimeter BO.06 (100%, 236 m^2)
+  - Untere Altstadt und Wohngebiet Matte (100%, 236 m^2)
+
+Bauklasse(n):
+  - Untere Altstadt und Wohngebiet Matte
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.ArchaeologischesInventar (1 Eintrag/Eintraege)
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Laermempfindlichkeitsstufen (1 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (3 Eintrag/Eintraege)
+Suche Parzelle fuer: Thunstrasse 40, 3005 Bern
+======================================================================
+Parzelle 337 (Bern, BE)
+EGRID:    CH773576674635
+Flaeche:  237 m^2
+Adresse:  Thunstrasse 40, 3005 Bern
+
+Nutzungszone(n):
+  - Wohnzone (W) (100%, 237 m^2)
+
+Bauklasse(n):
+  - Bauklasse E, Erhaltung der best. Bebauungsstruktur
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Laermempfindlichkeitsstufen (2 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (2 Eintrag/Eintraege)
+Suche Parzelle fuer: Dorfstrasse 10, 3095 Spiegel
+======================================================================
+Parzelle 6986 (Köniz, BE)
+EGRID:    CH534697356815
+Flaeche:  2672 m^2
+Adresse:  Dorfstrasse 10, 3095 Spiegel
+
+Grundnutzung (Bauzone):
+  - Wohnzone (Art. 29 BauR), Bauklasse IIIa (Art. 53 BauR) (100%, 2672 m^2)
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (1 Eintrag/Eintraege)
+Suche Parzelle fuer: Rathausplatz 1, 3600 Thun
+======================================================================
+Parzelle 713 (Thun, BE)
+EGRID:    CH600235884687
+Flaeche:  3410 m^2
+Adresse:  Rathausplatz 1, 3600 Thun
+
+Grundnutzung (Bauzone):
+  - Bestandeszone (76%, 2587 m^2)
+  - Uferzone (24%, 823 m^2)
+
+Ueberlagerungen:
+  - SFG-Anerkennung Zonenplan 2022 Altstadt-Bälliz
+  - Gefahrengebiet mit Grundwasseraufstoss
+
+Naturgefahren:
+  - ! Gefahrengebiet mittlere Gefährdung
+  - ! Gefahrengebiet erhebliche Gefährdung
+  - ! Gefahrengebiet geringe Gefährdung
+  - ! Gefahrengebiet Restgefährdung
+
+Baulinien:
+  - bestehend
+  - Altstadt
+  - nationale Bedeutung
+
+Weitere Flaechen:
+  - Altstadtgebiet
+  - Archäologisches Schutzgebiet
+
+OEREB-Themen auf dieser Parzelle:
+  - ch.BE.ArchaeologischesInventar (1 Eintrag/Eintraege)
+  - ch.BE.Bauinventar (3 Eintrag/Eintraege)
+  - ch.BE.Denkmalschutzobjekte (1 Eintrag/Eintraege)
+  - ch.BE.Gewaesserschutzbereiche (1 Eintrag/Eintraege)
+  - ch.BE.Naturgefahren (4 Eintrag/Eintraege)
+  - ch.Gewaesserraum (1 Eintrag/Eintraege)
+  - ch.Nutzungsplanung (13 Eintrag/Eintraege)
+(.venv) PS C:\Tools\bauzonen-radar\src\bauzonenradar> cd C:\Tools\bauzonen-radar
+>> git add .
+>> git commit -m "Parser erkennt alle OEREB-Kategorien (Gefahren, Baulinien, Flaechen), Kurzbericht komplett aufgeraeumt"
+>> git push
+warning: in the working copy of 'src/bauzonenradar/modelle.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/bauzonenradar/extract_thun.xml', LF will be replaced by CRLF the next time Git touches it
+[main 172e63c] Parser erkennt alle OEREB-Kategorien (Gefahren, Baulinien, Flaechen), Kurzbericht komplett aufgeraeumt
+ 2 files changed, 17001 insertions(+), 99 deletions(-)
+ create mode 100644 src/bauzonenradar/extract_thun.xml
+Enumerating objects: 10, done.
+Counting objects: 100% (10/10), done.
+Delta compression using up to 22 threads
+Compressing objects: 100% (5/5), done.
+Writing objects: 100% (6/6), 21.80 KiB | 7.27 MiB/s, done.
+Total 6 (delta 3), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (3/3), completed with 3 local objects.
+To https://github.com/christophejenzer-collab/bauzonen-radar.git
+   4bb9499..172e63c  main -> main
+(.venv) PS C:\Tools\bauzonen-radar> cd C:\Tools\bauzonen-radar
+(.venv) PS C:\Tools\bauzonen-radar> git add .
+(.venv) PS C:\Tools\bauzonen-radar> git commit -m "Parser erkennt alle OEREB-Kategorien (Gefahren, Baulinien, Flaechen), Kurzbericht komplett aufgeraeumt"
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+(.venv) PS C:\Tools\bauzonen-radar> git pushcd C:\Tools\bauzonen-radar
+git: 'pushcd' is not a git command. See 'git --help'.
+(.venv) PS C:\Tools\bauzonen-radar> git add .
+(.venv) PS C:\Tools\bauzonen-radar> git commit -m "Parser erkennt alle OEREB-Kategorien (Gefahren, Baulinien, Flaechen), Kurzbericht komplett aufgeraeumt"
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+(.venv) PS C:\Tools\bauzonen-radar> git pushcd C:\Tools\bauzonen-radar
+
+#START Tool#
+
+cd C:\Tools\bauzonen-radar
+.\start.ps1
+
+Abfrage
+
+cd src\bauzonenradar
+python analyse_adresse.py "Untere Sadelstrasse 1, 3653 Oberhofen"
+
+cd src\bauzonenradar
+python analyse_adresse.py "Thunstrasse 40, 3005 Bern"
+
+cd src\bauzonenradar
+python analyse_adresse.py "Untere Sadelstrasse 1, 3653 Oberhofen"
+
+cd src\bauzonenradar
+python analyse_adresse.py "Hirschweg 7, 3604 Thun"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
