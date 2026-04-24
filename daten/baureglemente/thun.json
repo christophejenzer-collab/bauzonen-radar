@@ -2,52 +2,86 @@
   "gemeinde": "Thun",
   "bfs_nr": 942,
   "kanton": "BE",
-  "stand": "2025-12-31",
-  "quelle": "Baureglement der Stadt Thun",
-  "quelle_url": "https://www.thun.ch/verwaltung/stadtplanung",
+  "stand": "2026-04-24",
+  "quelle": "Baureglement Stadt Thun (BR 2022/2025), Ortsplanungsrevision OPR",
+  "quelle_url": "https://www.thun.ch/verwaltung/stadtplanung/ortsplanungsrevision",
   "struktur": "kombiniert",
-  "hinweis": "Thun nutzt den Berner Oberland-Stil mit kombinierten Grundnutzungs-Eintraegen. Die aufgelisteten Zonennamen stammen aus realen OEREB-Abfragen und sind mit dem Thuner Baureglement (BauR) zu verifizieren. AZ-Werte sind mit Architekturbuero oder Stadt Thun zu klaeren.",
+  "system_default": "hoehen_und_gz",
+  "hinweis": "Die Stadt Thun hat mit dem BR 2022 (schrittweise Inkraftsetzung ab Februar 2025) die Ausnuetzungsziffer weitgehend abgeschafft. In den Wohnzonen W2, W3 und W4 gibt es keine AZ und keine GFZo mehr - die bauliche Dichte wird ueber Gebaeudehoehen, Grenzabstaende und Gruenflaechenziffer gesteuert. Seit Maerz 2022 gilt Dualitaet: Baugesuche werden nach altem (BR 2002) und neuem (BR 2022) Recht geprueft.",
 
   "nutzungszonen": {
     "Bestandeszone": {
+      "system": "hoehen_und_gz",
       "nutzung": "Bestand",
       "mischnutzung_erlaubt": true,
-      "ausnuetzungsziffer": null,
-      "max_geschosse": null,
       "max_gebaeudehoehe_m": null,
-      "hinweise": "Erhaltungszone. Bestehende Volumetrie ist Richtgroesse, echte AZ gemaess BauR."
+      "max_fassadenhoehe_m": null,
+      "gruenflaechenziffer": null,
+      "hinweise": "Erhaltungszone. Bestehende Volumetrie ist die Richtgroesse. Eine feste Kennzahl zur Potenzialberechnung gibt es nicht - der Bestand definiert den Rahmen.",
+      "rechtsgrundlage": "BR 2022, noch zu verifizieren"
     },
     "Uferzone": {
+      "system": "hoehen_und_gz",
       "nutzung": "Freihalte",
       "mischnutzung_erlaubt": false,
-      "ausnuetzungsziffer": null,
-      "max_geschosse": null,
       "max_gebaeudehoehe_m": null,
-      "hinweise": "Uferbereich Aare/Thunersee. Bauverbot oder sehr eingeschraenkte Bebauung."
+      "max_fassadenhoehe_m": null,
+      "gruenflaechenziffer": null,
+      "hinweise": "Uferbereich Aare/Thunersee. Bauverbot oder sehr eingeschraenkte Bebauung. Potenzialberechnung in der Regel nicht anwendbar.",
+      "rechtsgrundlage": "Gewaesserschutz, kantonal und kommunal"
     },
     "Wohnen/Arbeiten WA5": {
+      "system": "dualitaet",
       "nutzung": "Wohnen + Arbeiten",
       "mischnutzung_erlaubt": true,
       "ausnuetzungsziffer": null,
-      "max_geschosse": 5,
+      "geschossflaechenziffer_oberirdisch": null,
       "max_gebaeudehoehe_m": null,
-      "hinweise": "Mischzone fuer Wohnen und stilles Arbeiten, hoechste Dichtestufe in Thun. AZ aus BauR."
+      "max_geschosse": 5,
+      "gruenflaechenziffer": null,
+      "hinweise": "Mischzone mit hoechster Dichtestufe. In speziellen Gebieten (gemeinnuetziger Wohnbau, bestimmte Mischzonen) wird AZ durch GFZo ersetzt. Werte mit Stadtplanung Thun verifizieren.",
+      "rechtsgrundlage": "BR 2022, Mischzonen-Artikel",
+      "gueltig_ab": "2025-02-01"
     },
     "Zone mit Überbauungsordnung": {
+      "system": "unbekannt",
       "nutzung": "Sondernutzung",
       "mischnutzung_erlaubt": true,
-      "ausnuetzungsziffer": null,
-      "max_geschosse": null,
+      "hinweise": "Eigene Ueberbauungsordnung (UeO) definiert die Parameter individuell. Nicht aus allgemeinem Baureglement ableitbar - UeO-Dokumente pro Gebiet konsultieren."
+    },
+    "Wohnzone W2": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Wohnen",
+      "mischnutzung_erlaubt": false,
+      "ausnuetzungsziffer_historisch": 0.5,
       "max_gebaeudehoehe_m": null,
-      "hinweise": "Eigene Ueberbauungsordnung definiert die Parameter. Nicht aus allgemeinem Baureglement ableitbar."
+      "max_fassadenhoehe_m": null,
+      "grenzabstand_gross_m": 6.0,
+      "gruenflaechenziffer": null,
+      "hinweise": "Im alten BR 2002 galt AZ=0.5 (als 'ausnuetzungsziffer_historisch' hinterlegt, nicht fuer Berechnung). Im BR 2022 wird die Dichte ueber Gebaeudehoehen, Grenzabstaende (6 m grosser Grenzabstand) und Gruenflaechenziffer gesteuert. Konkrete Werte aus BR 2022 zu ergaenzen.",
+      "rechtsgrundlage": "BR 2022, Wohnzonen-Artikel",
+      "gueltig_ab": "2025-02-01"
+    },
+    "Wohnzone W3": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Wohnen",
+      "mischnutzung_erlaubt": false,
+      "ausnuetzungsziffer_historisch": 0.7,
+      "max_gebaeudehoehe_m": null,
+      "max_fassadenhoehe_m": null,
+      "grenzabstand_gross_m": 6.0,
+      "gruenflaechenziffer": null,
+      "hinweise": "Im alten BR 2002 galt AZ=0.7 (historisch). Im BR 2022 Dichtesteuerung ueber Hoehen, Grenzabstaende und Gruenflaechenziffer.",
+      "rechtsgrundlage": "BR 2022, Wohnzonen-Artikel",
+      "gueltig_ab": "2025-02-01"
     }
   },
 
   "_todo": [
-    "Ausnuetzungsziffern der Thuner Zonen aus BauR uebertragen.",
-    "Weitere Zonennamen ergaenzen, sobald neue Gebiete in Thun getestet wurden.",
-    "WA-Zonen (WA1 bis WA5) vollstaendig erfassen.",
-    "Spezialzonen (Altstadt-Baelliz, Panorama-Zonen) pruefen und ergaenzen.",
-    "Grenzabstaende ergaenzen."
+    "Konkrete Gebaeudehoehen aus BR 2022 fuer W2, W3, W4 ergaenzen.",
+    "Konkrete Gruenflaechenziffer-Werte aus Merkblatt Stadt Thun ergaenzen.",
+    "GFZo-Werte fuer Mischzonen und Zonen mit gemeinnuetzigem Wohnbau erheben.",
+    "Weitere Zonen (Kernzonen, Gewerbezonen) mit BR 2022 abgleichen.",
+    "Dualitaets-Phase: historische AZ-Werte als 'ausnuetzungsziffer_historisch' beibehalten fuer Uebergangs-Auswertungen."
   ]
 }

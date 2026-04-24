@@ -2,13 +2,23 @@
 Potenzialberechnung fuer Schweizer Grundstuecke.
 
 Kombiniert eine Parzelle (mit ihren OEREB-Daten) und ein Baureglement
-(mit den Ausnuetzungsziffern) zu einer Potenzialabschaetzung.
+(mit AZ, GFZo oder Hoehen+GZ) zu einer Potenzialabschaetzung.
 
-Kernformel:
-    Theoretisch zulaessige Geschossflaeche = Parzellenflaeche x AZ
+Der Berechner unterstuetzt alle drei Bemessungssysteme des Kantons Bern:
 
-Die Ist-Bebauung kommt spaeter aus swissBUILDINGS3D. Bis dahin wird
-sie als Platzhalter behandelt und klar als solche markiert.
+  - AZ   (klassische Ausnuetzungsziffer, altes Recht)
+  - GFZo (Geschossflaechenziffer oberirdisch, IVHB-konform)
+  - hoehen_und_gz (Hoehen + Gruenflaechenziffer, Thun-Stil)
+
+Bei AZ und GFZo rechnet die Formel:
+    Zulaessige Geschossflaeche = Parzellenflaeche x Kennzahl
+
+Bei hoehen_und_gz gibt es keine einzelne Kennzahl; die Potenzialaussage
+beschraenkt sich dann auf qualitative Hinweise (Volumetrie, freizuhaltende
+Flaeche, Ist-Bebauung im Kontext).
+
+Die Ist-Bebauung ist derzeit ein Platzhalter und wird in einer kuenftigen
+Version aus swissBUILDINGS3D bezogen.
 """
 
 from __future__ import annotations
@@ -17,25 +27,26 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from modelle import Parzelle, Restriction
-from baureglement import Baureglement, Bauparameter
+from baureglement import Baureglement, Bauparameter, BemessungsSystem
 
 
 class PotenzialStatus(Enum):
     """Ergebnis-Kategorien der Potenzialberechnung."""
-    HOCH = "hoch"                    # viel ungenutzte Reserve
-    MITTEL = "mittel"                # moderate Reserve
-    GERING = "gering"                # weitgehend ausgeschoepft
-    AUSGESCHOEPFT = "ausgeschoepft"  # vollstaendig bebaut
-    NICHT_BERECHENBAR = "nicht_berechenbar"  # AZ oder Istwerte fehlen
+    HOCH = "hoch"                            # viel ungenutzte Reserve
+    MITTEL = "mittel"                        # moderate Reserve
+    GERING = "gering"                        # weitgehend ausgeschoepft
+    AUSGESCHOEPFT = "ausgeschoepft"          # vollstaendig bebaut
+    NICHT_BERECHENBAR = "nicht_berechenbar"  # keine Kennzahl verfuegbar
 
 
 @dataclass
 class PotenzialErgebnis:
-    """Strukturiertes Ergebnis einer Potenzialanalyse fuer eine Parzelle."""
+    """Strukturiertes Ergebnis einer Potenzialanalyse."""
     parzellenflaeche_m2: float
     anrechenbare_flaeche_m2: float
     zonen_betrachtet: list[str] = field(default_factory=list)
-    ausnuetzungsziffer: float | None = None
+    verwendetes_system: str | None = None            # "AZ", "GFZo", oder "hoehen_und_gz"
+    verwendete_kennzahl: float | None = None         # Der Wert der Kennzahl
     theoretisch_zulaessig_m2: float | None = None
     geschaetzt_realisiert_m2: float | None = None
     realisiert_ist_platzhalter: bool = True
@@ -48,22 +59,29 @@ class PotenzialErgebnis:
         """Lesbare Textausgabe des Ergebnisses."""
         zeilen = ["Potenzialanalyse"]
         zeilen.append("-" * 40)
-        zeilen.append(f"Parzellenflaeche:      {self.parzellenflaeche_m2:.0f} m^2")
+        zeilen.append(f"Parzellenflaeche:       {self.parzellenflaeche_m2:.0f} m^2")
 
         if self.anrechenbare_flaeche_m2 != self.parzellenflaeche_m2:
             zeilen.append(
-                f"Anrechenbare Flaeche:  {self.anrechenbare_flaeche_m2:.0f} m^2"
+                f"Anrechenbare Flaeche:   {self.anrechenbare_flaeche_m2:.0f} m^2"
             )
 
         if self.zonen_betrachtet:
-            zeilen.append(f"Zone(n):               {', '.join(self.zonen_betrachtet)}")
+            zeilen.append(f"Zone(n):                {', '.join(self.zonen_betrachtet)}")
 
-        if self.ausnuetzungsziffer is not None:
-            zeilen.append(f"Ausnuetzungsziffer:    {self.ausnuetzungsziffer}")
+        if self.verwendetes_system:
+            zeilen.append(f"Verwendetes System:     {self.verwendetes_system}")
+
+        if self.verwendete_kennzahl is not None:
+            zeilen.append(
+                f"Kennzahl:               {self.verwendetes_system} = "
+                f"{self.verwendete_kennzahl}"
+            )
 
         if self.theoretisch_zulaessig_m2 is not None:
             zeilen.append(
-                f"Theoretisch zulaessig: {self.theoretisch_zulaessig_m2:.0f} m^2 Geschossflaeche"
+                f"Theoretisch zulaessig:  {self.theoretisch_zulaessig_m2:.0f} m^2 "
+                f"Geschossflaeche"
             )
 
         if self.geschaetzt_realisiert_m2 is not None:
@@ -73,14 +91,14 @@ class PotenzialErgebnis:
             )
 
         if self.reserve_m2 is not None:
-            zeilen.append(f"Reserve:               {self.reserve_m2:.0f} m^2")
+            zeilen.append(f"Reserve:                {self.reserve_m2:.0f} m^2")
 
         if self.ausschoepfungsgrad_prozent is not None:
             zeilen.append(
-                f"Ausschoepfungsgrad:    {self.ausschoepfungsgrad_prozent:.0f}%"
+                f"Ausschoepfungsgrad:     {self.ausschoepfungsgrad_prozent:.0f}%"
             )
 
-        zeilen.append(f"Status:                {self.status.value.upper()}")
+        zeilen.append(f"Status:                 {self.status.value.upper()}")
 
         if self.bemerkungen:
             zeilen.append("")
@@ -96,8 +114,8 @@ class PotenzialBerechner:
     Berechnet das Bebauungspotenzial einer Parzelle.
 
     Arbeitet mit einer Parzelle (OEREB-Daten) und einem Baureglement.
-    Falls fuer eine Zone keine AZ hinterlegt ist, gibt der Berechner
-    ein Ergebnis mit Status NICHT_BERECHENBAR zurueck - kein Crash.
+    Erkennt das jeweilige Bemessungssystem (AZ, GFZo, Hoehen+GZ) und
+    waehlt die passende Berechnungslogik.
     """
 
     def berechne(self, parzelle: Parzelle,
@@ -106,23 +124,22 @@ class PotenzialBerechner:
         Fuehrt die Potenzialanalyse durch.
 
         Ablauf:
-          1. Parameter aus dem Reglement holen
-          2. Erste gefundene AZ verwenden (oder: None)
-          3. Theoretisch zulaessige Geschossflaeche berechnen
-          4. Ist-Bebauung schaetzen (Platzhalter)
-          5. Reserve und Ausschoepfungsgrad ableiten
-          6. Status kategorisieren
+          1. Parameter aus Reglement holen (alle betroffenen Zonen)
+          2. Ersten Parameter mit berechenbarer Kennzahl auswaehlen
+          3. Mit AZ oder GFZo rechnen, oder qualitative Hinweise geben
+          4. Warnhinweise zu OEREB-Einschraenkungen anhaengen
         """
         ergebnis = PotenzialErgebnis(
             parzellenflaeche_m2=parzelle.flaeche_m2,
             anrechenbare_flaeche_m2=parzelle.flaeche_m2,
         )
 
-        # Kein Reglement -> direkt mit Grund zurueckgeben
+        # Kein Reglement -> nur Parzellen-Infos und Warnhinweise
         if reglement is None:
             ergebnis.bemerkungen.append(
                 "Kein Baureglement fuer diese Gemeinde verfuegbar."
             )
+            ergebnis.bemerkungen.extend(self._sammle_warnhinweise(parzelle))
             return ergebnis
 
         # Parameter aus dem Reglement holen
@@ -132,45 +149,49 @@ class PotenzialBerechner:
                 "Keine Zonenparameter gefunden. Zone ist im Reglement "
                 "noch nicht erfasst."
             )
-            return ergebnis
-
-        # Alle betrachteten Zonen notieren
-        ergebnis.zonen_betrachtet = [p.quelle_eintrag for p in parameter_liste]
-
-        # Die erste Parameter-Entsprechung mit gesetzter AZ verwenden
-        parameter_mit_az = [p for p in parameter_liste
-                            if p.ausnuetzungsziffer is not None]
-
-        if not parameter_mit_az:
-            ergebnis.bemerkungen.append(
-                "Ausnuetzungsziffer nicht im Reglement hinterlegt. "
-                "Potenzial kann nicht berechnet werden."
-            )
-            ergebnis.bemerkungen.extend(
-                f"Zone '{p.quelle_eintrag}': {p.hinweise}"
-                for p in parameter_liste if p.hinweise
-            )
-            # Auch ohne AZ sind die Warnhinweise wertvoll
             ergebnis.bemerkungen.extend(self._sammle_warnhinweise(parzelle))
             return ergebnis
 
-        # Wenn mehrere Zonen mit AZ, nehmen wir die erste.
-        # Verbesserungsmoeglichkeit: gewichteter Durchschnitt nach Flaechenanteil.
-        parameter = parameter_mit_az[0]
-        ergebnis.ausnuetzungsziffer = parameter.ausnuetzungsziffer
+        # Zonen und Systeme notieren
+        ergebnis.zonen_betrachtet = [
+            f"{p.quelle_eintrag} [{p.system.value}]" for p in parameter_liste
+        ]
 
-        if len(parameter_mit_az) > 1:
+        # Ersten berechenbaren Parameter suchen (GFZo bevorzugt, dann AZ)
+        berechenbare = [p for p in parameter_liste if p.ist_berechenbar]
+
+        if not berechenbare:
+            # Kein Parameter hat AZ oder GFZo - qualitative Analyse
+            self._behandle_nicht_berechenbar(parameter_liste, parzelle, ergebnis)
+            return ergebnis
+
+        # Berechnung mit dem ersten berechenbaren Parameter
+        parameter = berechenbare[0]
+        hauptkennzahl = parameter.hauptkennzahl()
+
+        if hauptkennzahl is None:
+            # System ist Hoehen+GZ - keine direkte Kennzahl
+            self._behandle_hoehen_und_gz(parameter, parzelle, ergebnis)
+            return ergebnis
+
+        # AZ oder GFZo verwenden
+        system_code, kennzahl = hauptkennzahl
+        ergebnis.verwendetes_system = system_code
+        ergebnis.verwendete_kennzahl = kennzahl
+
+        if len(berechenbare) > 1:
             ergebnis.bemerkungen.append(
-                f"Mehrere Zonen mit AZ gefunden. Berechnung basiert auf "
-                f"'{parameter.quelle_eintrag}'. Genauere Analyse moeglich."
+                f"Mehrere berechenbare Zonen gefunden. Berechnung basiert auf "
+                f"'{parameter.quelle_eintrag}'. Bei flaechenmaessiger Teilung "
+                f"ist eine gewichtete Berechnung genauer."
             )
 
         # Berechnung
         ergebnis.theoretisch_zulaessig_m2 = (
-            ergebnis.anrechenbare_flaeche_m2 * parameter.ausnuetzungsziffer
+            ergebnis.anrechenbare_flaeche_m2 * kennzahl
         )
 
-        # Ist-Bebauung schaetzen - derzeit Platzhalter
+        # Ist-Bebauung schaetzen
         ergebnis.geschaetzt_realisiert_m2 = self._schaetze_ist_bebauung(parzelle)
         ergebnis.realisiert_ist_platzhalter = True
         ergebnis.bemerkungen.append(
@@ -189,25 +210,96 @@ class PotenzialBerechner:
                 * 100
             )
 
+        # Hinweis zum Systemwechsel anhaengen
+        if parameter.system == BemessungsSystem.DUALITAET:
+            ergebnis.bemerkungen.append(
+                "Diese Zone steht in einer Uebergangsphase (Dualitaet). "
+                "Baugesuche werden nach altem und neuem Recht geprueft - "
+                "das Ergebnis ist eine Naeherung."
+            )
+
         # Status ableiten
         ergebnis.status = self._bestimme_status(ergebnis.ausschoepfungsgrad_prozent)
 
-        # Warnhinweise bei relevanten Ueberlagerungen
-        warnhinweise = self._sammle_warnhinweise(parzelle)
-        ergebnis.bemerkungen.extend(warnhinweise)
+        # Fachliche Hinweise aus dem Reglement
+        if parameter.hinweise:
+            ergebnis.bemerkungen.append(
+                f"Zone '{parameter.quelle_eintrag}': {parameter.hinweise}"
+            )
+
+        # Warnhinweise aus OEREB-Einschraenkungen
+        ergebnis.bemerkungen.extend(self._sammle_warnhinweise(parzelle))
 
         return ergebnis
 
-    # ----- Interne Hilfsmethoden -----
+    # ----- Spezialfaelle ------------------------------------------------
+
+    @staticmethod
+    def _behandle_nicht_berechenbar(parameter_liste: list[Bauparameter],
+                                    parzelle: Parzelle,
+                                    ergebnis: PotenzialErgebnis) -> None:
+        """Fuellt das Ergebnis, wenn keine Zone eine berechenbare Kennzahl hat."""
+        ergebnis.bemerkungen.append(
+            "In keiner der Zonen ist eine Kennzahl (AZ oder GFZo) zur "
+            "Potenzialberechnung hinterlegt."
+        )
+        for p in parameter_liste:
+            if p.hinweise:
+                ergebnis.bemerkungen.append(
+                    f"Zone '{p.quelle_eintrag}' [{p.system.value}]: {p.hinweise}"
+                )
+        ergebnis.bemerkungen.extend(
+            PotenzialBerechner._sammle_warnhinweise(parzelle)
+        )
+
+    @staticmethod
+    def _behandle_hoehen_und_gz(parameter: Bauparameter,
+                                parzelle: Parzelle,
+                                ergebnis: PotenzialErgebnis) -> None:
+        """Fuellt das Ergebnis, wenn die Zone ueber Hoehen+GZ gesteuert wird."""
+        ergebnis.verwendetes_system = parameter.system.value
+        ergebnis.bemerkungen.append(
+            f"Zone '{parameter.quelle_eintrag}' wird nicht ueber eine "
+            f"Ausnuetzungs- oder Geschossflaechenziffer geregelt. Die "
+            f"bauliche Dichte ergibt sich aus Gebaeudehoehen, "
+            f"Grenzabstaenden und Gruenflaechenziffer."
+        )
+
+        if parameter.max_gebaeudehoehe_m is not None:
+            ergebnis.bemerkungen.append(
+                f"Maximale Gebaeudehoehe: {parameter.max_gebaeudehoehe_m} m"
+            )
+        if parameter.max_fassadenhoehe_m is not None:
+            ergebnis.bemerkungen.append(
+                f"Maximale Fassadenhoehe: {parameter.max_fassadenhoehe_m} m"
+            )
+        if parameter.gruenflaechenziffer is not None:
+            ergebnis.bemerkungen.append(
+                f"Gruenflaechenziffer: {parameter.gruenflaechenziffer}"
+            )
+        if parameter.grenzabstand_gross_m is not None:
+            ergebnis.bemerkungen.append(
+                f"Grosser Grenzabstand: {parameter.grenzabstand_gross_m} m"
+            )
+
+        if parameter.hinweise:
+            ergebnis.bemerkungen.append(
+                f"Zone '{parameter.quelle_eintrag}': {parameter.hinweise}"
+            )
+
+        ergebnis.bemerkungen.extend(
+            PotenzialBerechner._sammle_warnhinweise(parzelle)
+        )
+
+    # ----- Interne Hilfsmethoden ---------------------------------------
 
     @staticmethod
     def _schaetze_ist_bebauung(parzelle: Parzelle) -> float:
         """
         Platzhalter fuer die Ist-Bebauung.
 
-        Derzeit eine grobe Heuristik: wir nehmen an, dass die Parzelle
-        zu 40% bebaut ist (typischer Wert fuer Schweizer Wohnzonen).
-        Wird spaeter durch swissBUILDINGS3D-Abfrage ersetzt.
+        Heuristik: 40% der Parzellenflaeche als grobe Naeherung.
+        Wird durch swissBUILDINGS3D-Abfrage ersetzt.
         """
         return parzelle.flaeche_m2 * 0.4
 
@@ -248,8 +340,8 @@ class PotenzialBerechner:
 
         if parzelle.linien():
             hinweise.append(
-                "Baulinien auf der Parzelle - effektive Bauflaeche ist kleiner "
-                "als die Gesamtflaeche."
+                "Baulinien auf der Parzelle - effektive Bauflaeche ist "
+                "kleiner als die Gesamtflaeche."
             )
 
         if parzelle.laufende_aenderungen():

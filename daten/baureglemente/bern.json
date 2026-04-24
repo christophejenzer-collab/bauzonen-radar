@@ -2,60 +2,73 @@
   "gemeinde": "Bern",
   "bfs_nr": 351,
   "kanton": "BE",
-  "stand": "2025-12-31",
+  "stand": "2026-04-24",
   "quelle": "Baurechtliche Grundordnung (BGO) der Stadt Bern",
   "quelle_url": "https://www.bern.ch/themen/planen-und-bauen/nutzungsplanung/baurechtliche-grundordnung",
   "struktur": "bauklassen",
-  "hinweis": "Stadt Bern trennt Nutzungszone (was darf hier sein) und Bauklasse (wie dicht darf gebaut werden). Die Ausnuetzungsziffer sitzt typischerweise auf der Bauklasse, kann aber je nach Zone-Bauklasse-Kombination variieren. Werte mit 'null' sind noch mit BGO zu verifizieren.",
+  "system_default": "AZ",
+  "hinweis": "Stadt Bern trennt Nutzungszone und Bauklasse. Die klassische Ausnuetzungsziffer (AZ) sitzt auf der Bauklasse und variiert je nach Zone-Bauklasse-Kombination. Der Kanton Bern hat mit der BMBV den Wechsel zu GFZo vorgegeben - der Umstellungsstand der Stadt Bern ist mit Architekturbuero oder Amt fuer Hochbau zu verifizieren. Werte mit 'null' sind noch zu erheben.",
 
   "bauklassen": {
     "Bauklasse A": {
+      "system": "AZ",
       "ausnuetzungsziffer": null,
+      "geschossflaechenziffer_oberirdisch": null,
       "max_geschosse": 2,
       "max_gebaeudehoehe_m": 7.5,
       "grenzabstand_klein_m": null,
       "grenzabstand_gross_m": null,
-      "hinweise": "Kleinste Bauklasse. Typisch fuer Einfamilienhaus-Quartiere. AZ pro Zone aus BGO zu entnehmen."
+      "hinweise": "Kleinste Bauklasse. Typisch fuer Einfamilienhaus-Quartiere. AZ pro Zone aus BGO zu entnehmen.",
+      "rechtsgrundlage": "BGO Stadt Bern, Bauklassen-Artikel"
     },
     "Bauklasse B": {
+      "system": "AZ",
       "ausnuetzungsziffer": null,
+      "geschossflaechenziffer_oberirdisch": null,
       "max_geschosse": 3,
       "max_gebaeudehoehe_m": 10.5,
       "grenzabstand_klein_m": null,
       "grenzabstand_gross_m": null,
-      "hinweise": "Mittlere Dichte. Reihen- und Mehrfamilienhaeuser. AZ pro Zone aus BGO."
+      "hinweise": "Mittlere Dichte. Reihen- und Mehrfamilienhaeuser.",
+      "rechtsgrundlage": "BGO Stadt Bern"
     },
     "Bauklasse C": {
+      "system": "AZ",
       "ausnuetzungsziffer": null,
+      "geschossflaechenziffer_oberirdisch": null,
       "max_geschosse": 4,
       "max_gebaeudehoehe_m": 13.5,
       "grenzabstand_klein_m": null,
       "grenzabstand_gross_m": null,
-      "hinweise": "Urbane Dichte. Mehrfamilienhaeuser, oft mit Gewerbe im EG. AZ pro Zone aus BGO."
+      "hinweise": "Urbane Dichte. Mehrfamilienhaeuser, oft mit Gewerbe im EG.",
+      "rechtsgrundlage": "BGO Stadt Bern"
     },
     "Bauklasse D": {
+      "system": "AZ",
       "ausnuetzungsziffer": null,
+      "geschossflaechenziffer_oberirdisch": null,
       "max_geschosse": 5,
       "max_gebaeudehoehe_m": 16.5,
       "grenzabstand_klein_m": null,
       "grenzabstand_gross_m": null,
-      "hinweise": "Hohe Dichte. Grossere Gebaeudevolumen. AZ pro Zone aus BGO."
+      "hinweise": "Hohe Dichte. Grossere Gebaeudevolumen.",
+      "rechtsgrundlage": "BGO Stadt Bern"
     },
     "Bauklasse E": {
+      "system": "hoehen_und_gz",
       "ausnuetzungsziffer": null,
       "max_geschosse": null,
       "max_gebaeudehoehe_m": null,
-      "grenzabstand_klein_m": null,
-      "grenzabstand_gross_m": null,
-      "hinweise": "Erhaltungsbauklasse: Bestandesgarantie, aber erhebliche Erweiterungseinschraenkungen. Keine fixe AZ - bestehende Volumetrie ist Richtgroesse."
+      "hinweise": "Erhaltungsbauklasse: Bestandesgarantie, aber erhebliche Erweiterungseinschraenkungen. Keine fixe AZ - bestehende Volumetrie ist Richtgroesse. Das System entspricht de facto einer Hoehen-basierten Steuerung (via Bestand).",
+      "rechtsgrundlage": "BGO Stadt Bern, Erhaltungszonen-Artikel"
     },
     "Bauklasse E, Erhaltung der best. Bebauungsstruktur": {
+      "system": "hoehen_und_gz",
       "ausnuetzungsziffer": null,
       "max_geschosse": null,
       "max_gebaeudehoehe_m": null,
-      "grenzabstand_klein_m": null,
-      "grenzabstand_gross_m": null,
-      "hinweise": "Synonym zu 'Bauklasse E'. Erhaltungsregime - Potenzial ergibt sich nur aus genauer Analyse der Bestandsbauten."
+      "hinweise": "Langform-Synonym zu 'Bauklasse E'. Erhaltungsregime - Potenzial ergibt sich nur aus genauer Analyse der Bestandsbauten.",
+      "rechtsgrundlage": "BGO Stadt Bern"
     }
   },
 
@@ -88,10 +101,11 @@
   },
 
   "_todo": [
-    "Ausnuetzungsziffern pro Bauklasse x Zone-Kombination aus BGO einpflegen (mit Architekturbuero verifizieren).",
+    "Umstellungsstand der Stadt Bern auf GFZo verifizieren (Amt fuer Hochbau oder Architekturbuero).",
+    "AZ-Werte pro Bauklasse x Zone-Kombination aus BGO einpflegen.",
+    "GFZo-Werte ergaenzen, sobald Stadt Bern die entsprechenden Artikel in Kraft gesetzt hat.",
     "Weitere Nutzungszonen ergaenzen (ZPP, ZoeN, Gruenzonen, Zonen fuer oeffentliche Nutzungen).",
-    "Grenzabstaende (klein/gross) pro Bauklasse ergaenzen.",
-    "Dachform-Vorgaben aus den Bauvorschriften einbauen.",
-    "Laermempfindlichkeitsstufe pro Zone ergaenzen fuer die Potenzial-Validierung."
+    "Grenzabstaende pro Bauklasse ergaenzen.",
+    "Laermempfindlichkeitsstufe pro Zone ergaenzen."
   ]
 }
