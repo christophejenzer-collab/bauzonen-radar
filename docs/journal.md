@@ -11,6 +11,41 @@ Format pro Session:
 
 ---
 
+## 25. April 2026 (Vormittag + Mittag, ~2 Stunden)
+
+### Kontext
+Praxistests in Vorbereitung auf Mitstudentin-Termin morgen. Iterative Bug-Identifikation und -Behebung.
+
+### Geleistet
+- Test mit Untere Sadelstrasse 1, Oberhofen → kein Reglement, Naturgefahren erkannt
+- Test mit Hirschweg 7, Thun → OEREB-Schreibweise "Wohnen W2" entdeckt
+- Test mit Kramgasse 1, Bern → Berner Altstadt-Spezialregime entdeckt
+- Test mit Junkerngasse 47, Bern → "Zone im öffentlichen Interesse" entdeckt
+- Test mit Marktgasse 1 + Bundesgasse 26 → "Obere Altstadt, Zone mit Planungspflicht"
+- Fix thun.json: "Wohnen W2/W3" zusaetzlich zu "Wohnzone W2/W3"
+- Fix bern.json: 12 Bauklassen total (5 numerisch, 1 Synonym, 4 Altstadt-Bereiche, 2 Planungspflicht, 1 ZoeN)
+- Fix bern.json: 11 Nutzungszonen incl. Schutzzone A, ZPP Obere Altstadt, UeO Marktgasse
+- Fix start.ps1: Wechselt automatisch in Modul-Ordner
+
+### Getestete Adressen heute
+- Untere Sadelstrasse 1, 3653 Oberhofen
+- Hirschweg 7, 3604 Thun
+- Kramgasse 1, 3000 Bern
+- Junkerngasse 47, 3011 Bern (1817 m^2, zwei Bauklassen!)
+- Marktgasse 1, 3011 Bern (mit Laubenfluchtlinie)
+- Bundesgasse 26, 3011 Bern
+
+### Git
+- (Hash kommt nach Commit)
+
+### Gelernt
+- OEREB- und Reglement-Schreibweisen koennen differieren
+- Berner Altstadt verwendet Spezialnamen (Untere/Obere Altstadt, Innere/Aeussere Neustadt)
+- Zonen mit Planungspflicht haben eigene Bezeichnungen (Suffix "Zone mit Planungspflicht")
+- "Zone im oeffentlichen Interesse" als ZoeN-Spezialregime
+- Tool zeigt jetzt alle gefundenen Bauklassen, nicht nur die erste
+- Tests mit unterschiedlichen Stadtteilen sind die beste Bug-Quelle
+
 ## 24. April 2026 (Abend, ~3 Stunden)
 
 - Test mit Kramgasse 1, Bern: Bug entdeckt — Berner Altstadt verwendet Spezialnamen statt numerischer Bauklassen

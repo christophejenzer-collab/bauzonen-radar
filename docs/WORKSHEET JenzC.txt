@@ -839,25 +839,6 @@ Your branch is up to date with 'origin/main'.
 nothing to commit, working tree clean
 (.venv) PS C:\Tools\bauzonen-radar> git pushcd C:\Tools\bauzonen-radar
 
-#START Tool#
-
-cd C:\Tools\bauzonen-radar
-.\start.ps1
-
-Abfrage
-
-cd src\bauzonenradar
-python analyse_adresse.py "Untere Sadelstrasse 1, 3653 Oberhofen"
-
-cd src\bauzonenradar
-python analyse_adresse.py "Thunstrasse 40, 3005 Bern"
-
-cd src\bauzonenradar
-python analyse_adresse.py "Untere Sadelstrasse 1, 3653 Oberhofen"
-
-cd src\bauzonenradar
-python analyse_adresse.py "Hirschweg 7, 3604 Thun"
-
 
 
 
