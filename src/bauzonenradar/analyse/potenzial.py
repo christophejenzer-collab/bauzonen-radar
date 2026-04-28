@@ -4,21 +4,35 @@ Potenzialberechnung fuer Schweizer Grundstuecke.
 Kombiniert eine Parzelle (mit ihren OEREB-Daten) und ein Baureglement
 zu einer Potenzialabschaetzung.
 
+Drei Datenqualitaeten werden klar unterschieden:
+  - VERBINDLICH    : AZ oder GFZo vorhanden, exakte Berechnung
+  - GROBSCHAETZUNG : Hoehen-System, Berechnung mit konservativen Annahmen
+  - NICHT_MOEGLICH : Keine Werte verfuegbar
+
 Drei Bemessungssysteme werden unterstuetzt:
   - AZ            : Klassische Ausnuetzungsziffer
+                    Berechnung: Flaeche x AZ
   - GFZo          : Geschossflaechenziffer oberirdisch
-  - hoehen_und_gz : Steuerung ueber Hoehen (+ optional Gruenflaechenziffer)
+                    Berechnung: Flaeche x GFZo
+  - hoehen_und_gz : Steuerung ueber Hoehen + Geometrie + (optional GZ)
+                    GROBSCHAETZUNG: max. Gebaeudegrundflaeche x Vollgeschosse
+                    + anteiliges Dachgeschoss
+
+Schaetz-Annahmen im Hoehen-System:
+  - Gebaeudebreite: gewaehlt als min(GL, 12 m)
+  - Dachgeschoss: 60% Anrechnung bei Schraegdach, 0% bei Flachdach
+  - Grenzabstaende ringsum subtrahiert (quadratische Approximation)
+  - GZ wirkt als oberes Limit fuer versiegelte Flaeche
+
+WICHTIG: Schaetzungen sind klar als solche zu kennzeichnen.
+Architekten und Investoren duerfen sie nicht mit verbindlichen
+Berechnungen verwechseln.
 
 Spezialeffekte:
   - Arealbonus: Bei grossen Parzellen kann ein zusaetzliches Geschoss
                 bewilligt werden (Thun: Schwelle 3000 m^2)
   - Strukturgebiet: Beirat Stadtbild kann Vorgaben aushebeln
                     (Thun-spezifisches Konzept)
-
-Ausgabe-Logik:
-  - AZ/GFZo vorhanden  → echte m^2-Berechnung mit Status HOCH/MITTEL/...
-  - Hoehen vorhanden   → qualitative Beschreibung mit allen Reglement-Werten
-  - Nichts vorhanden   → fachlicher Hinweis was fehlt
 """
 
 from __future__ import annotations
@@ -30,12 +44,26 @@ from modelle import Parzelle, Restriction
 from baureglement import Baureglement, Bauparameter, BemessungsSystem
 
 
+# Default-Annahmen fuer die Schaetz-Berechnung im Hoehen-System
+DEFAULT_GEBAEUDEBREITE_M = 12.0
+DACHGESCHOSS_ANRECHNUNG_SCHRAEGDACH = 0.6
+DACHGESCHOSS_ANRECHNUNG_FLACHDACH = 0.0
+
+
 class PotenzialStatus(Enum):
     HOCH = "hoch"
     MITTEL = "mittel"
     GERING = "gering"
     AUSGESCHOEPFT = "ausgeschoepft"
     NICHT_BERECHENBAR = "nicht_berechenbar"
+    SCHAETZWERT = "schaetzwert"
+
+
+class Datenqualitaet(Enum):
+    """Qualitaetsstufen der Potenzialberechnung."""
+    VERBINDLICH = "verbindlich"
+    GROBSCHAETZUNG = "grobschaetzung"
+    NICHT_MOEGLICH = "nicht_moeglich"
 
 
 @dataclass
@@ -51,14 +79,25 @@ class PotenzialErgebnis:
     realisiert_ist_platzhalter: bool = True
     reserve_m2: float | None = None
     ausschoepfungsgrad_prozent: float | None = None
+    datenqualitaet: Datenqualitaet = Datenqualitaet.NICHT_MOEGLICH
     status: PotenzialStatus = PotenzialStatus.NICHT_BERECHENBAR
     bemerkungen: list[str] = field(default_factory=list)
     arealbonus_anwendbar: bool = False
 
     def textbericht(self) -> str:
-        """Lesbare Textausgabe des Ergebnisses."""
-        zeilen = ["Potenzialanalyse"]
-        zeilen.append("-" * 40)
+        """Lesbare Textausgabe des Ergebnisses mit klarer Datenqualitaets-Markierung."""
+        zeilen: list[str] = []
+
+        # Header mit Datenqualitaet
+        if self.datenqualitaet == Datenqualitaet.VERBINDLICH:
+            zeilen.append("Potenzialanalyse - Datenqualitaet: VERBINDLICH")
+        elif self.datenqualitaet == Datenqualitaet.GROBSCHAETZUNG:
+            zeilen.append("Potenzialanalyse - Datenqualitaet: GROBSCHAETZUNG")
+            zeilen.append("!!! Werte sind konservativ geschaetzt - keine Investitionsentscheidung darauf basieren !!!")
+        else:
+            zeilen.append("Potenzialanalyse - Datenqualitaet: KEINE BERECHNUNG MOEGLICH")
+
+        zeilen.append("-" * 70)
         zeilen.append(f"Parzellenflaeche:       {self.parzellenflaeche_m2:.0f} m^2")
 
         if self.anrechenbare_flaeche_m2 != self.parzellenflaeche_m2:
@@ -71,22 +110,40 @@ class PotenzialErgebnis:
             zeilen.append(f"Verwendetes System:     {self.verwendetes_system}")
 
         if self.verwendete_kennzahl is not None:
-            zeilen.append(f"Kennzahl:               {self.verwendetes_system} = {self.verwendete_kennzahl}")
+            zeilen.append(
+                f"Kennzahl:               {self.verwendetes_system} = {self.verwendete_kennzahl}"
+            )
 
+        # Theoretischer Wert mit deutlicher Markierung
         if self.theoretisch_zulaessig_m2 is not None:
-            zeilen.append(f"Theoretisch zulaessig:  {self.theoretisch_zulaessig_m2:.0f} m^2")
+            if self.datenqualitaet == Datenqualitaet.GROBSCHAETZUNG:
+                zeilen.append(
+                    f"GROBSCHAETZUNG zulaessig: ca. {self.theoretisch_zulaessig_m2:.0f} m^2"
+                )
+            else:
+                zeilen.append(
+                    f"Theoretisch zulaessig:  {self.theoretisch_zulaessig_m2:.0f} m^2"
+                )
 
-        if self.geschaetzt_realisiert_m2 is not None:
+        # Realisiert nur ausgeben wenn wir es vergleichen koennen
+        if self.geschaetzt_realisiert_m2 is not None and self.datenqualitaet == Datenqualitaet.VERBINDLICH:
             kennz = " (PLATZHALTER)" if self.realisiert_ist_platzhalter else ""
-            zeilen.append(f"Realisiert (geschaetzt):{self.geschaetzt_realisiert_m2:.0f} m^2{kennz}")
+            zeilen.append(
+                f"Realisiert (geschaetzt):{self.geschaetzt_realisiert_m2:.0f} m^2{kennz}"
+            )
 
-        if self.reserve_m2 is not None:
-            zeilen.append(f"Reserve:                {self.reserve_m2:.0f} m^2")
+        # Reserve und Ausschoepfung nur bei verbindlicher Berechnung
+        if self.datenqualitaet == Datenqualitaet.VERBINDLICH:
+            if self.reserve_m2 is not None:
+                zeilen.append(f"Reserve:                {self.reserve_m2:.0f} m^2")
+            if self.ausschoepfungsgrad_prozent is not None:
+                zeilen.append(f"Ausschoepfungsgrad:     {self.ausschoepfungsgrad_prozent:.0f}%")
 
-        if self.ausschoepfungsgrad_prozent is not None:
-            zeilen.append(f"Ausschoepfungsgrad:     {self.ausschoepfungsgrad_prozent:.0f}%")
-
-        zeilen.append(f"Status:                 {self.status.value.upper()}")
+        # Status mit Schaetzwert-Variante
+        if self.datenqualitaet == Datenqualitaet.GROBSCHAETZUNG:
+            zeilen.append("Status:                 SCHAETZWERT - keine Investitionsentscheidung darauf basieren")
+        else:
+            zeilen.append(f"Status:                 {self.status.value.upper()}")
 
         if self.arealbonus_anwendbar:
             zeilen.append("")
@@ -106,23 +163,12 @@ class PotenzialBerechner:
 
     def berechne(self, parzelle: Parzelle,
                  reglement: Baureglement | None) -> PotenzialErgebnis:
-        """Fuehrt die Potenzialanalyse durch.
-
-        Logik-Fluss:
-        1. Strukturgebiet pruefen (Thun-Spezial)
-        2. Reglement geladen?       Nein -> nur Warnungen
-        3. Zone gefunden?           Nein -> Hinweis "Zone fehlt"
-        4. Berechenbar?             Nein -> Liste was fehlt
-        5. Arealbonus pruefen
-        6. AZ/GFZo vorhanden?       Ja -> echte Berechnung
-                                     Nein -> Hoehen-Bericht (Oberhofen-Stil)
-        """
+        """Fuehrt die Potenzialanalyse durch."""
         ergebnis = PotenzialErgebnis(
             parzellenflaeche_m2=parzelle.flaeche_m2,
             anrechenbare_flaeche_m2=parzelle.flaeche_m2,
         )
 
-        # Strukturgebiet schon hier pruefen - betrifft alle Pfade
         strukturgebiet_warnung = self._pruefe_strukturgebiet(parzelle)
 
         # Kein Reglement
@@ -158,7 +204,6 @@ class PotenzialBerechner:
                 ergebnis.bemerkungen.insert(0, strukturgebiet_warnung)
             return ergebnis
 
-        # Ersten berechenbaren Parameter waehlen
         parameter = berechenbare[0]
 
         # Arealbonus pruefen
@@ -175,17 +220,35 @@ class PotenzialBerechner:
         hauptkennzahl = parameter.hauptkennzahl()
 
         if hauptkennzahl is None:
-            # Hoehen-System (mit oder ohne GZ)
+            # Hoehen-System mit GROBSCHAETZUNG
             self._behandle_hoehen_und_gz(parameter, parzelle, ergebnis)
             if strukturgebiet_warnung:
                 ergebnis.bemerkungen.insert(0, strukturgebiet_warnung)
             ergebnis.bemerkungen.extend(self._sammle_warnhinweise(parzelle))
             return ergebnis
 
-        # AZ oder GFZo - echte m^2-Berechnung
+        # AZ oder GFZo - VERBINDLICHE Berechnung
+        self._behandle_verbindliche_berechnung(
+            parameter, hauptkennzahl, parzelle, ergebnis, berechenbare
+        )
+
+        if strukturgebiet_warnung:
+            ergebnis.bemerkungen.insert(0, strukturgebiet_warnung)
+        ergebnis.bemerkungen.extend(self._sammle_warnhinweise(parzelle))
+        return ergebnis
+
+    # ----- Verbindliche Berechnung (AZ/GFZo) ----------------------------
+
+    def _behandle_verbindliche_berechnung(self, parameter: Bauparameter,
+                                          hauptkennzahl: tuple[str, float],
+                                          parzelle: Parzelle,
+                                          ergebnis: PotenzialErgebnis,
+                                          berechenbare: list[Bauparameter]) -> None:
+        """Echte m^2-Berechnung mit AZ oder GFZo."""
         system_code, kennzahl = hauptkennzahl
         ergebnis.verwendetes_system = system_code
         ergebnis.verwendete_kennzahl = kennzahl
+        ergebnis.datenqualitaet = Datenqualitaet.VERBINDLICH
 
         if len(berechenbare) > 1:
             ergebnis.bemerkungen.append(
@@ -193,7 +256,6 @@ class PotenzialBerechner:
                 f"'{parameter.quelle_eintrag}'."
             )
 
-        # Berechnung
         ergebnis.theoretisch_zulaessig_m2 = (
             ergebnis.anrechenbare_flaeche_m2 * kennzahl
         )
@@ -201,8 +263,8 @@ class PotenzialBerechner:
         ergebnis.geschaetzt_realisiert_m2 = self._schaetze_ist_bebauung(parzelle)
         ergebnis.realisiert_ist_platzhalter = True
         ergebnis.bemerkungen.append(
-            "Ist-Bebauung ist derzeit ein Platzhalter. Der echte Wert "
-            "kommt in einer kuenftigen Version aus swissBUILDINGS3D."
+            "Ist-Bebauung ist derzeit ein Platzhalter (40% der Parzelle). "
+            "Der echte Wert kommt in einer kuenftigen Version aus swissBUILDINGS3D."
         )
 
         ergebnis.reserve_m2 = (
@@ -228,13 +290,6 @@ class PotenzialBerechner:
                 f"Zone '{parameter.quelle_eintrag}': {parameter.hinweise}"
             )
 
-        # Strukturgebiet-Warnung an den Anfang
-        if strukturgebiet_warnung:
-            ergebnis.bemerkungen.insert(0, strukturgebiet_warnung)
-
-        ergebnis.bemerkungen.extend(self._sammle_warnhinweise(parzelle))
-        return ergebnis
-
     # ----- Spezialfaelle ------------------------------------------------
 
     @staticmethod
@@ -242,9 +297,10 @@ class PotenzialBerechner:
                                     parzelle: Parzelle,
                                     ergebnis: PotenzialErgebnis) -> None:
         """Wenn KEIN einziger Wert hinterlegt ist (alles None)."""
+        ergebnis.datenqualitaet = Datenqualitaet.NICHT_MOEGLICH
         ergebnis.bemerkungen.append(
-            "In keiner der Zonen ist eine Kennzahl oder Hoehenangabe zur "
-            "Potenzialberechnung hinterlegt."
+            "DATEN NICHT VERFUEGBAR: In keiner der Zonen ist eine Kennzahl "
+            "oder Hoehenangabe zur Potenzialberechnung hinterlegt."
         )
         for p in parameter_liste:
             if p.hinweise:
@@ -255,94 +311,243 @@ class PotenzialBerechner:
             PotenzialBerechner._sammle_warnhinweise(parzelle)
         )
 
-    @staticmethod
-    def _behandle_hoehen_und_gz(parameter: Bauparameter,
+    def _behandle_hoehen_und_gz(self, parameter: Bauparameter,
                                 parzelle: Parzelle,
                                 ergebnis: PotenzialErgebnis) -> None:
-        """Fuellt das Ergebnis bei Hoehen-System (Thun BR 2022, Oberhofen).
-
-        Funktioniert mit oder ohne Gruenflaechenziffer:
-          - Mit GZ (Thun-Stil): zeigt zusaetzlich min. unversiegelte Flaeche
-          - Ohne GZ (Oberhofen-Stil): zeigt nur Hoehen, GL, Grenzabstaende
-        """
+        """Hoehen-System mit GROBSCHAETZUNG und klarer Markierung."""
         ergebnis.verwendetes_system = parameter.system.value
+        ergebnis.datenqualitaet = Datenqualitaet.GROBSCHAETZUNG
 
-        # Einleitung anpassen je nach GZ-Vorhandensein
+        # Klare Einleitung mit Datenlage
         if parameter.gruenflaechenziffer is not None:
             ergebnis.bemerkungen.append(
-                f"Zone '{parameter.quelle_eintrag}' wird ueber Gebaeudemasse "
-                f"und Gruenflaechenziffer gesteuert (kein AZ/GFZo)."
+                f"DATENLAGE: Zone '{parameter.quelle_eintrag}' wird ueber "
+                f"Gebaeudemasse und Gruenflaechenziffer gesteuert. Es existiert "
+                f"keine flaechen-bezogene Kennzahl (AZ/GFZo). Eine exakte "
+                f"Geschossflaechen-Berechnung ist nicht moeglich - nur eine "
+                f"konservative Schaetzung anhand der zulaessigen Gebaeudemasse."
             )
         else:
             ergebnis.bemerkungen.append(
-                f"Zone '{parameter.quelle_eintrag}' wird ueber Gebaeudemasse "
-                f"und Vollgeschosse gesteuert (kein AZ/GFZo, keine GZ)."
+                f"DATENLAGE: Zone '{parameter.quelle_eintrag}' wird ueber "
+                f"Vollgeschosse und Gebaeudemasse gesteuert. Es existiert weder "
+                f"eine flaechen-bezogene Kennzahl noch eine Gruenflaechenziffer. "
+                f"Eine exakte Geschossflaechen-Berechnung ist nicht moeglich - "
+                f"nur eine konservative Schaetzung."
             )
 
-        # Vollgeschosse
-        if parameter.max_geschosse is not None:
+        # Reglement-Werte ausgeben
+        self._gib_hoehen_werte_aus(parameter, parzelle, ergebnis)
+
+        # GROBSCHAETZUNG durchfuehren
+        schaetzung = self._schaetze_geschossflaeche_hoehen(parameter, parzelle)
+
+        if schaetzung is not None:
+            ergebnis.theoretisch_zulaessig_m2 = schaetzung["geschossflaeche_m2"]
+            ergebnis.status = PotenzialStatus.SCHAETZWERT
+
+            # Schaetzungs-Ist-Vergleich bewusst NICHT als Reserve ausweisen
+            # (Vergleich zweier Schaetzungen waere irrefuehrend)
+            ist_schaetzung = self._schaetze_ist_bebauung(parzelle)
+
+            ergebnis.bemerkungen.append("")
             ergebnis.bemerkungen.append(
-                f"Maximale Vollgeschosse: {parameter.max_geschosse}"
+                "BERECHNUNGSBASIS DER SCHAETZUNG:"
+            )
+            ergebnis.bemerkungen.append(
+                f"  Grundflaeche-Annahme:  {schaetzung['grundflaeche_m2']:.0f} m^2 "
+                f"(Gebaeudelaenge {parameter.max_gebaeudelaenge_m} m x "
+                f"angenommene Breite {schaetzung['breite_m']:.1f} m)"
+            )
+            ergebnis.bemerkungen.append(
+                f"  Vollgeschosse:         {schaetzung['vollgeschosse']}"
+            )
+            if schaetzung["mit_dachgeschoss"]:
+                ergebnis.bemerkungen.append(
+                    f"  Dachgeschoss-Bonus:    +{DACHGESCHOSS_ANRECHNUNG_SCHRAEGDACH * 100:.0f}% "
+                    f"(Schraegdach moeglich)"
+                )
+            ergebnis.bemerkungen.append(
+                f"  = GROBSCHAETZUNG zulaessig: {schaetzung['geschossflaeche_m2']:.0f} m^2"
+            )
+            ergebnis.bemerkungen.append(
+                f"  Vergleich Ist (Platzhalter 40% der Parzelle): {ist_schaetzung:.0f} m^2 "
+                f"(beide Werte sind Schaetzungen - direkter Vergleich nur grob aussagekraeftig)"
             )
 
-        # Hoehen-Werte
-        if parameter.max_fassadenhoehe_traufseitig_m is not None:
+            ergebnis.bemerkungen.append("")
             ergebnis.bemerkungen.append(
-                f"Fassadenhoehe traufseitig (Schraegdach): "
-                f"max. {parameter.max_fassadenhoehe_traufseitig_m} m"
+                "ANNAHMEN UND UNSICHERHEIT:"
             )
-        if parameter.max_fassadenhoehe_giebelseitig_m is not None:
             ergebnis.bemerkungen.append(
-                f"Fassadenhoehe giebelseitig (Schraegdach): "
-                f"max. {parameter.max_fassadenhoehe_giebelseitig_m} m"
+                f"  - Gebaeudebreite-Annahme {DEFAULT_GEBAEUDEBREITE_M:.0f} m kann "
+                f"je nach Parzellen-Geometrie zu hoch oder zu niedrig sein."
             )
-        if parameter.max_fassadenhoehe_anderes_dach_m is not None:
             ergebnis.bemerkungen.append(
-                f"Fassadenhoehe (Flachdach o.ae.): "
-                f"max. {parameter.max_fassadenhoehe_anderes_dach_m} m"
+                f"  - Grenzabstaende werden quadratisch approximiert "
+                f"(reale Parzelle ist meist nicht quadratisch)."
             )
-        if parameter.max_gebaeudehoehe_m is not None:
             ergebnis.bemerkungen.append(
-                f"Maximale Gebaeudehoehe: {parameter.max_gebaeudehoehe_m} m"
+                "  - Der echte Wert haengt vom Volumen-Konzept eines "
+                "Architekten ab und kann deutlich ueber oder unter der "
+                "Schaetzung liegen."
             )
 
-        # Gebaeudegeometrie
-        if parameter.max_gebaeudelaenge_m is not None:
+            # Plausibilitaetscheck gegen alten AZ
+            if parameter.vergleichswert_az_alt is not None:
+                az_referenz = parzelle.flaeche_m2 * parameter.vergleichswert_az_alt
+                faktor = schaetzung['geschossflaeche_m2'] / az_referenz if az_referenz > 0 else 0
+                ergebnis.bemerkungen.append("")
+                ergebnis.bemerkungen.append(
+                    f"PLAUSIBILITAETSCHECK gegen altes Recht:"
+                )
+                ergebnis.bemerkungen.append(
+                    f"  Altes BR: AZ={parameter.vergleichswert_az_alt} -> "
+                    f"{az_referenz:.0f} m^2 erlaubt"
+                )
+                ergebnis.bemerkungen.append(
+                    f"  Schaetzung: {schaetzung['geschossflaeche_m2']:.0f} m^2 "
+                    f"(Faktor {faktor:.2f}x gegenueber altem AZ-Recht)"
+                )
+                if faktor < 0.7:
+                    ergebnis.bemerkungen.append(
+                        f"  ! Schaetzung deutlich UNTER altem Recht. "
+                        f"Wahrscheinlich ist die Annahme Gebaeudebreite zu klein "
+                        f"oder die Parzellen-Geometrie ist ungewoehnlich."
+                    )
+                elif faktor > 1.8:
+                    ergebnis.bemerkungen.append(
+                        f"  ! Schaetzung deutlich UEBER altem Recht. Wahrscheinlich "
+                        f"ist die maximale Gebaeudegrundflaeche in Praxis durch "
+                        f"andere Faktoren begrenzt."
+                    )
+                else:
+                    ergebnis.bemerkungen.append(
+                        f"  Plausibel: Faktor {faktor:.2f}x liegt im erwartbaren "
+                        f"Bereich der Verdichtungs-Reform."
+                    )
+        else:
             ergebnis.bemerkungen.append(
-                f"Maximale Gebaeudelaenge: {parameter.max_gebaeudelaenge_m} m"
-            )
-        if parameter.grenzabstand_klein_m is not None:
-            ergebnis.bemerkungen.append(
-                f"Kleiner Grenzabstand: {parameter.grenzabstand_klein_m} m"
-            )
-        if parameter.grenzabstand_gross_m is not None:
-            ergebnis.bemerkungen.append(
-                f"Grosser Grenzabstand: {parameter.grenzabstand_gross_m} m"
-            )
-
-        # Gruenflaechen (nur wenn vorhanden)
-        if parameter.gruenflaechenziffer is not None:
-            min_gruen_m2 = parzelle.flaeche_m2 * parameter.gruenflaechenziffer
-            ergebnis.bemerkungen.append(
-                f"Gruenflaechenziffer: {parameter.gruenflaechenziffer} "
-                f"(min. {min_gruen_m2:.0f} m^2 unversiegelt zu halten)"
+                "GROBSCHAETZUNG nicht moeglich: Es fehlen Vollgeschosse "
+                "oder Geometrie-Werte (kA, gA, GL)."
             )
 
         # Zonen-Hinweis aus Reglement
         if parameter.hinweise:
+            ergebnis.bemerkungen.append("")
             ergebnis.bemerkungen.append(
-                f"Zone '{parameter.quelle_eintrag}': {parameter.hinweise}"
+                f"Reglement-Hinweis Zone '{parameter.quelle_eintrag}': "
+                f"{parameter.hinweise}"
             )
+
+    @staticmethod
+    def _gib_hoehen_werte_aus(parameter: Bauparameter,
+                              parzelle: Parzelle,
+                              ergebnis: PotenzialErgebnis) -> None:
+        """Schreibt die Reglement-Werte als Bemerkungen ins Ergebnis."""
+        ergebnis.bemerkungen.append("")
+        ergebnis.bemerkungen.append("REGLEMENT-EINGANGSWERTE:")
+        if parameter.max_geschosse is not None:
+            ergebnis.bemerkungen.append(
+                f"  Maximale Vollgeschosse:  {parameter.max_geschosse}"
+            )
+        if parameter.max_fassadenhoehe_traufseitig_m is not None:
+            ergebnis.bemerkungen.append(
+                f"  Fassadenhoehe traufseitig (Schraegdach): "
+                f"max. {parameter.max_fassadenhoehe_traufseitig_m} m"
+            )
+        if parameter.max_fassadenhoehe_giebelseitig_m is not None:
+            ergebnis.bemerkungen.append(
+                f"  Fassadenhoehe giebelseitig (Schraegdach): "
+                f"max. {parameter.max_fassadenhoehe_giebelseitig_m} m"
+            )
+        if parameter.max_fassadenhoehe_anderes_dach_m is not None:
+            ergebnis.bemerkungen.append(
+                f"  Fassadenhoehe (Flachdach o.ae.): "
+                f"max. {parameter.max_fassadenhoehe_anderes_dach_m} m"
+            )
+        if parameter.max_gebaeudehoehe_m is not None:
+            ergebnis.bemerkungen.append(
+                f"  Maximale Gebaeudehoehe:  {parameter.max_gebaeudehoehe_m} m"
+            )
+        if parameter.max_gebaeudelaenge_m is not None:
+            ergebnis.bemerkungen.append(
+                f"  Maximale Gebaeudelaenge: {parameter.max_gebaeudelaenge_m} m"
+            )
+        if parameter.grenzabstand_klein_m is not None:
+            ergebnis.bemerkungen.append(
+                f"  Kleiner Grenzabstand:    {parameter.grenzabstand_klein_m} m"
+            )
+        if parameter.grenzabstand_gross_m is not None:
+            ergebnis.bemerkungen.append(
+                f"  Grosser Grenzabstand:    {parameter.grenzabstand_gross_m} m"
+            )
+        if parameter.gruenflaechenziffer is not None:
+            min_gruen_m2 = parzelle.flaeche_m2 * parameter.gruenflaechenziffer
+            ergebnis.bemerkungen.append(
+                f"  Gruenflaechenziffer:     {parameter.gruenflaechenziffer} "
+                f"(min. {min_gruen_m2:.0f} m^2 unversiegelt)"
+            )
+
+    # ----- Schaetz-Berechnung im Hoehen-System --------------------------
+
+    @staticmethod
+    def _schaetze_geschossflaeche_hoehen(parameter: Bauparameter,
+                                         parzelle: Parzelle) -> dict | None:
+        """Schaetzt die zulaessige Geschossflaeche im Hoehen-System.
+
+        Annahmen siehe Modul-Doku.
+        """
+        if parameter.max_geschosse is None:
+            return None
+        if parameter.max_gebaeudelaenge_m is None:
+            return None
+
+        breite_m = min(parameter.max_gebaeudelaenge_m, DEFAULT_GEBAEUDEBREITE_M)
+
+        grundflaeche_geometrie = parameter.max_gebaeudelaenge_m * breite_m
+
+        grundflaeche_parzelle = grundflaeche_geometrie
+        if (parameter.grenzabstand_klein_m is not None
+                and parameter.grenzabstand_gross_m is not None):
+            seite_m = parzelle.flaeche_m2 ** 0.5
+            nutzbare_seite = max(0, seite_m - 2 * parameter.grenzabstand_klein_m)
+            nutzbare_seite_lang = max(0, seite_m - 2 * parameter.grenzabstand_gross_m)
+            grundflaeche_parzelle = nutzbare_seite * nutzbare_seite_lang
+
+        grundflaeche_gz = float("inf")
+        if parameter.gruenflaechenziffer is not None:
+            max_versiegelt = parzelle.flaeche_m2 * (1 - parameter.gruenflaechenziffer)
+            grundflaeche_gz = max_versiegelt
+
+        grundflaeche = min(
+            grundflaeche_geometrie,
+            grundflaeche_parzelle,
+            grundflaeche_gz,
+        )
+
+        geschossflaeche = grundflaeche * parameter.max_geschosse
+
+        mit_dachgeschoss = (
+            parameter.max_fassadenhoehe_traufseitig_m is not None
+            and parameter.max_fassadenhoehe_giebelseitig_m is not None
+        )
+        if mit_dachgeschoss:
+            geschossflaeche += grundflaeche * DACHGESCHOSS_ANRECHNUNG_SCHRAEGDACH
+
+        return {
+            "grundflaeche_m2": grundflaeche,
+            "vollgeschosse": parameter.max_geschosse,
+            "geschossflaeche_m2": geschossflaeche,
+            "breite_m": breite_m,
+            "mit_dachgeschoss": mit_dachgeschoss,
+        }
 
     # ----- Strukturgebiet-Erkennung ------------------------------------
 
     @staticmethod
     def _pruefe_strukturgebiet(parzelle: Parzelle) -> str | None:
-        """Prueft, ob die Parzelle im Strukturgebiet liegt (Thun-Spezial).
-
-        Strukturgebiet erscheint typischerweise als 'FlaecheAndere' oder
-        'Ueberlagerung' in den OEREB-Daten.
-        """
+        """Prueft, ob die Parzelle im Strukturgebiet liegt (Thun-Spezial)."""
         for r in parzelle.restrictions:
             if r.legende and "strukturgebiet" in r.legende.lower():
                 return (

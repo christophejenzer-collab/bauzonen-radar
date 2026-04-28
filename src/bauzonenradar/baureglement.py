@@ -33,6 +33,9 @@ Spezialeffekte:
                 (Thun: Schwellenwert 3000 m^2)
   - Strukturgebiet: Beirat Stadtbild kann das Baureglement teilweise
                     aushebeln und gestalterische Vorgaben machen
+  - vergleichswert_az_alt: Optional, der AZ-Wert der die Zone unter
+                           altem Recht hatte. Wird fuer Plausibilitaets-
+                           checks im Hoehen-System verwendet.
 """
 
 from __future__ import annotations
@@ -96,6 +99,8 @@ class Bauparameter:
         * andere Dachformen wie Flachdach (Fh)
     - Gruenflaechenziffer (GZ) - optional
     - AZ und GFZo als Kennzahlen
+    - vergleichswert_az_alt: AZ-Wert vor BR-Aenderung, fuer
+      Plausibilitaetscheck im Hoehen-System
     """
     quelle_eintrag: str
     system: BemessungsSystem = BemessungsSystem.UNBEKANNT
@@ -123,6 +128,9 @@ class Bauparameter:
     arealbonus_ab_flaeche_m2: float | None = None             # Schwellenwert
     arealbonus_zusaetzliche_geschosse: int | None = None      # Bonus
 
+    # Plausibilitaetscheck: Was haette das alte AZ-Recht ergeben?
+    vergleichswert_az_alt: float | None = None
+
     # Meta
     rechtsgrundlage: str = ""
     hinweise: str = ""
@@ -135,20 +143,15 @@ class Bauparameter:
         """
         True, wenn irgendein Wert zur qualifizierten Beurteilung verfuegbar ist.
 
-        Drei Stufen der Berechenbarkeit (von strikt zu locker):
-        1. AZ oder GFZo: ergibt direkte Quadratmeter-Berechnung
-        2. Hoehen mit GZ: qualifizierte Berechnung mit unversiegelter Flaeche (Thun-Stil)
-        3. Nur Hoehen: qualitative Beschreibung mit Reglement-Werten (Oberhofen-Stil)
-
-        Wichtig: Ein Reglement ohne Gruenflaechenziffer (z.B. Oberhofen) ist
-        trotzdem 'berechenbar' im Sinne dieser Methode - es gibt fachlich
-        relevante Werte aus, auch wenn keine direkte m^2-Berechnung moeglich ist.
+        Drei Stufen der Berechenbarkeit:
+        1. AZ oder GFZo: direkte Quadratmeter-Berechnung
+        2. Hoehen mit GZ: qualifizierte Schaetzung
+        3. Nur Hoehen: konservative Schaetzung (Oberhofen-Stil)
         """
         if self.ausnuetzungsziffer is not None:
             return True
         if self.geschossflaechenziffer_oberirdisch is not None:
             return True
-        # Hoehen-System: schon eine Hoehenangabe genuegt
         if self.max_fassadenhoehe_traufseitig_m is not None:
             return True
         if self.max_gebaeudehoehe_m is not None:
@@ -158,12 +161,11 @@ class Bauparameter:
         return False
 
     def hauptkennzahl(self) -> tuple[str, float] | None:
-        """
-        Gibt die fuer die direkte Quadratmeter-Berechnung relevante Kennzahl zurueck.
+        """Gibt die fuer die direkte m^2-Berechnung relevante Kennzahl zurueck.
 
         Nur AZ oder GFZo liefern eine Hauptkennzahl. Hoehen-Systeme geben
-        None zurueck und werden im PotenzialBerechner ueber die Hoehen-Pfad
-        behandelt.
+        None zurueck und werden im PotenzialBerechner ueber den Hoehen-Pfad
+        mit Schaetzung behandelt.
         """
         if self.geschossflaechenziffer_oberirdisch is not None:
             return ("GFZo", self.geschossflaechenziffer_oberirdisch)
@@ -351,6 +353,7 @@ class Baureglement:
             gruenflaechenziffer=daten.get("gruenflaechenziffer"),
             arealbonus_ab_flaeche_m2=daten.get("arealbonus_ab_flaeche_m2"),
             arealbonus_zusaetzliche_geschosse=daten.get("arealbonus_zusaetzliche_geschosse"),
+            vergleichswert_az_alt=daten.get("vergleichswert_az_alt"),
             rechtsgrundlage=daten.get("rechtsgrundlage", ""),
             hinweise=daten.get("hinweise", ""),
             gueltig_ab=daten.get("gueltig_ab"),
@@ -406,5 +409,7 @@ if __name__ == "__main__":
         if p.hat_arealbonus(parzelle.flaeche_m2):
             print(f"    !!! Arealbonus: +{p.arealbonus_zusaetzliche_geschosse} "
                   f"Geschoss(e) ab {p.arealbonus_ab_flaeche_m2:.0f} m^2")
+        if p.vergleichswert_az_alt is not None:
+            print(f"    Altes AZ: {p.vergleichswert_az_alt}")
         if p.hinweise:
             print(f"    Hinweis: {p.hinweise}")
