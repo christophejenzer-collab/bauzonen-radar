@@ -83,13 +83,53 @@ Bereich liegt.
 
 ### NICHT_MOEGLICH
 
-Wenn weder Kennzahlen noch Hoehenwerte verfuegbar sind, gibt das
-Tool einen klaren Hinweis aus, was fehlt.
+Wenn die Zone einem Spezialregime unterliegt (UNESCO-Altstadt,
+UeO/UeP mit projektspezifischen Vorschriften, Schutzzonen) oder
+weder Kennzahlen noch Hoehenwerte verfuegbar sind, verzichtet das
+Tool **bewusst** auf eine Schein-Berechnung und gibt stattdessen
+eine klare Empfehlung zum weiteren Vorgehen aus (z.B. "Direkter
+Kontakt mit Bauverwaltung und Denkmalpflege"). Der visuelle
+Empfehlungs-Block (Balken) wird in diesem Fall konsequent
+weggelassen, statt Pseudo-Werte anzuzeigen.
 
 Diese saubere Trennung der Datenqualitaet ist **rechtlich und
 ethisch wichtig**: Architekten und Investoren sollen sofort sehen,
 ob sie einer Zahl trauen koennen oder nur eine Orientierung
-bekommen.
+bekommen. Falsche Werte sind viel schlimmer als ein ehrliches
+"kann ich nicht".
+
+## Bauklassenplan Stadt Bern (BKP-API)
+
+Eine Besonderheit der Stadt Bern: Die konkreten Bau-Vorschriften
+pro Parzelle stehen nicht in der Bauordnung selbst, sondern
+parzellenscharf im Bauklassenplan (BKP). Die Stadt Bern stellt
+diesen ueber einen oeffentlichen ArcGIS REST-Service zur Verfuegung:
+
+```
+https://map.bern.ch/arcgis/rest/services/Geoportal/Bauklassenplan/MapServer
+```
+
+Das Modul `bern_bkp.py` fragt zwei Layer ab:
+- **Layer 88 (BKP_Bauweise)**: Bauweise (offen/geschlossen),
+  Gebaeudelaenge, Gebaeudetiefe pro Parzelle
+- **Layer 95 (BKP_Grundzonen_Flaechen)**: Nutzungszone (W, WG,
+  K, K(s), K(l), D, IG) und Bauklasse (BK_2 bis BK_6, BK_E,
+  BK_SPEZ, OA, UA)
+
+Die parzellenscharfen Werte (z.B. Gebaeudelaenge 70 m,
+Gebaeudetiefe 13 m fuer eine konkrete Parzelle in BK_4) werden in
+die Schaetz-Berechnung eingespeist und ersetzen damit die
+pauschalen Default-Annahmen. Das Tool zeigt im Bericht klar an,
+welcher Wert aus dem BKP stammt ("aus BKP") und welcher aus dem
+Default ("aus Default").
+
+Drei Faelle in der Stadt Bern:
+
+| Fall | Beispiel | BKP-Bauweise | Pfad |
+|---|---|---|---|
+| BK 1-6 mit Bauweise | Eigerstrasse 60 (BK_4) | ja | GROBSCHAETZUNG |
+| BK_E (Erhaltung) | Thunstrasse 40 | nein | VERBINDLICH (GFZo aus BO) |
+| Spezialregime | Altstadt OA, BK_SPEZ (UeO) | nein | NICHT_MOEGLICH |
 
 ## Empfehlungs-Block mit visueller Lagebeurteilung
 

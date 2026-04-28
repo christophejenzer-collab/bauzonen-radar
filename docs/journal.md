@@ -12,6 +12,316 @@ der Werte und finale Architektur liegen beim Projektteam.
 
 ---
 
+## 28. April 2026 (Dienstag, spaeter Abend) - Datenquellen-Evaluation Thun + geodienste.ch
+
+**Dauer**: ca. 30 Minuten
+
+### Frage des Tages
+
+Nachdem die Stadt Bern dank BKP-API parzellenscharfe Werte liefert: Geht
+das fuer Thun und andere Gemeinden auch? Konkret evaluiert wurden zwei
+weitere Datenquellen.
+
+### Quelle 1: geodienste.ch
+
+Schweizweite, einheitliche WFS-API. Endpoint:
+`https://geodienste.ch/db/npl_nutzungsplanung_v1_2_0/deu`
+
+WFS-Capabilities geben vier Layer:
+- `ms:grundnutzung`
+- `ms:ueberlagernde_nutzungsplaninhalte_flaechenbezogene_festlegungen`
+- `ms:ueberlagernde_nutzungsplaninhalte_linienbezogene_festlegungen`
+- `ms:ueberlagernde_nutzungsplaninhalte_punktbezogene_festlegungen`
+
+Live-Test mit BBox um Thun-Zentrum lieferte Features mit Properties
+wie `typ_kommunal_code`, `typ_kantonal_code`, `hauptnutzung_bezeichnung`
+und PDF-Links zum Baureglement. **Aber keine Bauwerte** (keine
+Geschossigkeit, keine Ausnuetzungsziffer, keine Hoehen).
+
+### Quelle 2: ThunGIS (thun.regiogis-beo.ch)
+
+Stadt-spezifisches GIS-Portal mit Geokatalog "Bauzonenplan" -
+parzellenscharfes Click-Popup zeigt fuer Seestrasse 72a:
+- Kant.Art: WA4
+- Abkuerzung Zonenname: WA4
+- Bezeichnung: Wohnen/Arbeiten WA4
+- Beschrieb: (leer)
+- Planbeschriftung: (leer)
+
+**Auch hier keine Bauwerte** - nur Zonen-Bezeichnung.
+
+### Erkenntnis: Bern ist der Sonderfall
+
+Im Kanton Bern haben die Geoinformations-Stellen entschieden, im
+Datenmodell nur die rechtlich verbindliche Zonenzuteilung zu fuehren.
+Die konkreten Bauwerte (Geschosse, Hoehen, Grenzabstaende, GFZo) sind
+**ausschliesslich in den Baureglement-PDFs** der Gemeinden verfuegbar.
+
+Stadt Bern hat als einzige BE-Gemeinde eine eigene ArcGIS REST-API
+(`map.bern.ch`) mit dem Bauklassenplan, der parzellenscharfe
+Gebaeudemasse (Bauweise, Gebaeudelaenge, Gebaeudetiefe) liefert.
+
+### Architektur-Konsequenz
+
+Drei Tier von Datenquellen sind moeglich:
+
+| Tier | Beispiel | Detailgrad | Aufwand |
+|---|---|---|---|
+| OEREB | alle BE-Gemeinden | Zonen-Code + Rechtsstatus | bereits implementiert |
+| Spezialisierte Stadt-API | map.bern.ch BKP | + Gebaeudelaenge, Bauweise | implementiert fuer Bern |
+| geodienste.ch | schweizweit | nur Zonen-Code (gleiche Info wie OEREB) | KEIN MEHRWERT |
+
+### Schlussfolgerung fuer die Architektur
+
+Die Tool-Architektur **bleibt wie sie ist**. Pro Gemeinde erfassen wir
+das Baureglement in einer JSON-Datei (kommt aus der Recherche im PDF),
+und nur fuer Stadt Bern reichern wir parzellenscharf via BKP-API an.
+
+Das ist keine Schwaeche, sondern eine **fundierte Datenquellen-
+Entscheidung mit Begruendung**. Wertvoll fuer die Verteidigung am 17.6.
+und fuer Diskussionen mit Fachleuten.
+
+### Koeniz: getestet - kein Mehrwert ueber OEREB hinaus
+
+Gemeinde Koeniz (4-groesste BE-Gemeinde, 43'000 Einwohner, grenzt an
+Stadt Bern) hat ein eigenes Geoportal `geoportal.koeniz.ch` mit
+ArcGIS-Backend. Live-Test mit Parzelle 1274 (im Layer "Nutzungsplan"):
+
+Popup zeigt:
+```
+Wohnzone (Art. 29 BauR), Bauklasse IIa (Art. 53 BauR)
++ Link auf das Baureglement-PDF
++ Link auf das Nutzungsplan-Dokument
+```
+
+**Das gleiche Muster wie Thun**: Zone und Bauklasse sind
+parzellenscharf verfuegbar, aber **die konkreten Bauwerte (Geschosse,
+Hoehen, Grenzabstaende) fehlen**. Sie stehen nur im
+PDF-Baureglement (Art. 53).
+
+Interessante architektonische Erkenntnis: **Koeniz hat ein
+Bauklassen-System wie Bern** (statt Hoehen-System wie Thun). Das heisst,
+wenn wir die Werte aus Art. 53 BauR Koeniz einmalig erfassen und in eine
+`koeniz.json` packen, koennten wir Koeniz mit der gleichen Pipeline wie
+Bern abdecken - nur eben ohne Live-API, sondern mit statischen JSON-
+Werten.
+
+Baureglement direkt zugreifbar:
+`https://gisdoc.koeniz.ch/public/plak/npl/Baureglement/721.0_Baureglement.pdf`
+
+**TODO fuer Iteration 4 oder spaeter**:
+- Art. 53 BauR Koeniz auswerten und Bauklassen-Tabelle in `koeniz.json`
+  uebernehmen
+- Das ist die gleiche Erfassungs-Arbeit wie fuer Thun/Oberhofen, nur
+  fuer eine vierte Gemeinde
+
+### Endergebnis der Datenquellen-Evaluation
+
+| Gemeinde | Bauwerte aus Live-API verfuegbar? |
+|---|---|
+| Stadt Bern | JA (parzellenscharf via map.bern.ch BKP) |
+| Stadt Thun | nein - nur PDF |
+| Oberhofen | nein - nur PDF |
+| Koeniz | nein - nur PDF |
+| Alle anderen BE-Gemeinden (vermutlich) | nein - nur PDF |
+
+**Stadt Bern bleibt die Ausnahme.** Fuer alle anderen Gemeinden ist die
+JSON-Erfassung pro Gemeinde der einzige Weg zu den Bauwerten.
+
+---
+
+## 28. April 2026 (Dienstag, abends) - Bauklassenplan via ArcGIS-API live
+
+**Dauer**: ca. 3 Stunden
+
+### Ausgangsproblem: parzellenscharfe Werte fehlten
+
+Bauklassen 2-6 in `bern.json` standen als `system: GFZo` mit
+`geschossflaechenziffer_oberirdisch: null`. Der Hintergrund: Die
+konkreten GFZo-Werte stehen nicht in der Bauordnung selbst, sondern
+parzellenscharf im Bauklassenplan (BKP) der Stadt Bern. Solange
+diese Daten fehlten, lieferte das Tool fuer 80% der Bern-Adressen
+"NICHT_BERECHENBAR" zurueck.
+
+### Durchbruch: ArcGIS REST-API map.bern.ch
+
+Recherche im Geoportal der Stadt Bern: Der Bauklassenplan ist als
+ArcGIS REST-Service oeffentlich abfragbar.
+
+```
+https://map.bern.ch/arcgis/rest/services/Geoportal/Bauklassenplan/MapServer
+```
+
+Zwei relevante Layer:
+- **Layer 88 (BKP_Bauweise)**: Bauweise (offen/geschlossen),
+  Gebaeudelaenge, Gebaeudetiefe pro Parzelle
+- **Layer 95 (BKP_Grundzonen_Flaechen)**: Nutzungszone (W/WG/K/D/IG)
+  und Bauklasse (BK_2 bis BK_6, BK_E, BK_SPEZ, OA, UA)
+
+Ueberraschende Erkenntnis: Der BKP liefert **keine GFZo-Werte**.
+Bauklassen 2-6 sind reine Hoehen-Systeme - definiert ueber
+Vollgeschosse + Fassadenhoehe + Geometrie. Nur Bauklasse E hat
+ueber Art. 57 BO einen GFZo-Wert (0.5 bzw. 0.6).
+
+Das aendert die Architektur grundlegend: Die `bern.json` musste von
+`GFZo` auf `hoehen_und_gz` umgestellt werden.
+
+### Neues Modul: bern_bkp.py
+
+ArcGIS-Anbindung mit pure Standard-Library (urllib, json), Cache
+pro Session, robust gegen Fehler. Drei Datenklassen:
+- `BkpBauweise` (Layer 88)
+- `BkpGrundzone` (Layer 95)
+- `BkpAuskunft` (kombiniert)
+
+Live-getestet mit sechs Adressen quer durch Bern - alle Pfade
+funktionieren.
+
+### Drei Faelle in der Stadt Bern
+
+Die Live-Tests deckten drei klar unterscheidbare Faelle auf:
+
+| Fall | Beispiel | Bauweise-Daten | Pfad |
+|---|---|---|---|
+| BK 1-6 mit Bauweise | Eigerstrasse 60 (BK_4) | ja | GROBSCHAETZUNG mit echten Werten |
+| BK_E (Erhaltung) | Thunstrasse 40, Optingenstrasse 30 | nein | VERBINDLICH (GFZo aus BO) |
+| Altstadt OA/UA | Marktgasse 25 (OA) | nein | NICHT_MOEGLICH |
+| BK_SPEZ (UeO) | Bumplitzstrasse 100, Sulgenrain 12 | nein | NICHT_MOEGLICH |
+
+### Architektur-Entscheidung: pragmatisch ehrlich
+
+Bei BK_E gibt es Spezialregelung (Erhaltung der Volumetrie ist
+verbindlich, GFZo nur als Obergrenze). Bei Altstadt und BK_SPEZ
+gibt es keine quantitative Berechnung sinnvoll, weil das Spezial-
+regime das Standard-Reglement aushebelt.
+
+**Entscheidung**: Falsche Werte sind viel schlimmer als ein
+ehrliches "kann ich nicht". Entsprechend wurde das Datenmodell um
+das System `NICHT_MOEGLICH` erweitert - Zonen mit diesem System
+liefern eine klare Meldung statt einer Schein-Berechnung.
+
+### NICHT_MOEGLICH-Pfad in potenzial.py
+
+Neuer Behandlungspfad `_behandle_nicht_moeglich`:
+- Datenqualitaet: NICHT_MOEGLICH
+- Status: NICHT_BERECHENBAR
+- Verwendetes System: "Spezialregime (keine Standard-Berechnung)"
+- Klare Erklaerung warum nicht gerechnet wird
+- Empfehlung: Direkter Kontakt mit Bauverwaltung / Denkmalpflege
+- Empfehlungs-Block (Balken) wird konsequent weggelassen statt
+  Pseudo-Werte zu zeigen
+
+### Bauparameter.mit_bkp_daten() Methode
+
+Neue Methode auf der `Bauparameter`-Klasse. Reichert die im
+JSON definierten Werte mit parzellenscharfen BKP-Daten an:
+- `max_gebaeudelaenge_m` aus BKP (z.B. 70 m fuer Eigerstrasse 60)
+- Neues Feld `bkp_gebaeudetiefe_m` (z.B. 13 m statt Default 12 m)
+- Neues Feld `bkp_bauweise` ("offen" / "geschlossen")
+- Hinweis-Text wird automatisch um BKP-Info ergaenzt
+
+Die Anreicherung passiert im PotenzialBerechner, bevor die
+Schaetzung gerechnet wird.
+
+### Drei-Begrenzer-Logik mit transparenter Anzeige
+
+Im Hoehen-System wird die Grundflaeche durch drei Faktoren
+begrenzt:
+1. Gebaeudemasse (Laenge x Tiefe aus BKP)
+2. Parzelle minus Grenzabstaende (quadratische Naeherung)
+3. Gruenflaechenziffer (falls definiert)
+
+Der kleinste Wert gewinnt. Vorher zeigte der Bericht nur den
+Endwert mit irrefuehrender Begruendung. Jetzt werden alle drei
+Kandidaten ausgewiesen, der aktive Begrenzer ist mit `<- aktiv`
+markiert.
+
+```
+Drei Begrenzer der Grundflaeche werden geprueft:
+  1. Gebaeudemasse: 910 m^2 (70.0 m x 13.0 m aus BKP)
+  2. Parzelle minus Grenzabstaende: 743 m^2 <- aktiv
+  3. Gruenflaechenziffer: nicht definiert (entfaellt)
+-> Massgebende Grundflaeche: 743 m^2
+```
+
+Damit ist sofort sichtbar, ob das Reglement oder die Parzelle der
+Engpass ist.
+
+### bern.json komplett umgebaut
+
+Alle Bauklassen-Eintraege ueberarbeitet:
+- BK 2-6: System auf `hoehen_und_gz`, Vollgeschosse, FH/FHA, kA/gA
+- BKP-Code-Synonyme `BK_2`, `BK_3`, ..., `BK_E`, `BK_SPEZ`
+- Altstadt-Zonen + ZPP + Schutzzonen + ZoeN FD: System
+  `nicht_moeglich`
+- Nutzungszonen-Code-Synonyme `W`, `WG`, `K`, `K (s)`, `K (l)`,
+  `D`, `IG`, `OA`, `UA`
+
+### bessere Meldung bei "Zone nicht im Reglement erfasst"
+
+Neue Hilfsmethode `_bkp_zone_hinweis`. Wenn eine Adresse eine
+Bauklasse oder Zone hat, die noch nicht im Reglement-JSON erfasst
+ist, gibt das Tool jetzt aus:
+- Welche BKP-Codes konkret gefunden wurden
+- Den Hinweis, dass eine Sonderzone (UeO/UeP) der Grund sein kann
+- Eine Empfehlung zum weiteren Vorgehen
+
+### Verifikations-Tests (neue Adressen-Suite)
+
+Sechs Bern-Adressen quer durchs Stadtgebiet getestet:
+
+| Adresse | Bauklasse | Datenqualitaet | Output |
+|---|---|---|---|
+| Thunstrasse 40 | BK_E | VERBINDLICH | GFZo 0.5, 80% Ausschoepfung |
+| Optingenstrasse 30 | BK_E | VERBINDLICH | GFZo 0.5, 80% Ausschoepfung |
+| Eigerstrasse 60 | BK_4 | GROBSCHAETZUNG | mit echten BKP-Werten |
+| Marktgasse 25 | OA | NICHT_MOEGLICH | klare Empfehlung |
+| Bumplitzstrasse 100 | BK_SPEZ | NICHT_MOEGLICH | UeO-Hinweis |
+| Sulgenrain 12 | BK_SPEZ | NICHT_MOEGLICH | UeO-Hinweis |
+
+Alle drei Pfade (VERBINDLICH / GROBSCHAETZUNG / NICHT_MOEGLICH)
+funktionieren mit Live-API-Daten.
+
+### Bug-Fix-Sequenz
+
+Drei kleinere Bugs mit jeweils gezieltem Fix:
+1. `koordinate_lv95` wurde nicht auf das Parzellen-Objekt
+   zurueckgeschrieben - der Berechner fand die Koordinate nicht
+   und konnte die BKP-Anreicherung nicht ausfuehren.
+2. `bkp_gebaeudetiefe_m` wurde von der Schaetz-Berechnung ignoriert
+   (Default 12 m statt echte 13 m aus BKP).
+3. Begruendungstext im Bericht zeigte multiplikative Formel
+   (70 m x 13 m = 743 m^2), die mathematisch nicht stimmt -
+   tatsaechlich war die Parzelle der Begrenzer, nicht die
+   Geometrie.
+
+### Status
+
+Stadt Bern ist mit dieser Iteration **vollstaendig abgedeckt**:
+- VERBINDLICH-Pfad fuer BK_E (~10% der Stadt)
+- GROBSCHAETZUNG-Pfad fuer BK 2-6 mit parzellenscharfen Werten
+  (~70% der Stadt)
+- NICHT_MOEGLICH-Pfad fuer Altstadt, UeO, Schutzzonen, ZoeN ohne
+  konkretem Subtyp (~20% der Stadt)
+
+Die Schwager-Erfassungs-Excel ist fuer die Bauklassenplan-Werte
+nicht mehr zwingend noetig - die API liefert die Werte direkt. Sie
+bleibt aber relevant fuer:
+- Verifikation der BKP-Werte (Stichproben)
+- Subtypen FA-FD der ZoeN (nicht in API)
+- Anhang II der BO (Zonen-spezifische Sondervorschriften)
+
+### Dokumentation aktualisiert
+
+- `docs/journal.md`: Dieser Eintrag
+- `docs/konzept.md`: Sektion ueber BKP-API-Anbindung
+- `docs/projektplan.md`: Iteration 3 als abgeschlossen markiert,
+  Iteration 4 vorbereitet
+- `docs/fachliche_grundlagen.md`: Neue Sektion "Bauklassenplan
+  Stadt Bern (BKP-API)"
+
+---
+
 ## 28. April 2026 (Dienstag) - Schaetz-Berechnung, Datenqualitaet, Empfehlungs-Block
 
 **Dauer**: ca. 5 Stunden

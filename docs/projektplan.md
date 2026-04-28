@@ -1,6 +1,6 @@
 # Projektplan: Bauzonen-Radar
 
-Stand: 28. April 2026.
+Stand: 28. April 2026 (abends).
 Abgabe: 17. Juni 2026.
 
 ## Iterationen im Ueberblick
@@ -8,7 +8,7 @@ Abgabe: 17. Juni 2026.
 ```
 Iteration 1: Pipeline               [ABGESCHLOSSEN] Marz/April 2026
 Iteration 2: Potenzialberechnung    [ABGESCHLOSSEN] April 2026
-Iteration 3: Verifikation           [LAUFEND]       April/Mai 2026
+Iteration 3: Verifikation           [ABGESCHLOSSEN] 28. April 2026
 Iteration 4: Webseite               [GEPLANT]       Mai/Juni 2026
 Iteration 5: Generalprobe           [GEPLANT]       Mitte Juni 2026
 ```
@@ -57,32 +57,51 @@ fuer Endanwender.
 - Bug-Fix: Sinnloser Reserve-Vergleich bei Schaetzungen entfernt
 - Bug-Fix: Ausschoepfung bei Schaetzungen auf 100% gekappt
 
-## Iteration 3: Verifikation und Vervollstaendigung (laufend)
+## Iteration 3: Verifikation und Vervollstaendigung (abgeschlossen)
 
-**Zeitraum**: 28. April 2026 - Mitte Mai 2026
+**Zeitraum**: 28. April 2026 (in einem Tag durchgezogen)
 
-**Ziel**: Reglement-Daten durch Fachperson verifizieren lassen
-und Stadt Bern Bauklassenplan vollstaendig einpflegen.
+**Ziel**: Stadt Bern mit parzellenscharfen Werten aus dem
+Bauklassenplan vervollstaendigen.
 
-**Offene Aufgaben**:
+**Erledigt**:
+- Bauklassenplan Stadt Bern als ArcGIS REST-API entdeckt
+- Modul `bern_bkp.py` mit pure Standard-Library implementiert
+- Layer 88 (Bauweise) und Layer 95 (Grundzonen) live abgefragt
+- `bern.json` komplett umgebaut: BK 2-6 als `hoehen_und_gz`
+  statt `GFZo`, BKP-Code-Synonyme ergaenzt
+- Neuer Pfad `NICHT_MOEGLICH` fuer Spezialregime (Altstadt,
+  UeO/UeP, Schutzzonen)
+- `Bauparameter.mit_bkp_daten()` Methode fuer parzellenscharfe
+  Anreicherung
+- Drei-Begrenzer-Logik in der Schaetz-Berechnung mit transparenter
+  Anzeige (Gebaeudemasse / Parzelle / GZ - der kleinste gewinnt)
+- `analyse_adresse.py` faengt Stadt-Bern-Adressen ab und ruft
+  zusaetzlich BKP auf
+- Sechs Adressen quer durch Bern verifiziert (alle drei
+  Datenqualitaets-Pfade live durchgespielt)
 
-### Christophe
-- Erfassungs-Excel an Schwager senden mit Begleittext
-- Antwort des Schwagers in `bern.json` einpflegen
-- `fachliche_grundlagen.md` mit Bauklassenplan-Werten erweitern
-- Falls noetig: vierte Gemeinde aufnehmen (z.B. Koeniz)
-- Falls Faktor-Schwellenwerte des Plausibilitaetschecks in der
-  Praxis nicht passen: feinjustieren
+**Verschoben in Iteration 4 oder spaeter**:
+- Verifikation einzelner BKP-Werte durch Schwager (Stichproben)
+- Subtypen FA-FD der ZoeN nachpflegen
+- Vierte Gemeinde aufnehmen (z.B. Koeniz)
+- Variable gGA aus Art. 46 BO Bern in Code umsetzen
+  (aktuell: `grenzabstand_gross_m` als statischer Default)
 
-### Fabienne
+### Christophe (offen)
+- Erfassungs-Excel an Schwager senden (jetzt zur Verifikation
+  statt zur Erst-Erfassung, weil API die Werte liefert)
+- Antwort des Schwagers in `bern.json` als Stichprobe
+  einarbeiten
+
+### Fabienne (offen)
 - GitHub-Username an Christophe senden fuer Collaborator-Einladung
 - Repo durchklicken und erste Anforderungs-Liste erstellen
 - `docs/anforderungen.md` als Skelett anlegen
 - Implizite Annahmen im Code identifizieren
 
-### Gemeinsam
+### Gemeinsam (offen)
 - Mid-Iteration-Termin (Anfang Mai)
-- Fortschritt abgleichen
 - Iteration 4 vorbereiten
 
 ## Iteration 4: Webseite (geplant)

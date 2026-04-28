@@ -58,6 +58,7 @@ class BemessungsSystem(Enum):
     GFZO = "GFZo"
     HOEHEN_UND_GZ = "hoehen_und_gz"
     DUALITAET = "dualitaet"
+    NICHT_MOEGLICH = "nicht_moeglich"
     UNBEKANNT = "unbekannt"
 
     @classmethod
@@ -77,6 +78,8 @@ class BemessungsSystem(Enum):
             "dualitaet": cls.DUALITAET,
             "dualität": cls.DUALITAET,
             "uebergang": cls.DUALITAET,
+            "nicht_moeglich": cls.NICHT_MOEGLICH,
+            "nicht_möglich": cls.NICHT_MOEGLICH,
         }
         return mapping.get(norm, cls.UNBEKANNT)
 
@@ -136,6 +139,10 @@ class Bauparameter:
     hinweise: str = ""
     gueltig_ab: str | None = None
 
+    # BKP-Daten (parzellenscharf, fuer Stadt Bern via bern_bkp.py)
+    bkp_gebaeudetiefe_m: float | None = None
+    bkp_bauweise: str | None = None  # "offen", "geschlossen", oder None
+
     # ----- Abgeleitete Eigenschaften -----
 
     @property
@@ -178,6 +185,79 @@ class Bauparameter:
         if self.arealbonus_ab_flaeche_m2 is None:
             return False
         return parzellenflaeche_m2 >= self.arealbonus_ab_flaeche_m2
+
+    def mit_bkp_daten(self, bkp_auskunft) -> "Bauparameter":
+        """Reichert die Bauparameter mit parzellenscharfen BKP-Daten an.
+
+        Stadt Bern liefert ueber den Bauklassenplan (BKP) parzellenscharf
+        folgende Werte, die im Reglement als Defaults stehen oder nicht
+        spezifiziert sind:
+          - Gebaeudelaenge (z.B. 20 m fuer Thunstrasse 40)
+          - Gebaeudetiefe (oft 12-13 m, ergibt eine bessere Annahme als
+            der pauschale Default)
+          - Bauweise (offen/geschlossen)
+
+        Falls die BKP-Auskunft keine Bauweise-Daten enthaelt (BK_E,
+        Altstadt), bleiben die Werte unveraendert.
+
+        Args:
+            bkp_auskunft: BkpAuskunft aus bern_bkp.py
+
+        Returns:
+            Eine neue Bauparameter-Instanz mit angereicherten Werten.
+            Das Original bleibt unveraendert.
+        """
+        if bkp_auskunft is None or bkp_auskunft.bauweise is None:
+            return self
+
+        bauweise = bkp_auskunft.bauweise
+
+        # Gebaeudelaenge aus BKP uebernehmen, falls vorhanden
+        neue_gebaeudelaenge = self.max_gebaeudelaenge_m
+        if not bauweise.gebaeudelaenge_unbeschraenkt and bauweise.gebaeudelaenge:
+            neue_gebaeudelaenge = float(bauweise.gebaeudelaenge)
+
+        # Gebaeudetiefe als bessere "Breite"-Annahme,
+        # wird im neuen Feld bkp_gebaeudetiefe_m gespeichert
+        neue_tiefe = None
+        if not bauweise.gebaeudetiefe_unbeschraenkt and bauweise.gebaeudetiefe:
+            neue_tiefe = float(bauweise.gebaeudetiefe)
+
+        # Bauweise-Hinweis ergaenzen
+        bauweise_hinweis = (
+            f"BKP-Daten Stadt Bern: Bauweise '{bauweise.bauweise_beschrieb}', "
+            f"Gebaeudelaenge {bauweise.gebaeudelaenge or 'unbeschraenkt'} m, "
+            f"Gebaeudetiefe {bauweise.gebaeudetiefe or 'unbeschraenkt'} m."
+        )
+        neue_hinweise = (
+            self.hinweise + " | " + bauweise_hinweis
+            if self.hinweise else bauweise_hinweis
+        )
+
+        # Erstelle eine Kopie mit den angereicherten Werten
+        return Bauparameter(
+            quelle_eintrag=self.quelle_eintrag,
+            system=self.system,
+            ausnuetzungsziffer=self.ausnuetzungsziffer,
+            geschossflaechenziffer_oberirdisch=self.geschossflaechenziffer_oberirdisch,
+            max_geschosse=self.max_geschosse,
+            max_gebaeudehoehe_m=self.max_gebaeudehoehe_m,
+            max_fassadenhoehe_traufseitig_m=self.max_fassadenhoehe_traufseitig_m,
+            max_fassadenhoehe_giebelseitig_m=self.max_fassadenhoehe_giebelseitig_m,
+            max_fassadenhoehe_anderes_dach_m=self.max_fassadenhoehe_anderes_dach_m,
+            max_gebaeudelaenge_m=neue_gebaeudelaenge,
+            grenzabstand_klein_m=self.grenzabstand_klein_m,
+            grenzabstand_gross_m=self.grenzabstand_gross_m,
+            gruenflaechenziffer=self.gruenflaechenziffer,
+            arealbonus_ab_flaeche_m2=self.arealbonus_ab_flaeche_m2,
+            arealbonus_zusaetzliche_geschosse=self.arealbonus_zusaetzliche_geschosse,
+            vergleichswert_az_alt=self.vergleichswert_az_alt,
+            rechtsgrundlage=self.rechtsgrundlage,
+            hinweise=neue_hinweise,
+            gueltig_ab=self.gueltig_ab,
+            bkp_gebaeudetiefe_m=neue_tiefe,
+            bkp_bauweise=bauweise.bauweise_beschrieb,
+        )
 
     def zusammenfassung(self) -> str:
         """Kurze Textuebersicht."""

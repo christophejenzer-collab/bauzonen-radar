@@ -226,8 +226,18 @@ class PotenzialBerechner:
     """Berechnet das Bebauungspotenzial einer Parzelle."""
 
     def berechne(self, parzelle: Parzelle,
-                 reglement: Baureglement | None) -> PotenzialErgebnis:
-        """Fuehrt die Potenzialanalyse durch."""
+                 reglement: Baureglement | None,
+                 bkp_quelle=None) -> PotenzialErgebnis:
+        """Fuehrt die Potenzialanalyse durch.
+
+        Args:
+            parzelle: OEREB-Parzelle mit Geometrie und Restrictions.
+            reglement: Geladenes Baureglement der Gemeinde, oder None.
+            bkp_quelle: Optionale BernBkpQuelle. Wenn vorhanden, werden
+                fuer Bern die parzellenscharfen BKP-Daten geholt und in
+                die Bauparameter eingespeist (echte Gebaeudelaenge,
+                Bauweise statt Default-Annahmen).
+        """
         ergebnis = PotenzialErgebnis(
             parzellenflaeche_m2=parzelle.flaeche_m2,
             anrechenbare_flaeche_m2=parzelle.flaeche_m2,
@@ -246,21 +256,58 @@ class PotenzialBerechner:
         # Parameter aus Reglement
         parameter_liste = reglement.finde_bauparameter(parzelle)
         if not parameter_liste:
+            # Wenn BKP-Daten verfuegbar sind, sind die Codes potenziell
+            # neu fuer das Reglement - geben einen konkreten Hinweis
+            bkp_hinweis = self._bkp_zone_hinweis(parzelle, bkp_quelle)
+            if bkp_hinweis:
+                ergebnis.bemerkungen.append(
+                    "ZONE IM REGLEMENT NICHT ERFASST: " + bkp_hinweis
+                )
+            else:
+                ergebnis.bemerkungen.append(
+                    "ZONE IM REGLEMENT NICHT ERFASST: Die OEREB-Auskunft "
+                    "liefert eine Bauklasse oder Nutzungszone, die in der "
+                    "JSON-Datei der Gemeinde noch nicht erfasst ist. "
+                    "Pruefen Sie die OEREB-Bezeichnung und ergaenzen Sie "
+                    "die Zone in der Reglement-JSON."
+                )
+            ergebnis.datenqualitaet = Datenqualitaet.NICHT_MOEGLICH
+            ergebnis.status = PotenzialStatus.NICHT_BERECHENBAR
             ergebnis.bemerkungen.append(
-                "Keine Zonenparameter gefunden. Zone ist im Reglement noch nicht erfasst."
+                "EMPFEHLUNG: Direkter Kontakt mit der Bauverwaltung der "
+                "Gemeinde. Bei Sonderzonen (UeO/UeP) gelten projekt"
+                "spezifische Vorschriften statt der Standard-Bauordnung."
             )
             if strukturgebiet_warnung:
                 ergebnis.bemerkungen.append(strukturgebiet_warnung)
             ergebnis.bemerkungen.extend(self._sammle_warnhinweise(parzelle))
             return ergebnis
 
+        # BKP-Anreicherung fuer Stadt Bern
+        if bkp_quelle is not None:
+            parameter_liste = self._reichere_mit_bkp_an(
+                parameter_liste, parzelle, bkp_quelle, ergebnis
+            )
+
         # Zonen notieren
         ergebnis.zonen_betrachtet = [
             f"{p.quelle_eintrag} [{p.system.value}]" for p in parameter_liste
         ]
 
-        # Berechenbare Parameter finden
-        berechenbare = [p for p in parameter_liste if p.ist_berechenbar]
+        # NICHT_MOEGLICH: Zone gibt explizit zu erkennen, dass keine
+        # quantitative Berechnung sinnvoll ist (z.B. Altstadt, Schutzzonen)
+        nicht_moeglich = [p for p in parameter_liste
+                          if p.system == BemessungsSystem.NICHT_MOEGLICH]
+        if nicht_moeglich and len(nicht_moeglich) == len(parameter_liste):
+            self._behandle_nicht_moeglich(nicht_moeglich, parzelle, ergebnis)
+            if strukturgebiet_warnung:
+                ergebnis.bemerkungen.insert(0, strukturgebiet_warnung)
+            return ergebnis
+
+        # Berechenbare Parameter finden (NICHT_MOEGLICH ausgeschlossen)
+        berechenbare = [p for p in parameter_liste
+                        if p.ist_berechenbar
+                        and p.system != BemessungsSystem.NICHT_MOEGLICH]
 
         if not berechenbare:
             self._behandle_nicht_berechenbar(parameter_liste, parzelle, ergebnis)
@@ -300,6 +347,154 @@ class PotenzialBerechner:
             ergebnis.bemerkungen.insert(0, strukturgebiet_warnung)
         ergebnis.bemerkungen.extend(self._sammle_warnhinweise(parzelle))
         return ergebnis
+
+    # ----- BKP-Anreicherung (Stadt Bern) --------------------------------
+
+    @staticmethod
+    def _bkp_zone_hinweis(parzelle: Parzelle, bkp_quelle) -> str | None:
+        """Erstellt einen Text, der die im BKP gefundenen Codes nennt.
+
+        Wird bei 'Zone im Reglement nicht erfasst' verwendet, um dem
+        Benutzer konkret zu sagen welche Codes ergaenzt werden muessten.
+        """
+        if bkp_quelle is None:
+            return None
+
+        # Versuche, eine LV95-Koordinate aus der Parzelle zu bekommen
+        koordinate = None
+        for feldname in ("koordinate_lv95", "koordinaten", "lv95"):
+            if hasattr(parzelle, feldname):
+                wert = getattr(parzelle, feldname)
+                if wert and len(wert) == 2:
+                    koordinate = (float(wert[0]), float(wert[1]))
+                    break
+        if koordinate is None:
+            return None
+
+        try:
+            auskunft = bkp_quelle.hole_auskunft(koordinate[0], koordinate[1])
+        except Exception:
+            return None
+
+        if not auskunft.gefunden:
+            return None
+
+        teile = []
+        if auskunft.grundzone:
+            g = auskunft.grundzone
+            teile.append(
+                f"Der Bauklassenplan liefert Bauklasse '{g.bauklasse_kuerzel}' "
+                f"({g.bauklasse_beschrieb}) und Nutzungszone "
+                f"'{g.nutzungszone_kuerzel}' ({g.nutzungszone_beschrieb})."
+            )
+
+        teile.append(
+            "Die Bezeichnung aus der OEREB-Auskunft passt jedoch zu keinem "
+            "Eintrag im Reglement. Moegliche Ursachen: (1) Die Zone ist eine "
+            "Sonderzone mit eigener Ueberbauungsordnung (UeO), oder (2) das "
+            "Reglement-JSON sollte um diesen Eintrag ergaenzt werden."
+        )
+        return " ".join(teile)
+
+    def _reichere_mit_bkp_an(self, parameter_liste: list[Bauparameter],
+                             parzelle: Parzelle,
+                             bkp_quelle,
+                             ergebnis: PotenzialErgebnis) -> list[Bauparameter]:
+        """Reichert Bauparameter mit parzellenscharfen BKP-Daten an.
+
+        Holt fuer die Parzellen-Koordinate die BKP-Auskunft und ergaenzt
+        Gebaeudelaenge/Bauweise in den Parametern. Falls die Parzelle
+        keine Koordinate hat oder die BKP-Anfrage fehlschlaegt, bleibt
+        die Liste unveraendert.
+        """
+        # Versuche, eine LV95-Koordinate aus der Parzelle zu bekommen
+        koordinate = None
+        for feldname in ("koordinate_lv95", "koordinaten", "lv95"):
+            if hasattr(parzelle, feldname):
+                wert = getattr(parzelle, feldname)
+                if wert and len(wert) == 2:
+                    koordinate = (float(wert[0]), float(wert[1]))
+                    break
+
+        if koordinate is None:
+            return parameter_liste
+
+        try:
+            auskunft = bkp_quelle.hole_auskunft(koordinate[0], koordinate[1])
+        except Exception as fehler:
+            ergebnis.bemerkungen.append(
+                f"BKP-Anfrage fehlgeschlagen: {fehler}. "
+                f"Berechnung mit Default-Werten."
+            )
+            return parameter_liste
+
+        if not auskunft.gefunden:
+            return parameter_liste
+
+        # Reichere alle Parameter mit den BKP-Daten an
+        angereichert = [p.mit_bkp_daten(auskunft) for p in parameter_liste]
+
+        if auskunft.bauweise:
+            b = auskunft.bauweise
+            laenge = ("unbeschr." if b.gebaeudelaenge_unbeschraenkt
+                      else f"{b.gebaeudelaenge} m")
+            tiefe = ("unbeschr." if b.gebaeudetiefe_unbeschraenkt
+                     else f"{b.gebaeudetiefe} m")
+            ergebnis.bemerkungen.append(
+                f"BKP-Daten Stadt Bern uebernommen: Bauweise "
+                f"'{b.bauweise_beschrieb}', Gebaeudelaenge {laenge}, "
+                f"Gebaeudetiefe {tiefe} (parzellenscharf aus Bauklassenplan)."
+            )
+
+        return angereichert
+
+    # ----- NICHT_MOEGLICH-Pfad -----------------------------------------
+
+    @staticmethod
+    def _behandle_nicht_moeglich(parameter_liste: list[Bauparameter],
+                                 parzelle: Parzelle,
+                                 ergebnis: PotenzialErgebnis) -> None:
+        """Wenn die Zone explizit als 'nicht_moeglich' markiert ist.
+
+        Beispiele: Altstadt-Zonen (UNESCO-Schutz), Schutzzonen, Zonen mit
+        Planungspflicht ohne UeO. Hier ist eine quantitative
+        Potenzialberechnung nicht sinnvoll - die Aussage muss klar sein:
+        'Keine Berechnung moeglich, individuelle Pruefung noetig'.
+        """
+        ergebnis.datenqualitaet = Datenqualitaet.NICHT_MOEGLICH
+        ergebnis.verwendetes_system = "Spezialregime (keine Standard-Berechnung)"
+        ergebnis.status = PotenzialStatus.NICHT_BERECHENBAR
+
+        ergebnis.bemerkungen.append(
+            "QUANTITATIVE POTENZIALBERECHNUNG NICHT MOEGLICH:"
+        )
+        ergebnis.bemerkungen.append(
+            "Diese Zone unterliegt einem Spezialregime (z.B. UNESCO-Schutz, "
+            "Altstadt, Schutzzone, Planungspflicht). Eine Standard-Berechnung "
+            "anhand von AZ/GFZo oder Hoehenmassen waere irrefuehrend."
+        )
+
+        for p in parameter_liste:
+            if p.hinweise:
+                ergebnis.bemerkungen.append("")
+                ergebnis.bemerkungen.append(
+                    f"Zone '{p.quelle_eintrag}': {p.hinweise}"
+                )
+            if p.rechtsgrundlage:
+                ergebnis.bemerkungen.append(
+                    f"  Rechtsgrundlage: {p.rechtsgrundlage}"
+                )
+
+        ergebnis.bemerkungen.append("")
+        ergebnis.bemerkungen.append(
+            "EMPFEHLUNG: Direkter Kontakt mit Bauverwaltung und ggf. "
+            "Denkmalpflege der Gemeinde. Vor jedem Bauvorhaben ist eine "
+            "individuelle Vorabklaerung noetig."
+        )
+
+        ergebnis.bemerkungen.extend(
+            PotenzialBerechner._sammle_warnhinweise(parzelle)
+        )
 
     # ----- Verbindliche Berechnung (AZ/GFZo) ----------------------------
 
@@ -428,10 +623,37 @@ class PotenzialBerechner:
             ergebnis.bemerkungen.append(
                 "BERECHNUNGSBASIS DER SCHAETZUNG:"
             )
+
+            # Drei moegliche Begrenzer transparent zeigen
             ergebnis.bemerkungen.append(
-                f"  Grundflaeche-Annahme:  {schaetzung['grundflaeche_m2']:.0f} m^2 "
-                f"(Gebaeudelaenge {parameter.max_gebaeudelaenge_m} m x "
-                f"angenommene Breite {schaetzung['breite_m']:.1f} m)"
+                f"  Drei Begrenzer der Grundflaeche werden geprueft - "
+                f"der kleinste gewinnt:"
+            )
+            geo_marker = " <- aktiv" if schaetzung["begrenzer"] == "geometrie" else ""
+            ergebnis.bemerkungen.append(
+                f"    1. Gebaeudemasse: {schaetzung['grundflaeche_geometrie_m2']:.0f} m^2 "
+                f"({parameter.max_gebaeudelaenge_m} m x {schaetzung['breite_m']:.1f} m "
+                f"aus {schaetzung['breite_quelle']}){geo_marker}"
+            )
+            parz_marker = " <- aktiv" if schaetzung["begrenzer"] == "parzelle" else ""
+            ergebnis.bemerkungen.append(
+                f"    2. Parzelle minus Grenzabstaende: "
+                f"{schaetzung['grundflaeche_parzelle_m2']:.0f} m^2 "
+                f"(quadratische Naeherung){parz_marker}"
+            )
+            if schaetzung["grundflaeche_gz_m2"] is not None:
+                gz_marker = " <- aktiv" if schaetzung["begrenzer"] == "gz" else ""
+                ergebnis.bemerkungen.append(
+                    f"    3. Gruenflaechenziffer: "
+                    f"{schaetzung['grundflaeche_gz_m2']:.0f} m^2 (versiegelbar){gz_marker}"
+                )
+            else:
+                ergebnis.bemerkungen.append(
+                    f"    3. Gruenflaechenziffer: nicht definiert (entfaellt)"
+                )
+
+            ergebnis.bemerkungen.append(
+                f"  -> Massgebende Grundflaeche: {schaetzung['grundflaeche_m2']:.0f} m^2"
             )
             ergebnis.bemerkungen.append(
                 f"  Vollgeschosse:         {schaetzung['vollgeschosse']}"
@@ -453,10 +675,17 @@ class PotenzialBerechner:
             ergebnis.bemerkungen.append(
                 "ANNAHMEN UND UNSICHERHEIT:"
             )
-            ergebnis.bemerkungen.append(
-                f"  - Gebaeudebreite-Annahme {DEFAULT_GEBAEUDEBREITE_M:.0f} m kann "
-                f"je nach Parzellen-Geometrie zu hoch oder zu niedrig sein."
-            )
+            if schaetzung["breite_quelle"] == "BKP":
+                ergebnis.bemerkungen.append(
+                    f"  - Gebaeudebreite {schaetzung['breite_m']:.1f} m stammt "
+                    f"aus dem parzellenscharfen Bauklassenplan (verbindlich)."
+                )
+            else:
+                ergebnis.bemerkungen.append(
+                    f"  - Gebaeudebreite-Annahme {DEFAULT_GEBAEUDEBREITE_M:.0f} m "
+                    f"(Default) kann je nach Parzellen-Geometrie zu hoch oder "
+                    f"zu niedrig sein."
+                )
             ergebnis.bemerkungen.append(
                 f"  - Grenzabstaende werden quadratisch approximiert "
                 f"(reale Parzelle ist meist nicht quadratisch)."
@@ -574,7 +803,16 @@ class PotenzialBerechner:
         if parameter.max_gebaeudelaenge_m is None:
             return None
 
-        breite_m = min(parameter.max_gebaeudelaenge_m, DEFAULT_GEBAEUDEBREITE_M)
+        # Breite-Annahme: Wenn der BKP eine echte Gebaeudetiefe geliefert
+        # hat, nutzen wir die statt des pauschalen Defaults. Sonst Default.
+        if parameter.bkp_gebaeudetiefe_m is not None:
+            breite_m = min(parameter.max_gebaeudelaenge_m,
+                           parameter.bkp_gebaeudetiefe_m)
+            breite_quelle = "BKP"
+        else:
+            breite_m = min(parameter.max_gebaeudelaenge_m,
+                           DEFAULT_GEBAEUDEBREITE_M)
+            breite_quelle = "Default"
         grundflaeche_geometrie = parameter.max_gebaeudelaenge_m * breite_m
 
         grundflaeche_parzelle = grundflaeche_geometrie
@@ -596,6 +834,14 @@ class PotenzialBerechner:
             grundflaeche_gz,
         )
 
+        # Welcher Faktor ist der Begrenzer?
+        if grundflaeche == grundflaeche_geometrie:
+            begrenzer = "geometrie"
+        elif grundflaeche == grundflaeche_parzelle:
+            begrenzer = "parzelle"
+        else:
+            begrenzer = "gz"
+
         geschossflaeche = grundflaeche * parameter.max_geschosse
 
         mit_dachgeschoss = (
@@ -610,7 +856,14 @@ class PotenzialBerechner:
             "vollgeschosse": parameter.max_geschosse,
             "geschossflaeche_m2": geschossflaeche,
             "breite_m": breite_m,
+            "breite_quelle": breite_quelle,
             "mit_dachgeschoss": mit_dachgeschoss,
+            "grundflaeche_geometrie_m2": grundflaeche_geometrie,
+            "grundflaeche_parzelle_m2": grundflaeche_parzelle,
+            "grundflaeche_gz_m2": (
+                grundflaeche_gz if grundflaeche_gz != float("inf") else None
+            ),
+            "begrenzer": begrenzer,
         }
 
     # ----- Strukturgebiet-Erkennung ------------------------------------

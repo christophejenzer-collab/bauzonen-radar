@@ -1,34 +1,30 @@
 bauzonen-radar/
-├── README.md
-├── LICENSE
-├── .gitignore
-├── requirements.txt
-├── docs/
-│   ├── konzept.md
-│   ├── datenquellen.md
-│   └── entscheidungen.md
-├── src/
-│   └── bauzonenradar/
-│       ├── __init__.py
-│       ├── main.py
-│       ├── datenquellen/
-│       │   ├── __init__.py
-│       │   ├── bern.py
-│       │   └── base.py
-│       ├── analyse/
-│       │   ├── __init__.py
-│       │   └── potenzial.py
-│       ├── ausgabe/
-│       │   ├── __init__.py
-│       │   └── dossier.py
-│       └── gui/
-│           ├── __init__.py
-│           └── app.py
-├── tests/
-│   ├── __init__.py
-│   └── test_potenzial.py
-├── daten/
-│   └── baureglemente/
-│       └── bern.json
-└── beispiele/
-    └── beispielparzelle.png
+|-- README.md                                Stand 28.04.2026
+|-- requirements.txt
+|-- .gitignore
+|-- start.ps1                                venv aktivieren + cd in src
+|-- demo.ps1                                 Regressionstest 10 Adressen
+|
+|-- docs/
+|   |-- konzept.md                           Pflichtdokument, Stand 28.04.
+|   |-- projektplan.md                       5 Iterationen, Stand 28.04.
+|   |-- journal.md                           Eintraege bis 28.04.
+|   |-- fachliche_grundlagen.md              Bern + Thun + Oberhofen
+|   `-- erfassung_baureglemente.xlsx         4 Tabs, 8 Tabellen fuer Schwager
+|
+|-- daten/
+|   `-- baureglemente/
+|       |-- bern.json                        Stand 25.04.
+|       |-- thun.json                        Stand 27.04.
+|       `-- oberhofen_am_thunersee.json      Stand 27.04.
+|
+|-- src/
+|   `-- bauzonenradar/
+|       |-- modelle.py                       Datenklassen
+|       |-- bern.py                          OEREB-Anbindung
+|       |-- baureglement.py                  Reglement-Lader (Bugfix)
+|       |-- analyse_adresse.py               Hauptprogramm
+|       `-- analyse/
+|           `-- potenzial.py                 Potenzialberechnung (Bugfix)
+|
+`-- tests/                                   noch leer

@@ -318,23 +318,82 @@ dass die effektive Bauflaeche kleiner als die Gesamtflaeche ist.
 Wenn die OEREB-Daten "laufendes Verfahren" oder "geplante
 Aenderung" anzeigen, gibt das Tool eine Warnung aus.
 
+## Bauklassenplan Stadt Bern (BKP) - ArcGIS REST-API
+
+Die Stadt Bern stellt ihren Bauklassenplan ueber einen oeffentlichen
+ArcGIS REST-Service zur Verfuegung. Das Tool fragt diesen ab, um
+parzellenscharfe Werte zu erhalten, die nicht in der Bauordnung
+selbst stehen.
+
+**Endpoint**:
+```
+https://map.bern.ch/arcgis/rest/services/Geoportal/Bauklassenplan/MapServer
+```
+
+### Layer 88: BKP_Bauweise
+
+Liefert pro Parzelle:
+- `Bauweise_typologie_beschrieb`: "offen" oder "geschlossen"
+- `Gebaeudelaenge`: m, oder als unbeschraenkt markiert
+- `Gebaeudetiefe`: m, oder als unbeschraenkt markiert
+
+Beispiel Eigerstrasse 60: Bauweise offen, Laenge 70 m, Tiefe 13 m.
+
+### Layer 95: BKP_Grundzonen_Flaechen
+
+Liefert pro Parzelle:
+- `U_nutzungszone_beschrieb`: "W - Wohnzone", "WG - Gemischte
+  Wohnzone", "K (s) - Kernzone (staedtisch)", "D -
+  Dienstleistungszone", "OA - Obere Altstadt" usw.
+- `U_bauklasse_beschrieb`: "BK_2 - Bauklasse 2" bis "BK_6", plus
+  "BK_E - Bauklasse E" und "BK_SPEZ - Bebauung mittels spez.
+  Vorschr."
+
+### Drei Faelle in der Stadt Bern
+
+Die Live-Tests deckten drei klar unterscheidbare Faelle auf:
+
+| Fall | Beispiel | Bauweise-Daten | Pfad im Tool |
+|---|---|---|---|
+| BK 2-6 mit Bauweise | Eigerstrasse 60 (BK_4) | ja | GROBSCHAETZUNG mit echten Werten |
+| BK_E (Erhaltung) | Thunstrasse 40, Optingenstrasse 30 | nein | VERBINDLICH (GFZo aus Art. 57 BO) |
+| Altstadt OA/UA | Marktgasse 25 | nein | NICHT_MOEGLICH |
+| BK_SPEZ (UeO) | Bumplitzstrasse 100, Sulgenrain 12 | nein | NICHT_MOEGLICH |
+
+### Wichtige Erkenntnis
+
+Der BKP liefert **keine GFZo-Werte** fuer die Bauklassen 2-6. Diese
+sind reine Hoehen-Systeme, definiert ueber Vollgeschosse +
+Fassadenhoehe + Geometrie. Nur Bauklasse E hat ueber Art. 57 BO
+einen GFZo-Wert von 0.5 (bzw. 0.6 ab 3 Geschossen).
+
+Das bedeutet fuer die Standard-Bauklassen 2-6 in der Stadt Bern
+liefert das Tool zwingend eine GROBSCHAETZUNG, nie eine VERBINDLICHe
+Berechnung. Die parzellenscharfen BKP-Werte fuer Gebaeudelaenge und
+Gebaeudetiefe machen diese Schaetzung aber deutlich praeziser als
+mit pauschalen Defaults.
+
 ## Quellen-Zusammenfassung
 
 | Gemeinde | Reglement | Stand | URL |
 |---|---|---|---|
 | Bern | BO 2006 | 28.09.2023 | stadtrecht.bern.ch |
+| Bern | Bauklassenplan (parzellenscharf) | 28.04.2026 (live) | map.bern.ch ArcGIS REST |
 | Thun | BR 2022 | Februar 2025 | thun.ch |
 | Oberhofen | BR 2012 | 31.12.2024 | oberhofen.ch |
 
 ## Zu klaerende Punkte
 
-- Stadt Bern Bauklassenplan: GFZo-Werte pro Zone-Bauklasse-
-  Kombination (von Schwager)
 - Variable gGA aus Art. 46 BO Bern (zweidimensionale Tabelle)
-  in Code umsetzen
+  in Code umsetzen - aktuell wird der "GL_unbeschraenkt"-Default
+  verwendet
+- Subtypen FA/FB/FC/FD der ZoeN aus dem OEREB - aktuell wird oft
+  nur "Zone im oeffentlichen Interesse" geliefert ohne Subtyp
 - Eventuell vierte Gemeinde aufnehmen (Koeniz wegen Test-Adresse
   Spiegel)
 - Schaetz-Annahmen feinjustieren falls sich in der Praxis zeigt,
-  dass 12 m Gebaeudebreite zu hoch oder zu niedrig ist
+  dass die quadratische Naeherung der Parzelle zu konservativ ist
 - Schwellenwerte der Lagebeurteilung (60/30/10) ggf. mit echten
   Marktdaten validieren
+- Stichprobenartige Verifikation der BKP-API-Werte durch Schwager
+  (statt Erst-Erfassung, weil die API liefert)
