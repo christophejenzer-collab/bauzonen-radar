@@ -19,13 +19,38 @@ Bauzonen-Radar beantwortet das automatisiert:
 3. Tool laedt das passende Gemeinde-Baureglement
 4. Tool rechnet das theoretische Bebauungspotenzial aus und
    markiert die Datenqualitaet klar
-5. Ausgabe: Strukturierter Bericht mit Status (HOCH / MITTEL / GERING /
-   AUSGESCHOEPFT / SCHAETZWERT)
+5. Ausgabe: Strukturierter Bericht mit Empfehlungs-Block,
+   visuellem Balken und verbaler Lagebeurteilung
+
+## Empfehlungs-Block (zentrale Ausgabe)
+
+Jede Analyse mundet in einen klar markierten Empfehlungs-Block mit
+ASCII-Fortschrittsbalken zur visuellen Lagebeurteilung:
+
+```
+======================================================================
+EMPFEHLUNG (verbindliche Berechnung)
+======================================================================
+  Ausschoepfung:    [################----]  80.0%
+  Bauland-Reserve: [####----------------]  20.0%
+
+  -> GERINGES Verdichtungs-Potenzial - primaer Bestandsoptimierung
+======================================================================
+```
+
+Vier Lagebeurteilungs-Stufen anhand der Bauland-Reserve:
+- **>= 60%**: HOHES Verdichtungs-Potenzial (attraktive Reserve)
+- **30-60%**: MITTLERES Verdichtungs-Potenzial (lohnt Detailpruefung)
+- **10-30%**: GERINGES Verdichtungs-Potenzial (Bestandsoptimierung)
+- **< 10%**: PRAKTISCH AUSGESCHOEPFT (kein nennenswertes Potenzial)
+
+Bei Grobschaetzungen wird der Block deutlich gekennzeichnet
+("(geschaetzt)").
 
 ## Datenqualitaet
 
 Eine Besonderheit dieses Tools: Es unterscheidet drei klar getrennte
-Qualitaetsstufen:
+Qualitaetsstufen seiner Aussagen:
 
 | Stufe | Wann | Beispiel |
 |---|---|---|
@@ -33,9 +58,10 @@ Qualitaetsstufen:
 | **GROBSCHAETZUNG** | Hoehen-System | Stadt Thun BR 2022, Oberhofen |
 | **NICHT_MOEGLICH** | Keine Werte verfuegbar | Zone noch nicht erfasst |
 
-Bei einer Schaetzung wird das im Output **deutlich markiert** mit Banner
-und einer Berechnungsbasis, die alle Annahmen offenlegt. Architekten und
-Investoren sollen klar sehen, ob sie einer Zahl trauen koennen.
+Bei einer Schaetzung wird das im Output **deutlich markiert** mit
+Banner und einer Berechnungsbasis, die alle Annahmen offenlegt.
+Architekten und Investoren sollen klar sehen, ob sie einer Zahl
+trauen koennen.
 
 ## Aktueller Funktionsumfang
 
@@ -49,13 +75,14 @@ Investoren sollen klar sehen, ob sie einer Zahl trauen koennen.
 - Schaetz-Berechnung im Hoehen-System mit konservativen Annahmen:
   Gebaeudegrundflaeche x Vollgeschosse + anteiliges Dachgeschoss
 - Plausibilitaetscheck gegen altes AZ-Recht
+- Empfehlungs-Block mit ASCII-Balken zur visuellen Lagebeurteilung
 - Spezialfall-Erkennung: Strukturgebiet (Thun), Arealbonus,
   Naturgefahren, Baulinien, Ueberlagerungen
 - Drei Gemeinden hinterlegt: Stadt Bern, Stadt Thun,
   Oberhofen am Thunersee
 - Regressionstest mit zehn realen Adressen via `demo.ps1`
 
-## Beispiel-Ausgabe (verbindlich)
+## Beispiel-Ausgabe (verbindliche Berechnung)
 
 ```
 Bauzonen-Radar - Analyse fuer: Thunstrasse 40, 3005 Bern
@@ -73,9 +100,18 @@ Realisiert (Platzhalter):95 m^2
 Reserve:                24 m^2
 Ausschoepfungsgrad:     80%
 Status:                 GERING
+
+======================================================================
+EMPFEHLUNG (verbindliche Berechnung)
+======================================================================
+  Ausschoepfung:    [################----]  80.0%
+  Bauland-Reserve: [####----------------]  20.0%
+
+  -> GERINGES Verdichtungs-Potenzial - primaer Bestandsoptimierung
+======================================================================
 ```
 
-## Beispiel-Ausgabe (Schaetzung)
+## Beispiel-Ausgabe (Grobschaetzung)
 
 ```
 Bauzonen-Radar - Analyse fuer: Florastrasse 5, 3600 Thun
@@ -90,6 +126,15 @@ Potenzialanalyse - Datenqualitaet: GROBSCHAETZUNG
 Verwendetes System:     hoehen_und_gz
 GROBSCHAETZUNG zulaessig: ca. 780 m^2
 Status:                 SCHAETZWERT - keine Investitionsentscheidung darauf basieren
+
+======================================================================
+EMPFEHLUNG (Grobschaetzung - nur als Orientierung)
+======================================================================
+  Ausschoepfung:    [#########-----------]  45.8%
+  Bauland-Reserve: [###########---------]  54.2%
+
+  -> MITTLERES Verdichtungs-Potenzial - lohnt Detailpruefung (geschaetzt)
+======================================================================
 
 BERECHNUNGSBASIS DER SCHAETZUNG:
   Grundflaeche-Annahme:  217 m^2 (GL 25 m x angenommene Breite 12 m)
@@ -146,8 +191,8 @@ Verifizierte Adressen, die das Tool zum Funktionieren bringen sollte:
 - Bundesgasse 26, 3011 Bern
 
 **Stadt Thun (Grobschaetzung Hoehen+GZ):**
-- Hirschweg 7, 3604 Thun (Wohnen W2 mit Strukturgebiet)
-- Florastrasse 5, 3600 Thun (Wohnen W3, Schaetzung ~780 m^2)
+- Hirschweg 7, 3604 Thun (Wohnen W2 mit Strukturgebiet, 93% ausgeschoepft)
+- Florastrasse 5, 3600 Thun (Wohnen W3, 46% ausgeschoepft)
 - Rathausplatz 1, 3600 Thun (Bestandeszone, Uferzone, vier Naturgefahren)
 
 **Region Bern-Mittelland und Berner Oberland:**
@@ -178,7 +223,7 @@ bauzonen-radar/
     |-- baureglement.py             Reglement-Lade-Modul
     |-- analyse_adresse.py          Hauptprogramm
     `-- analyse/
-        `-- potenzial.py            Potenzialberechnung mit Schaetz-Logik
+        `-- potenzial.py            Potenzialberechnung mit Empfehlungs-Block
 ```
 
 ## Team

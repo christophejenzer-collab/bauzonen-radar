@@ -12,9 +12,9 @@ der Werte und finale Architektur liegen beim Projektteam.
 
 ---
 
-## 28. April 2026 (Dienstag) - Schaetz-Berechnung und Datenqualitaet
+## 28. April 2026 (Dienstag) - Schaetz-Berechnung, Datenqualitaet, Empfehlungs-Block
 
-**Dauer**: ca. 4 Stunden
+**Dauer**: ca. 5 Stunden
 
 ### Termin mit Fabienne (Mitstudentin)
 
@@ -91,8 +91,6 @@ Bei Schaetzungen erscheint:
   niedrig sein...")
 - Plausibilitaetscheck gegen altes AZ-Recht (falls in JSON
   hinterlegt)
-- KEINE Reserve und KEIN Ausschoepfungsgrad (Vergleich zweier
-  Schaetzungen waere irrefuehrend)
 
 ### Plausibilitaetscheck
 
@@ -112,26 +110,64 @@ Sieben Zonen mit allen Werten plus `vergleichswert_az_alt`:
 - Arbeiten A
 - Arealbonus bei WA5 ab 3000 m^2
 
+### Empfehlungs-Block mit visueller Lagebeurteilung
+
+Zwei reale Tests (Thunstrasse 40 mit "80% ausgeschoepft" und
+Florastrasse 5 mit "Schaetzung 780 m^2") zeigten: Die nackten
+Zahlen sind korrekt, aber **schwer in einer Sekunde zu erfassen**.
+Ein Investor oder Architekt will sofort sehen, ob sich eine
+Detailpruefung lohnt.
+
+**Loesung**: Empfehlungs-Block mit ASCII-Fortschrittsbalken plus
+verbaler Lagebeurteilung.
+
+```
+======================================================================
+EMPFEHLUNG (verbindliche Berechnung)
+======================================================================
+  Ausschoepfung:    [################----]  80.0%
+  Bauland-Reserve: [####----------------]  20.0%
+
+  -> GERINGES Verdichtungs-Potenzial - primaer Bestandsoptimierung
+======================================================================
+```
+
+Vier Lagebeurteilungen anhand Bauland-Reserve:
+- >= 60%: HOHES Verdichtungs-Potenzial
+- 30-60%: MITTLERES Verdichtungs-Potenzial
+- 10-30%: GERINGES Verdichtungs-Potenzial
+- < 10%: PRAKTISCH AUSGESCHOEPFT
+
+Bei Schaetzungen wird "(geschaetzt)" angehaengt und der Header
+sagt "EMPFEHLUNG (Grobschaetzung - nur als Orientierung)".
+
+### Bug-Fix: Ausschoepfung bei Oberhofen
+
+Oberhofen-Test ergab vorher "111% ausgeschoepft" (zwei
+Schaetzungen verglichen). Mit dem neuen Empfehlungs-Block wird die
+Ausschoepfung auf 100% und die Reserve auf 0% gekappt.
+
 ### Verifikations-Tests (alle vier Adressen)
 
-| Adresse | System | Datenqualitaet | Ergebnis |
-|---|---|---|---|
-| Thunstrasse 40, Bern | GFZo | VERBINDLICH | 118 m^2, 80%, GERING |
-| Florastrasse 5, Thun W3 | Hoehen+GZ | GROBSCHAETZUNG | ~780 m^2 (Faktor 1.25x) |
-| Hirschweg 7, Thun W2 | Hoehen+GZ | GROBSCHAETZUNG | ~201 m^2 (Faktor 0.86x) |
-| U. Stadelstrasse 1, Oberhofen | Hoehen | GROBSCHAETZUNG | ~384 m^2 (kein AZ-Vergleich) |
+| Adresse | System | Datenqualitaet | Ergebnis | Empfehlung |
+|---|---|---|---|---|
+| Thunstrasse 40, Bern | GFZo | VERBINDLICH | 118 m^2, 80% | GERINGES Verdichtungs-Potenzial |
+| Florastrasse 5, Thun W3 | Hoehen+GZ | GROBSCHAETZUNG | ~780 m^2, 46% | MITTLERES (geschaetzt) |
+| Hirschweg 7, Thun W2 | Hoehen+GZ | GROBSCHAETZUNG | ~201 m^2, 93% | PRAKTISCH AUSGESCHOEPFT (geschaetzt) |
+| U. Stadelstrasse 1, Oberhofen | Hoehen | GROBSCHAETZUNG | ~384 m^2, 100% | PRAKTISCH AUSGESCHOEPFT (geschaetzt) |
 
 **Status**: Drei Bemessungssysteme im selben Tool funktional, mit
-sauberer Datenqualitaets-Markierung.
+sauberer Datenqualitaets-Markierung und visueller Lagebeurteilung.
 
 ### Dokumentation aktualisiert
 
-- README.md: Beispiel-Outputs fuer beide Datenqualitaeten,
-  Test-Adressen mit Datenqualitaets-Hinweis, Schaetz-Disclaimer
-- docs/konzept.md: Neue Sektion "Datenqualitaet als zentrales
-  Konzept", aktualisierte Iteration 2
-- docs/projektplan.md: Iteration 2 mit allen Schaetz-Features
-  dokumentiert, Iteration 4 mit Datenqualitaets-Ampel
+- README.md: Beispiel-Outputs mit Empfehlungs-Block fuer beide
+  Datenqualitaeten, Test-Adressen mit Empfehlung
+- docs/konzept.md: Neue Sektion "Empfehlungs-Block mit visueller
+  Lagebeurteilung", aktualisierte Iteration 2
+- docs/projektplan.md: Iteration 2 mit allen Schaetz- und
+  Empfehlungs-Features dokumentiert, Iteration 4 mit grafischer
+  Progress-Bar
 - docs/journal.md: Dieser Eintrag
 - docs/fachliche_grundlagen.md: Neue Sektion "Schaetz-Berechnung
   im Hoehen-System"
@@ -220,5 +256,10 @@ Daten.
 - swisstopo SearchAPI ist sehr schnell und tolerant gegenueber
   Tippfehlern in Adressen.
 - Iteratives Vorgehen mit Real-Tests deckt Schwachstellen auf, die
-  in der Theorie nicht sichtbar sind. Beispiel: Florastrasse-Test
-  fuehrte direkt zur Schaetz-Berechnung.
+  in der Theorie nicht sichtbar sind. Beispiele:
+  - Florastrasse-Test fuehrte direkt zur Schaetz-Berechnung
+  - Thunstrasse 40 + Florastrasse 5 zusammen fuehrten zum
+    Empfehlungs-Block (visuell statt rein numerisch)
+- Information Design ist genauso wichtig wie korrekte Berechnung.
+  Ein Architekt liest in einer Sekunde den Balken, nicht in zehn
+  Sekunden die Zahl.

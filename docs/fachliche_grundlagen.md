@@ -99,8 +99,57 @@ Berechnungen unterschieden**:
 - Status "SCHAETZWERT" statt "GERING/MITTEL/HOCH"
 - Berechnungsbasis transparent
 - Annahmen offen kommuniziert
-- Reserve und Ausschoepfungsgrad werden NICHT ausgegeben (zwei
-  Schaetzungen vergleichen waere irrefuehrend)
+- Reserve und Ausschoepfungsgrad werden nur als Empfehlungs-Block
+  ausgegeben (klar als Schaetzung markiert)
+
+## Empfehlungs-Block mit visueller Lagebeurteilung
+
+Damit Endanwender (Architekten, Investoren) das Tool-Ergebnis
+schnell erfassen koennen, wird jede Analyse mit einem visuellen
+Empfehlungs-Block abgeschlossen.
+
+### Bauland-Reserve in Prozent
+
+```
+Bauland-Reserve = max(0, 100% - Ausschoepfungsgrad)
+```
+
+Bei Schaetzungen wird der Wert auf 0-100% gekappt, damit
+Vergleiche zweier Schaetzungen (Soll- und Ist-Schaetzung) keine
+unsinnigen Werte produzieren.
+
+### ASCII-Fortschrittsbalken
+
+```
+[################----]  80.0%   (Ausschoepfung)
+[####----------------]  20.0%   (Bauland-Reserve)
+```
+
+20 Zeichen breit. `#` fuer gefuellt, `-` fuer leer. Aufloesung von
+5% pro Balken-Zeichen.
+
+### Vier Lagebeurteilungen
+
+| Bauland-Reserve | Lagebeurteilung |
+|---|---|
+| >= 60% | HOHES Verdichtungs-Potenzial - attraktive Bauland-Reserve |
+| 30-60% | MITTLERES Verdichtungs-Potenzial - lohnt Detailpruefung |
+| 10-30% | GERINGES Verdichtungs-Potenzial - primaer Bestandsoptimierung |
+| < 10% | PRAKTISCH AUSGESCHOEPFT - kein nennenswertes Verdichtungs-Potenzial |
+
+### Bei Schaetzungen wird "(geschaetzt)" angehaengt
+
+Beispiel-Output bei Florastrasse 5 (Wohnen W3, 46% ausgeschoepft):
+
+```
+EMPFEHLUNG (Grobschaetzung - nur als Orientierung)
+======================================================================
+  Ausschoepfung:    [#########-----------]  45.8%
+  Bauland-Reserve: [###########---------]  54.2%
+
+  -> MITTLERES Verdichtungs-Potenzial - lohnt Detailpruefung (geschaetzt)
+======================================================================
+```
 
 ## Stadt Bern
 
@@ -287,3 +336,5 @@ Aenderung" anzeigen, gibt das Tool eine Warnung aus.
   Spiegel)
 - Schaetz-Annahmen feinjustieren falls sich in der Praxis zeigt,
   dass 12 m Gebaeudebreite zu hoch oder zu niedrig ist
+- Schwellenwerte der Lagebeurteilung (60/30/10) ggf. mit echten
+  Marktdaten validieren

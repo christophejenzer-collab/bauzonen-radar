@@ -32,7 +32,8 @@ Iteration 5: Generalprobe           [GEPLANT]       Mitte Juni 2026
 **Zeitraum**: 25. April 2026 - 28. April 2026
 
 **Ziel**: Mit Reglement-Daten konkrete Bauland-Reserven berechnen
-und Datenqualitaet sauber kommunizieren.
+und Datenqualitaet sauber kommunizieren. Visuelle Lagebeurteilung
+fuer Endanwender.
 
 **Erledigt**:
 - `Baureglement`-Klasse mit JSON-Lade-Logik
@@ -49,9 +50,12 @@ und Datenqualitaet sauber kommunizieren.
 - Plausibilitaetscheck gegen altes AZ-Recht (vergleichswert_az_alt
   in JSON hinterlegt)
 - Header-Banner und klare Status-Markierung bei Schaetzungen
+- **Empfehlungs-Block mit ASCII-Balken** zur visuellen Lagebeurteilung
+- Vier Lagebeurteilungs-Stufen anhand Bauland-Reserve in Prozent
 - Erste echte GFZo-Berechnung: Thunstrasse 40 Bern, Status GERING
 - Bug-Fix: Hoehen-System ohne GZ wird korrekt behandelt
 - Bug-Fix: Sinnloser Reserve-Vergleich bei Schaetzungen entfernt
+- Bug-Fix: Ausschoepfung bei Schaetzungen auf 100% gekappt
 
 ## Iteration 3: Verifikation und Vervollstaendigung (laufend)
 
@@ -97,6 +101,11 @@ und Stadt Bern Bauklassenplan vollstaendig einpflegen.
   - gruen = VERBINDLICH (echte AZ/GFZo-Berechnung)
   - orange = GROBSCHAETZUNG (Hoehen-System)
   - grau = NICHT_MOEGLICH (Daten fehlen)
+- Empfehlungs-Block als grafische Progress-Bar (statt ASCII):
+  - Bauland-Reserve in Prozent als zentrales visuelles Element
+  - Farb-Skala fuer die vier Lagebeurteilungen
+  - `_zeichne_balken`-Funktion aus dem Backend wird durch
+    Streamlit-Progress-Bar ersetzt
 - PDF-Export fuer Kundendossier
 - Auch Anforderungs-Spezifikation `docs/anforderungen.md`
   vollenden
@@ -123,7 +132,7 @@ und Stadt Bern Bauklassenplan vollstaendig einpflegen.
 | Schwager liefert Daten zu spaet | Bauklassenplan eigenstaendig recherchieren |
 | Streamlit-GUI nicht fertig | Fallback: CLI-Demo reicht fuer Bewertung |
 | Bauklassenplan-Werte unklar | Direktanfrage Stadt Bern Stadtplanung |
-| Schaetz-Werte werden falsch interpretiert | Klare Banner-Markierung im Output |
+| Schaetz-Werte werden falsch interpretiert | Klare Banner-Markierung im Output, "(geschaetzt)" in Empfehlung |
 
 ## Naechste Termine
 

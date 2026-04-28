@@ -25,7 +25,8 @@ gebaut werden darf, muss:
   Berechnung umsetzen
 
 Das ist Spezialwissen. Bauzonen-Radar buendelt diese Schritte in
-einer Adress-Abfrage.
+einer Adress-Abfrage und liefert eine sofort lesbare visuelle
+Lagebeurteilung.
 
 ## Loesung
 
@@ -39,10 +40,10 @@ Eine Python-Pipeline, die folgendes leistet:
 4. **Reglement-Matching**: Passendes Gemeinde-JSON laden, Zone
    und Bauklasse zuordnen
 5. **Potenzialberechnung**: Theoretisch zulaessig vs. geschaetzt
-   realisiert. Status HOCH / MITTEL / GERING / AUSGESCHOEPFT /
-   SCHAETZWERT
+   realisiert. Vier Lagebeurteilungen mit ASCII-Balken
 6. **Bericht**: Strukturierter Textbericht mit klarer Markierung
-   der Datenqualitaet und allen relevanten Hinweisen
+   der Datenqualitaet, visueller Empfehlung und allen relevanten
+   Hinweisen
 
 ## Drei Bemessungssysteme
 
@@ -83,14 +84,63 @@ Bereich liegt.
 ### NICHT_MOEGLICH
 
 Wenn weder Kennzahlen noch Hoehenwerte verfuegbar sind, gibt das
-Tool einen klaren Hinweis aus, was fehlt. Es werden nur die
-verfuegbaren Reglement-Werte und Warnhinweise (Naturgefahren,
-Baulinien, Ueberlagerungen) ausgegeben.
+Tool einen klaren Hinweis aus, was fehlt.
 
 Diese saubere Trennung der Datenqualitaet ist **rechtlich und
 ethisch wichtig**: Architekten und Investoren sollen sofort sehen,
 ob sie einer Zahl trauen koennen oder nur eine Orientierung
 bekommen.
+
+## Empfehlungs-Block mit visueller Lagebeurteilung
+
+Jede Analyse mundet in einen klar markierten Empfehlungs-Block.
+Dieser fasst die Auswertung in drei Ebenen zusammen:
+
+### Drei Ebenen der Empfehlung
+
+1. **Datenqualitaets-Banner** (oben): Sagt was die Zahlen wert sind
+2. **ASCII-Fortschrittsbalken** (Mitte): Visuelle Lagebeurteilung
+   in einer Sekunde erfassbar
+3. **Verbale Lagebeurteilung** (unten): Was bedeutet die Zahl konkret
+
+### Beispiel verbindliche Berechnung
+
+```
+======================================================================
+EMPFEHLUNG (verbindliche Berechnung)
+======================================================================
+  Ausschoepfung:    [################----]  80.0%
+  Bauland-Reserve: [####----------------]  20.0%
+
+  -> GERINGES Verdichtungs-Potenzial - primaer Bestandsoptimierung
+======================================================================
+```
+
+### Beispiel Grobschaetzung
+
+```
+======================================================================
+EMPFEHLUNG (Grobschaetzung - nur als Orientierung)
+======================================================================
+  Ausschoepfung:    [#########-----------]  45.8%
+  Bauland-Reserve: [###########---------]  54.2%
+
+  -> MITTLERES Verdichtungs-Potenzial - lohnt Detailpruefung (geschaetzt)
+======================================================================
+```
+
+### Vier Lagebeurteilungen
+
+Anhand der Bauland-Reserve in Prozent:
+
+| Reserve | Lagebeurteilung |
+|---|---|
+| >= 60% | HOHES Verdichtungs-Potenzial - attraktive Bauland-Reserve |
+| 30-60% | MITTLERES Verdichtungs-Potenzial - lohnt Detailpruefung |
+| 10-30% | GERINGES Verdichtungs-Potenzial - primaer Bestandsoptimierung |
+| < 10% | PRAKTISCH AUSGESCHOEPFT - kein nennenswertes Verdichtungs-Potenzial |
+
+Bei Schaetzungen wird die Lagebeurteilung mit "(geschaetzt)" markiert.
 
 ## Aufgabenverteilung
 
@@ -102,6 +152,7 @@ Das Projekt wird im Zweier-Team bearbeitet:
 - XML-Parser
 - Reglement-Daten-Erfassung (Stadt Bern, Stadt Thun, Oberhofen)
 - Potenzialberechnung mit Drei-System-Modell und Schaetz-Logik
+- Empfehlungs-Block mit visueller Lagebeurteilung
 - Spezialfall-Behandlung (Strukturgebiet, Arealbonus, Naturgefahren)
 
 ### Fabienne
@@ -131,7 +182,7 @@ Fuer die Erstellung dieses Projekts wurde Claude.AI (Anthropic)
 als Programmier-Assistent eingesetzt. Konkret unterstuetzte Claude:
 
 - Architektur-Entscheidungen (Drei-Systeme-Modell, Datenqualitaets-
-  Stufen, Schaetz-Logik im Hoehen-System)
+  Stufen, Schaetz-Logik im Hoehen-System, Empfehlungs-Block)
 - Code-Generierung fuer Datenklassen, Parser, Berechnungslogik
 - Strukturierung der Reglement-JSONs
 - Recherche und Verifikation gegen offizielle Quellen (Bauordnung
@@ -157,7 +208,8 @@ in Thun) ist Teil der laufenden Iteration 3.
 - 10 Test-Adressen liefern korrekte Parzellen-Daten
 
 ### Iteration 2: Potenzialberechnung (abgeschlossen)
-**Ziel**: Mit Reglement-Daten echte Berechnung durchfuehren.
+**Ziel**: Mit Reglement-Daten echte Berechnung durchfuehren und
+Datenqualitaet sauber kommunizieren.
 
 **Ergebnis**:
 - Drei Bemessungssysteme im Datenmodell verankert
@@ -169,6 +221,8 @@ in Thun) ist Teil der laufenden Iteration 3.
 - Schaetz-Berechnung im Hoehen-System mit Datenqualitaets-Stufen
 - Plausibilitaetscheck gegen altes AZ-Recht
 - Klare Banner-Markierung von Schaetzungen
+- Empfehlungs-Block mit ASCII-Balken zur visuellen Lagebeurteilung
+- Vier Lagebeurteilungs-Stufen anhand Bauland-Reserve
 
 ### Iteration 3: Verifikation und Vervollstaendigung (laufend)
 **Ziel**: Echte Werte aus dem Bauklassenplan Bern einpflegen,
@@ -191,6 +245,7 @@ Tool-Output durch Architekt-Schwager validieren lassen.
 - Visualisierung der Parzelle (Kartenausschnitt)
 - Strukturierte Ergebnisanzeige mit visueller Datenqualitaets-Ampel
   (gruen = verbindlich, orange = Schaetzung, grau = nicht moeglich)
+- Empfehlungs-Block als grafische Progress-Bar (statt ASCII)
 - PDF-Export fuer Kundendossier
 
 ## Bewertungskriterien (laut Kursvorgabe)
@@ -208,6 +263,7 @@ Tool-Output durch Architekt-Schwager validieren lassen.
 - 28.04.2026 - Aufgabenverteilung mit Fabienne abgestimmt
 - 28.04.2026 - Schaetz-Berechnung im Hoehen-System mit
   Datenqualitaets-Markierung implementiert
+- 28.04.2026 - Empfehlungs-Block mit ASCII-Balken implementiert
 - bis Mai - Iteration 3 abgeschlossen, Bern-Bauklassenplan komplett
 - Mai-Juni - Iteration 4 (Webseite) durch Fabienne
 - Mitte Juni - Generalprobe Live-Demo
@@ -222,6 +278,8 @@ Tool-Output durch Architekt-Schwager validieren lassen.
 - Schaetz-Berechnung im Hoehen-System mit klarer Datenqualitaets-
   Markierung implementiert
 - Plausibilitaetscheck gegen altes AZ-Recht funktional
+- Empfehlungs-Block mit visueller Lagebeurteilung in 1 Sekunde
+  erfassbar
 - Code in privates GitHub-Repo eingecheckt
 - Fuenf Dokumente im Repo gepflegt (README + 4 docs/)
 - Zehn Test-Adressen verifiziert
