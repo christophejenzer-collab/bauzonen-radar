@@ -12,9 +12,9 @@ der Werte und finale Architektur liegen beim Projektteam.
 
 ---
 
-## 28. April 2026 (Dienstag) - Termin mit Fabienne, Oberhofen integriert
+## 28. April 2026 (Dienstag) - Schaetz-Berechnung und Datenqualitaet
 
-**Dauer**: ca. 2 Stunden
+**Dauer**: ca. 4 Stunden
 
 ### Termin mit Fabienne (Mitstudentin)
 
@@ -31,23 +31,21 @@ Naechste Schritte fuer Fabienne:
 
 ### Oberhofen integriert
 
-Vierter Schritt (nach Bern und Thun): Kleine Gemeinde abdecken.
+Vierter Schritt nach Bern und Thun: kleine Gemeinde abdecken.
 
 **Recherche**:
 - Offizielles Baureglement Oberhofen am Thunersee gefunden
 - Quelle: BR vom 14. Mai 2012, Nachfuehrung bis 31. Dezember 2024,
   AGR-genehmigt
-- PDF-URL:
-  https://www.oberhofen.ch/images/files/Reglemente-und-Verordnungen/Bau/AGR-Gemeindebaureglement.pdf
 - Art. 212 mit Tabelle: vier Wohn-/Mischzonen W1, W2, W3, M2
 - Werte fuer kA, gA, GL, Fh tr, Fh gi, VG aus Reglement extrahiert
 - Plus elf ZOEN, zehn ZPP, sechs Ortsbildschutzgebiete
 
 **Erkenntnis**: Oberhofen verwendet Hoehen-System ohne
-Gruenflaechenziffer (Unterschied zu Thun BR 2022). Das bricht
-unsere bisherige `ist_berechenbar`-Logik.
+Gruenflaechenziffer. Das bricht unsere bisherige
+`ist_berechenbar`-Logik.
 
-### Bug-Fixes
+### Bug-Fixes (erste Runde)
 
 **Problem**: Bei Oberhofen-Test schlug `_behandle_hoehen_und_gz`
 nicht an, weil keine GZ in den Daten war.
@@ -61,26 +59,82 @@ durch alle vorhandenen Werte. Einleitungstext unterscheidet
 zwischen "mit GZ" (Thun-Stil) und "ohne GZ" (Oberhofen-Stil).
 Vollgeschosse werden ausgegeben.
 
-### Verifikations-Tests (alle drei Gemeinden)
+### Erweiterung: Schaetz-Berechnung im Hoehen-System
 
-| Adresse | System | Ergebnis |
-|---|---|---|
-| Thunstrasse 40, Bern | GFZo | 118 m^2 zulaessig, 80%, Status GERING |
-| Hirschweg 7, Thun | Hoehen+GZ | Komplette Werte, Strukturgebiet erkannt |
-| U. Stadelstrasse 1, Oberhofen | Hoehen | Komplette Werte mit Vollgeschossen |
+Real-Test mit "Florastrasse 5, 3600 Thun" (Wohnen W3) brachte die
+Frage: "Warum berechnet das Tool nichts? Es ist ja nur W3."
 
-**Status**: Drei Bemessungssysteme im selben Tool funktional.
+**Erkenntnis**: Im Hoehen-System ist eine direkte m^2-Berechnung
+nicht moeglich, aber eine konservative Schaetzung sehr wohl. Wir
+brauchen:
+- Annahme Gebaeudebreite (default 12 m, gekappt durch GL)
+- Multiplikation mit Vollgeschossen
+- Anteiliger Dachgeschoss-Bonus bei Schraegdach (60%)
+- Beruecksichtigung von Grenzabstaenden und GZ als Begrenzung
+
+### Datenqualitaets-Konzept
+
+Wichtige Design-Entscheidung: Schaetzungen muessen sich klar von
+verbindlichen Berechnungen unterscheiden.
+
+Drei Stufen eingefuehrt:
+- **VERBINDLICH** (AZ/GFZo)
+- **GROBSCHAETZUNG** (Hoehen-System)
+- **NICHT_MOEGLICH** (keine Werte)
+
+Bei Schaetzungen erscheint:
+- Header-Banner mit Warnung
+- "GROBSCHAETZUNG zulaessig" statt "Theoretisch zulaessig"
+- "Status: SCHAETZWERT - keine Investitionsentscheidung darauf basieren"
+- Vollstaendige Berechnungsbasis transparent
+- Annahmen-Sektion ("Annahme Gebaeudebreite kann zu hoch oder zu
+  niedrig sein...")
+- Plausibilitaetscheck gegen altes AZ-Recht (falls in JSON
+  hinterlegt)
+- KEINE Reserve und KEIN Ausschoepfungsgrad (Vergleich zweier
+  Schaetzungen waere irrefuehrend)
+
+### Plausibilitaetscheck
+
+Neues Feld `vergleichswert_az_alt` in `Bauparameter`. Bei jeder
+Thun-Zone hinterlegt der alte AZ-Wert aus BR 2002.
+
+Aussage:
+- Faktor < 0.7: "auffaellig niedrig"
+- Faktor 0.7-1.8: "plausibel"
+- Faktor > 1.8: "auffaellig hoch"
+
+### thun.json komplett ueberarbeitet
+
+Sieben Zonen mit allen Werten plus `vergleichswert_az_alt`:
+- W2, W3, W4
+- WA3, WA4, WA5
+- Arbeiten A
+- Arealbonus bei WA5 ab 3000 m^2
+
+### Verifikations-Tests (alle vier Adressen)
+
+| Adresse | System | Datenqualitaet | Ergebnis |
+|---|---|---|---|
+| Thunstrasse 40, Bern | GFZo | VERBINDLICH | 118 m^2, 80%, GERING |
+| Florastrasse 5, Thun W3 | Hoehen+GZ | GROBSCHAETZUNG | ~780 m^2 (Faktor 1.25x) |
+| Hirschweg 7, Thun W2 | Hoehen+GZ | GROBSCHAETZUNG | ~201 m^2 (Faktor 0.86x) |
+| U. Stadelstrasse 1, Oberhofen | Hoehen | GROBSCHAETZUNG | ~384 m^2 (kein AZ-Vergleich) |
+
+**Status**: Drei Bemessungssysteme im selben Tool funktional, mit
+sauberer Datenqualitaets-Markierung.
 
 ### Dokumentation aktualisiert
 
-- README.md: Stand 28.04., Oberhofen-Test-Adresse, Fabienne-Eintrag,
-  KI-Hinweis am Ende
-- docs/konzept.md: Iteration 1+2 abgeschlossen markiert,
-  Aufgabenverteilung mit Fabienne, KI-Werkzeuge-Sektion
-- docs/projektplan.md: Iteration 3 als laufend markiert,
-  Iteration 4 verfeinert, Risiken-Tabelle ergaenzt
+- README.md: Beispiel-Outputs fuer beide Datenqualitaeten,
+  Test-Adressen mit Datenqualitaets-Hinweis, Schaetz-Disclaimer
+- docs/konzept.md: Neue Sektion "Datenqualitaet als zentrales
+  Konzept", aktualisierte Iteration 2
+- docs/projektplan.md: Iteration 2 mit allen Schaetz-Features
+  dokumentiert, Iteration 4 mit Datenqualitaets-Ampel
 - docs/journal.md: Dieser Eintrag
-- docs/fachliche_grundlagen.md: Oberhofen-Sektion ergaenzt
+- docs/fachliche_grundlagen.md: Neue Sektion "Schaetz-Berechnung
+  im Hoehen-System"
 
 ---
 
@@ -165,3 +219,6 @@ Daten.
   laengere Wartezeiten.
 - swisstopo SearchAPI ist sehr schnell und tolerant gegenueber
   Tippfehlern in Adressen.
+- Iteratives Vorgehen mit Real-Tests deckt Schwachstellen auf, die
+  in der Theorie nicht sichtbar sind. Beispiel: Florastrasse-Test
+  fuehrte direkt zur Schaetz-Berechnung.

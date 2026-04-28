@@ -18,21 +18,10 @@ Drei Bemessungssysteme werden unterstuetzt:
                     GROBSCHAETZUNG: max. Gebaeudegrundflaeche x Vollgeschosse
                     + anteiliges Dachgeschoss
 
-Schaetz-Annahmen im Hoehen-System:
-  - Gebaeudebreite: gewaehlt als min(GL, 12 m)
-  - Dachgeschoss: 60% Anrechnung bei Schraegdach, 0% bei Flachdach
-  - Grenzabstaende ringsum subtrahiert (quadratische Approximation)
-  - GZ wirkt als oberes Limit fuer versiegelte Flaeche
-
-WICHTIG: Schaetzungen sind klar als solche zu kennzeichnen.
-Architekten und Investoren duerfen sie nicht mit verbindlichen
-Berechnungen verwechseln.
-
-Spezialeffekte:
-  - Arealbonus: Bei grossen Parzellen kann ein zusaetzliches Geschoss
-                bewilligt werden (Thun: Schwelle 3000 m^2)
-  - Strukturgebiet: Beirat Stadtbild kann Vorgaben aushebeln
-                    (Thun-spezifisches Konzept)
+Empfehlung-System (visuell):
+  - Bauland-Reserve in Prozent als zentrale Lagebeurteilung
+  - ASCII-Fortschrittsbalken zur sofortigen visuellen Erfassung
+  - Bei Schaetzungen klar als "geschaetzt" markiert
 """
 
 from __future__ import annotations
@@ -48,6 +37,9 @@ from baureglement import Baureglement, Bauparameter, BemessungsSystem
 DEFAULT_GEBAEUDEBREITE_M = 12.0
 DACHGESCHOSS_ANRECHNUNG_SCHRAEGDACH = 0.6
 DACHGESCHOSS_ANRECHNUNG_FLACHDACH = 0.0
+
+# Visualisierung
+BALKEN_BREITE = 20  # Anzahl Zeichen im ASCII-Fortschrittsbalken
 
 
 class PotenzialStatus(Enum):
@@ -78,6 +70,7 @@ class PotenzialErgebnis:
     geschaetzt_realisiert_m2: float | None = None
     realisiert_ist_platzhalter: bool = True
     reserve_m2: float | None = None
+    reserve_prozent: float | None = None
     ausschoepfungsgrad_prozent: float | None = None
     datenqualitaet: Datenqualitaet = Datenqualitaet.NICHT_MOEGLICH
     status: PotenzialStatus = PotenzialStatus.NICHT_BERECHENBAR
@@ -125,12 +118,12 @@ class PotenzialErgebnis:
                     f"Theoretisch zulaessig:  {self.theoretisch_zulaessig_m2:.0f} m^2"
                 )
 
-        # Realisiert nur ausgeben wenn wir es vergleichen koennen
-        if self.geschaetzt_realisiert_m2 is not None and self.datenqualitaet == Datenqualitaet.VERBINDLICH:
+        if self.geschaetzt_realisiert_m2 is not None:
             kennz = " (PLATZHALTER)" if self.realisiert_ist_platzhalter else ""
-            zeilen.append(
-                f"Realisiert (geschaetzt):{self.geschaetzt_realisiert_m2:.0f} m^2{kennz}"
-            )
+            if self.datenqualitaet == Datenqualitaet.VERBINDLICH:
+                zeilen.append(
+                    f"Realisiert (geschaetzt):{self.geschaetzt_realisiert_m2:.0f} m^2{kennz}"
+                )
 
         # Reserve und Ausschoepfung nur bei verbindlicher Berechnung
         if self.datenqualitaet == Datenqualitaet.VERBINDLICH:
@@ -145,6 +138,12 @@ class PotenzialErgebnis:
         else:
             zeilen.append(f"Status:                 {self.status.value.upper()}")
 
+        # ===== EMPFEHLUNG mit visuellem Balken =====
+        empfehlung_block = self._formatiere_empfehlung()
+        if empfehlung_block:
+            zeilen.append("")
+            zeilen.extend(empfehlung_block)
+
         if self.arealbonus_anwendbar:
             zeilen.append("")
             zeilen.append("AREALBONUS MOEGLICH: zusaetzliches Geschoss bewilligungsfaehig")
@@ -156,6 +155,71 @@ class PotenzialErgebnis:
                 zeilen.append(f"  - {b}")
 
         return "\n".join(zeilen)
+
+    def _formatiere_empfehlung(self) -> list[str]:
+        """Erstellt den Empfehlungs-Block mit Reserve-Prozent und Balken."""
+        if self.ausschoepfungsgrad_prozent is None:
+            return []
+
+        zeilen = []
+        zeilen.append("=" * 70)
+
+        # Header je nach Datenqualitaet
+        if self.datenqualitaet == Datenqualitaet.VERBINDLICH:
+            zeilen.append("EMPFEHLUNG (verbindliche Berechnung)")
+        else:
+            zeilen.append("EMPFEHLUNG (Grobschaetzung - nur als Orientierung)")
+        zeilen.append("=" * 70)
+
+        # Werte sicherstellen (im Bereich 0-100 fuer die Anzeige)
+        ausschoepfung = max(0.0, min(100.0, self.ausschoepfungsgrad_prozent))
+        reserve = max(0.0, 100.0 - ausschoepfung)
+        if self.reserve_prozent is not None:
+            reserve = max(0.0, min(100.0, self.reserve_prozent))
+
+        # Balken Ausschoepfung
+        balken_ausschoepfung = self._zeichne_balken(ausschoepfung)
+        zeilen.append(
+            f"  Ausschoepfung:    {balken_ausschoepfung} {ausschoepfung:5.1f}%"
+        )
+
+        # Balken Reserve
+        balken_reserve = self._zeichne_balken(reserve)
+        zeilen.append(
+            f"  Bauland-Reserve: {balken_reserve} {reserve:5.1f}%"
+        )
+
+        # Lagebeurteilung
+        zeilen.append("")
+        beurteilung = self._lagebeurteilung(reserve)
+        if self.datenqualitaet == Datenqualitaet.GROBSCHAETZUNG:
+            zeilen.append(f"  -> {beurteilung} (geschaetzt)")
+        else:
+            zeilen.append(f"  -> {beurteilung}")
+
+        zeilen.append("=" * 70)
+        return zeilen
+
+    @staticmethod
+    def _zeichne_balken(prozent: float) -> str:
+        """Zeichnet einen ASCII-Fortschrittsbalken.
+
+        Beispiel: 80% -> '[################----]'
+        """
+        anzahl_voll = int(round(prozent / 100.0 * BALKEN_BREITE))
+        anzahl_leer = BALKEN_BREITE - anzahl_voll
+        return "[" + "#" * anzahl_voll + "-" * anzahl_leer + "]"
+
+    @staticmethod
+    def _lagebeurteilung(reserve_prozent: float) -> str:
+        """Verbale Lagebeurteilung anhand der Bauland-Reserve."""
+        if reserve_prozent >= 60:
+            return "HOHES Verdichtungs-Potenzial - attraktive Bauland-Reserve"
+        if reserve_prozent >= 30:
+            return "MITTLERES Verdichtungs-Potenzial - lohnt Detailpruefung"
+        if reserve_prozent >= 10:
+            return "GERINGES Verdichtungs-Potenzial - primaer Bestandsoptimierung"
+        return "PRAKTISCH AUSGESCHOEPFT - kein nennenswertes Verdichtungs-Potenzial"
 
 
 class PotenzialBerechner:
@@ -276,6 +340,7 @@ class PotenzialBerechner:
                 / ergebnis.theoretisch_zulaessig_m2
                 * 100
             )
+            ergebnis.reserve_prozent = 100.0 - ergebnis.ausschoepfungsgrad_prozent
 
         if parameter.system == BemessungsSystem.DUALITAET:
             ergebnis.bemerkungen.append(
@@ -346,9 +411,18 @@ class PotenzialBerechner:
             ergebnis.theoretisch_zulaessig_m2 = schaetzung["geschossflaeche_m2"]
             ergebnis.status = PotenzialStatus.SCHAETZWERT
 
-            # Schaetzungs-Ist-Vergleich bewusst NICHT als Reserve ausweisen
-            # (Vergleich zweier Schaetzungen waere irrefuehrend)
             ist_schaetzung = self._schaetze_ist_bebauung(parzelle)
+            ergebnis.geschaetzt_realisiert_m2 = ist_schaetzung
+            ergebnis.realisiert_ist_platzhalter = True
+
+            # Auch bei Schaetzung Reserve/Ausschoepfung berechnen,
+            # damit der Empfehlungs-Block angezeigt wird
+            if ergebnis.theoretisch_zulaessig_m2 > 0:
+                ergebnis.ausschoepfungsgrad_prozent = (
+                    ist_schaetzung / ergebnis.theoretisch_zulaessig_m2 * 100
+                )
+                ergebnis.reserve_prozent = max(0.0, 100.0 - ergebnis.ausschoepfungsgrad_prozent)
+                ergebnis.reserve_m2 = max(0.0, ergebnis.theoretisch_zulaessig_m2 - ist_schaetzung)
 
             ergebnis.bemerkungen.append("")
             ergebnis.bemerkungen.append(
@@ -494,17 +568,13 @@ class PotenzialBerechner:
     @staticmethod
     def _schaetze_geschossflaeche_hoehen(parameter: Bauparameter,
                                          parzelle: Parzelle) -> dict | None:
-        """Schaetzt die zulaessige Geschossflaeche im Hoehen-System.
-
-        Annahmen siehe Modul-Doku.
-        """
+        """Schaetzt die zulaessige Geschossflaeche im Hoehen-System."""
         if parameter.max_geschosse is None:
             return None
         if parameter.max_gebaeudelaenge_m is None:
             return None
 
         breite_m = min(parameter.max_gebaeudelaenge_m, DEFAULT_GEBAEUDEBREITE_M)
-
         grundflaeche_geometrie = parameter.max_gebaeudelaenge_m * breite_m
 
         grundflaeche_parzelle = grundflaeche_geometrie
@@ -562,10 +632,7 @@ class PotenzialBerechner:
 
     @staticmethod
     def _schaetze_ist_bebauung(parzelle: Parzelle) -> float:
-        """Platzhalter: 40% der Parzellenflaeche.
-
-        TODO: Spaetere Iteration ersetzt das durch swissBUILDINGS3D-Daten.
-        """
+        """Platzhalter: 40% der Parzellenflaeche."""
         return parzelle.flaeche_m2 * 0.4
 
     @staticmethod

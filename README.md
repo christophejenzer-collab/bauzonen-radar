@@ -17,10 +17,25 @@ Bauzonen-Radar beantwortet das automatisiert:
 2. Tool holt sich Parzellen- und Zonen-Daten aus dem offiziellen
    OEREB-Webservice des Kantons Bern
 3. Tool laedt das passende Gemeinde-Baureglement
-4. Tool rechnet das theoretische Bebauungspotenzial aus und vergleicht
-   es mit der Ist-Bebauung
+4. Tool rechnet das theoretische Bebauungspotenzial aus und
+   markiert die Datenqualitaet klar
 5. Ausgabe: Strukturierter Bericht mit Status (HOCH / MITTEL / GERING /
-   AUSGESCHOEPFT)
+   AUSGESCHOEPFT / SCHAETZWERT)
+
+## Datenqualitaet
+
+Eine Besonderheit dieses Tools: Es unterscheidet drei klar getrennte
+Qualitaetsstufen:
+
+| Stufe | Wann | Beispiel |
+|---|---|---|
+| **VERBINDLICH** | AZ oder GFZo vorhanden | Stadt Bern Bauklasse E (GFZo 0.5) |
+| **GROBSCHAETZUNG** | Hoehen-System | Stadt Thun BR 2022, Oberhofen |
+| **NICHT_MOEGLICH** | Keine Werte verfuegbar | Zone noch nicht erfasst |
+
+Bei einer Schaetzung wird das im Output **deutlich markiert** mit Banner
+und einer Berechnungsbasis, die alle Annahmen offenlegt. Architekten und
+Investoren sollen klar sehen, ob sie einer Zahl trauen koennen.
 
 ## Aktueller Funktionsumfang
 
@@ -31,32 +46,61 @@ Bauzonen-Radar beantwortet das automatisiert:
     - **AZ** (klassische Ausnuetzungsziffer)
     - **GFZo** (Geschossflaechenziffer oberirdisch, IVHB-konform)
     - **Hoehen + GZ** (mit oder ohne Gruenflaechenziffer)
+- Schaetz-Berechnung im Hoehen-System mit konservativen Annahmen:
+  Gebaeudegrundflaeche x Vollgeschosse + anteiliges Dachgeschoss
+- Plausibilitaetscheck gegen altes AZ-Recht
 - Spezialfall-Erkennung: Strukturgebiet (Thun), Arealbonus,
   Naturgefahren, Baulinien, Ueberlagerungen
 - Drei Gemeinden hinterlegt: Stadt Bern, Stadt Thun,
   Oberhofen am Thunersee
 - Regressionstest mit zehn realen Adressen via `demo.ps1`
 
-## Beispiel-Ausgabe
+## Beispiel-Ausgabe (verbindlich)
 
 ```
 Bauzonen-Radar - Analyse fuer: Thunstrasse 40, 3005 Bern
 ======================================================================
 Parzelle 337 (Bern, BE)
 Flaeche:  237 m^2
+Bauklasse: Bauklasse E
 
-Nutzungszone: Wohnzone (W)
-Bauklasse:    Bauklasse E, Erhaltung der best. Bebauungsstruktur
-
-Potenzialanalyse
-----------------------------------------
+Potenzialanalyse - Datenqualitaet: VERBINDLICH
+----------------------------------------------------------------------
 Verwendetes System:     GFZo
 Kennzahl:               GFZo = 0.5
 Theoretisch zulaessig:  118 m^2
-Realisiert (geschaetzt):95 m^2 (PLATZHALTER)
+Realisiert (Platzhalter):95 m^2
 Reserve:                24 m^2
 Ausschoepfungsgrad:     80%
 Status:                 GERING
+```
+
+## Beispiel-Ausgabe (Schaetzung)
+
+```
+Bauzonen-Radar - Analyse fuer: Florastrasse 5, 3600 Thun
+======================================================================
+Parzelle 248 (Thun, BE)
+Flaeche:  894 m^2
+Zone:     Wohnen W3
+
+Potenzialanalyse - Datenqualitaet: GROBSCHAETZUNG
+!!! Werte sind konservativ geschaetzt - keine Investitionsentscheidung darauf basieren !!!
+----------------------------------------------------------------------
+Verwendetes System:     hoehen_und_gz
+GROBSCHAETZUNG zulaessig: ca. 780 m^2
+Status:                 SCHAETZWERT - keine Investitionsentscheidung darauf basieren
+
+BERECHNUNGSBASIS DER SCHAETZUNG:
+  Grundflaeche-Annahme:  217 m^2 (GL 25 m x angenommene Breite 12 m)
+  Vollgeschosse:         3
+  Dachgeschoss-Bonus:    +60% (Schraegdach moeglich)
+  = GROBSCHAETZUNG zulaessig: 780 m^2
+
+PLAUSIBILITAETSCHECK gegen altes Recht:
+  Altes BR: AZ=0.7 -> 626 m^2 erlaubt
+  Schaetzung: 780 m^2 (Faktor 1.25x gegenueber altem AZ-Recht)
+  Plausibel: Faktor 1.25x liegt im erwartbaren Bereich der Verdichtungs-Reform.
 ```
 
 ## Schnellstart
@@ -94,19 +138,20 @@ python analyse_adresse.py "Hirschweg 7, 3604 Thun"
 
 Verifizierte Adressen, die das Tool zum Funktionieren bringen sollte:
 
-**Stadt Bern:**
-- Thunstrasse 40, 3005 Bern (Bauklasse E - berechnet GFZo)
+**Stadt Bern (verbindliche GFZo-Berechnung):**
+- Thunstrasse 40, 3005 Bern (Bauklasse E - GFZo 0.5, 118 m^2)
 - Kramgasse 1, 3000 Bern (Untere Altstadt UNESCO)
 - Marktgasse 1, 3011 Bern (Obere Altstadt mit Laubenfluchtlinie)
 - Junkerngasse 47, 3011 Bern (zwei Bauklassen)
 - Bundesgasse 26, 3011 Bern
 
-**Stadt Thun:**
+**Stadt Thun (Grobschaetzung Hoehen+GZ):**
 - Hirschweg 7, 3604 Thun (Wohnen W2 mit Strukturgebiet)
+- Florastrasse 5, 3600 Thun (Wohnen W3, Schaetzung ~780 m^2)
 - Rathausplatz 1, 3600 Thun (Bestandeszone, Uferzone, vier Naturgefahren)
 
 **Region Bern-Mittelland und Berner Oberland:**
-- Untere Stadelstrasse 1, 3653 Oberhofen (Wohnzone W1, Hoehen-System)
+- Untere Stadelstrasse 1, 3653 Oberhofen (Wohnzone W1, Hoehen-System ohne GZ)
 - Dorfstrasse 10, 3095 Spiegel (Koeniz - Reglement noch nicht hinterlegt)
 
 ## Projektstruktur
@@ -133,7 +178,7 @@ bauzonen-radar/
     |-- baureglement.py             Reglement-Lade-Modul
     |-- analyse_adresse.py          Hauptprogramm
     `-- analyse/
-        `-- potenzial.py            Potenzialberechnung
+        `-- potenzial.py            Potenzialberechnung mit Schaetz-Logik
 ```
 
 ## Team
@@ -180,3 +225,7 @@ Hochschul-Projekt, nicht zur kommerziellen Nutzung freigegeben. Die
 Reglement-Daten sind Eigeninterpretation der oeffentlichen Reglemente
 und ersetzen keine rechtsverbindliche Auskunft der zustaendigen
 Bauverwaltung.
+
+Insbesondere die Schaetz-Berechnungen im Hoehen-System sind explizit
+als Grobschaetzungen markiert und duerfen nicht als Grundlage fuer
+Investitions-Entscheidungen verwendet werden.

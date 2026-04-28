@@ -31,19 +31,27 @@ Iteration 5: Generalprobe           [GEPLANT]       Mitte Juni 2026
 
 **Zeitraum**: 25. April 2026 - 28. April 2026
 
-**Ziel**: Mit Reglement-Daten konkrete Bauland-Reserven berechnen.
+**Ziel**: Mit Reglement-Daten konkrete Bauland-Reserven berechnen
+und Datenqualitaet sauber kommunizieren.
 
 **Erledigt**:
 - `Baureglement`-Klasse mit JSON-Lade-Logik
 - `BemessungsSystem`-Enum: AZ / GFZo / Hoehen+GZ
+- `Datenqualitaet`-Enum: VERBINDLICH / GROBSCHAETZUNG / NICHT_MOEGLICH
 - `PotenzialBerechner` mit Drei-Pfad-Logik
 - Stadt Bern komplett (Bauklassen 2-6, Bauklasse E, ZoeN, Altstadt)
 - Stadt Thun komplett (BR 2022 mit Hoehen + GZ, Strukturgebiet,
-  Arealbonus)
+  Arealbonus, alle Wohn-/Mischzonen)
 - Oberhofen am Thunersee komplett (BR 2012/2024, Hoehen-System
   ohne GZ)
+- Schaetz-Berechnung im Hoehen-System mit konservativen Annahmen
+  (Gebaeudegrundflaeche x Vollgeschosse + 60% Dachgeschoss)
+- Plausibilitaetscheck gegen altes AZ-Recht (vergleichswert_az_alt
+  in JSON hinterlegt)
+- Header-Banner und klare Status-Markierung bei Schaetzungen
 - Erste echte GFZo-Berechnung: Thunstrasse 40 Bern, Status GERING
 - Bug-Fix: Hoehen-System ohne GZ wird korrekt behandelt
+- Bug-Fix: Sinnloser Reserve-Vergleich bei Schaetzungen entfernt
 
 ## Iteration 3: Verifikation und Vervollstaendigung (laufend)
 
@@ -59,6 +67,8 @@ und Stadt Bern Bauklassenplan vollstaendig einpflegen.
 - Antwort des Schwagers in `bern.json` einpflegen
 - `fachliche_grundlagen.md` mit Bauklassenplan-Werten erweitern
 - Falls noetig: vierte Gemeinde aufnehmen (z.B. Koeniz)
+- Falls Faktor-Schwellenwerte des Plausibilitaetschecks in der
+  Praxis nicht passen: feinjustieren
 
 ### Fabienne
 - GitHub-Username an Christophe senden fuer Collaborator-Einladung
@@ -83,7 +93,10 @@ und Stadt Bern Bauklassenplan vollstaendig einpflegen.
 - Eingabefeld fuer Adresse mit Autocomplete
 - Live-Aufruf der Backend-Pipeline
 - Visualisierung Parzelle auf Kartenausschnitt
-- Strukturierte Ergebnisanzeige (Karten, Tabellen, Status-Ampel)
+- Strukturierte Ergebnisanzeige mit visueller Datenqualitaets-Ampel:
+  - gruen = VERBINDLICH (echte AZ/GFZo-Berechnung)
+  - orange = GROBSCHAETZUNG (Hoehen-System)
+  - grau = NICHT_MOEGLICH (Daten fehlen)
 - PDF-Export fuer Kundendossier
 - Auch Anforderungs-Spezifikation `docs/anforderungen.md`
   vollenden
@@ -97,6 +110,7 @@ und Stadt Bern Bauklassenplan vollstaendig einpflegen.
 **Inhalte**:
 - Pitch-Text auf 5 Minuten trimmen
 - Live-Demo-Adressen auswaehlen und proben
+  (idealerweise eine pro Datenqualitaets-Stufe)
 - Drei moegliche Code-Fragen vorbereiten
 - Backup-Plan falls Internet/OEREB-Webservice down
 - README finalisieren
@@ -109,6 +123,7 @@ und Stadt Bern Bauklassenplan vollstaendig einpflegen.
 | Schwager liefert Daten zu spaet | Bauklassenplan eigenstaendig recherchieren |
 | Streamlit-GUI nicht fertig | Fallback: CLI-Demo reicht fuer Bewertung |
 | Bauklassenplan-Werte unklar | Direktanfrage Stadt Bern Stadtplanung |
+| Schaetz-Werte werden falsch interpretiert | Klare Banner-Markierung im Output |
 
 ## Naechste Termine
 

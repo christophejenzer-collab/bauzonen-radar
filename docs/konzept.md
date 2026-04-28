@@ -39,9 +39,10 @@ Eine Python-Pipeline, die folgendes leistet:
 4. **Reglement-Matching**: Passendes Gemeinde-JSON laden, Zone
    und Bauklasse zuordnen
 5. **Potenzialberechnung**: Theoretisch zulaessig vs. geschaetzt
-   realisiert. Status HOCH / MITTEL / GERING / AUSGESCHOEPFT
-6. **Bericht**: Strukturierter Textbericht mit allen relevanten
-   Hinweisen (Naturgefahren, Strukturgebiet, Arealbonus, ...)
+   realisiert. Status HOCH / MITTEL / GERING / AUSGESCHOEPFT /
+   SCHAETZWERT
+6. **Bericht**: Strukturierter Textbericht mit klarer Markierung
+   der Datenqualitaet und allen relevanten Hinweisen
 
 ## Drei Bemessungssysteme
 
@@ -50,12 +51,46 @@ einheitliches Mass, sondern mehrere parallele Systeme, die je
 nach Gemeinde und Reglement-Stand greifen. Das Tool unterstuetzt
 alle drei:
 
-| System | Beschreibung | Beispiel |
+| System | Beschreibung | Beispiel-Gemeinde |
 |---|---|---|
 | **AZ** | Klassische Ausnuetzungsziffer | altes Recht, viele Gemeinden |
 | **GFZo** | Geschossflaechenziffer oberirdisch | Stadt Bern, IVHB-konform |
-| **Hoehen + GZ** | Steuerung ueber Gebaeudemasse | Stadt Thun BR 2022 |
+| **Hoehen + GZ** | Steuerung ueber Gebaeudemasse + Gruenflaeche | Stadt Thun BR 2022 |
 | **Hoehen** | Nur Vollgeschosse + Hoehen | Oberhofen BR 2012 |
+
+## Datenqualitaet als zentrales Konzept
+
+Eine wichtige Design-Entscheidung: Das Tool unterscheidet drei
+Qualitaetsstufen seiner eigenen Aussagen:
+
+### VERBINDLICH
+
+Wenn eine direkte Kennzahl wie AZ oder GFZo vorhanden ist, wird
+exakt gerechnet: `Parzellenflaeche x Kennzahl = Geschossflaeche`.
+Das Ergebnis ist verbindlich und kann fuer eine erste Investitions-
+Plausibilisierung verwendet werden.
+
+### GROBSCHAETZUNG
+
+Im Hoehen-System gibt es keine flaechen-bezogene Kennzahl. Das Tool
+macht eine konservative Schaetzung anhand der Gebaeudemasse:
+`Grundflaeche x Vollgeschosse + Dachgeschoss-Anteil`. Das Ergebnis
+wird im Output mit einem **Banner** und der **Berechnungsbasis**
+transparent ausgewiesen. Ein Plausibilitaetscheck gegen das alte
+AZ-Recht (falls hinterlegt) zeigt, ob die Schaetzung im erwartbaren
+Bereich liegt.
+
+### NICHT_MOEGLICH
+
+Wenn weder Kennzahlen noch Hoehenwerte verfuegbar sind, gibt das
+Tool einen klaren Hinweis aus, was fehlt. Es werden nur die
+verfuegbaren Reglement-Werte und Warnhinweise (Naturgefahren,
+Baulinien, Ueberlagerungen) ausgegeben.
+
+Diese saubere Trennung der Datenqualitaet ist **rechtlich und
+ethisch wichtig**: Architekten und Investoren sollen sofort sehen,
+ob sie einer Zahl trauen koennen oder nur eine Orientierung
+bekommen.
 
 ## Aufgabenverteilung
 
@@ -66,7 +101,7 @@ Das Projekt wird im Zweier-Team bearbeitet:
 - OEREB-Webservice-Anbindung
 - XML-Parser
 - Reglement-Daten-Erfassung (Stadt Bern, Stadt Thun, Oberhofen)
-- Potenzialberechnung mit Drei-System-Modell
+- Potenzialberechnung mit Drei-System-Modell und Schaetz-Logik
 - Spezialfall-Behandlung (Strukturgebiet, Arealbonus, Naturgefahren)
 
 ### Fabienne
@@ -95,7 +130,8 @@ Investor schaden wuerden.
 Fuer die Erstellung dieses Projekts wurde Claude.AI (Anthropic)
 als Programmier-Assistent eingesetzt. Konkret unterstuetzte Claude:
 
-- Architektur-Entscheidungen (z.B. Drei-Systeme-Modell)
+- Architektur-Entscheidungen (Drei-Systeme-Modell, Datenqualitaets-
+  Stufen, Schaetz-Logik im Hoehen-System)
 - Code-Generierung fuer Datenklassen, Parser, Berechnungslogik
 - Strukturierung der Reglement-JSONs
 - Recherche und Verifikation gegen offizielle Quellen (Bauordnung
@@ -130,6 +166,9 @@ in Thun) ist Teil der laufenden Iteration 3.
   118 m^2 zulaessig, 80% Ausschoepfung, Status GERING)
 - Hoehen-System mit und ohne Gruenflaechenziffer funktional
 - Strukturgebiet- und Arealbonus-Erkennung implementiert
+- Schaetz-Berechnung im Hoehen-System mit Datenqualitaets-Stufen
+- Plausibilitaetscheck gegen altes AZ-Recht
+- Klare Banner-Markierung von Schaetzungen
 
 ### Iteration 3: Verifikation und Vervollstaendigung (laufend)
 **Ziel**: Echte Werte aus dem Bauklassenplan Bern einpflegen,
@@ -150,7 +189,8 @@ Tool-Output durch Architekt-Schwager validieren lassen.
 **Vorgesehen**:
 - Eingabefeld fuer Adresse
 - Visualisierung der Parzelle (Kartenausschnitt)
-- Strukturierte Ergebnisanzeige
+- Strukturierte Ergebnisanzeige mit visueller Datenqualitaets-Ampel
+  (gruen = verbindlich, orange = Schaetzung, grau = nicht moeglich)
 - PDF-Export fuer Kundendossier
 
 ## Bewertungskriterien (laut Kursvorgabe)
@@ -166,6 +206,8 @@ Tool-Output durch Architekt-Schwager validieren lassen.
 ## Zeitplan
 
 - 28.04.2026 - Aufgabenverteilung mit Fabienne abgestimmt
+- 28.04.2026 - Schaetz-Berechnung im Hoehen-System mit
+  Datenqualitaets-Markierung implementiert
 - bis Mai - Iteration 3 abgeschlossen, Bern-Bauklassenplan komplett
 - Mai-Juni - Iteration 4 (Webseite) durch Fabienne
 - Mitte Juni - Generalprobe Live-Demo
@@ -177,7 +219,10 @@ Tool-Output durch Architekt-Schwager validieren lassen.
 - Pipeline End-to-End funktional
 - Drei Gemeinden mit drei verschiedenen Bemessungssystemen
   abgedeckt
+- Schaetz-Berechnung im Hoehen-System mit klarer Datenqualitaets-
+  Markierung implementiert
+- Plausibilitaetscheck gegen altes AZ-Recht funktional
 - Code in privates GitHub-Repo eingecheckt
-- Vier Dokumente im `docs/`-Ordner gepflegt
+- Fuenf Dokumente im Repo gepflegt (README + 4 docs/)
 - Zehn Test-Adressen verifiziert
 - Mitstudentin Fabienne fest an Bord

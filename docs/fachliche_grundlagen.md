@@ -46,6 +46,62 @@ Statt einer Flaechen-Kennzahl werden steuern:
 Stadt Thun verwendet dieses System seit BR 2022.
 Oberhofen verwendet es seit BR 2012, allerdings ohne GZ.
 
+## Schaetz-Berechnung im Hoehen-System
+
+Ein Hoehen-System gibt keine direkte Quadratmeter-Zahl her, weil
+die zulaessige Geschossflaeche vom konkreten Volumen-Konzept
+abhaengt. Das Tool macht eine konservative Schaetzung mit klar
+dokumentierten Annahmen:
+
+### Berechnungsformel
+
+```
+Grundflaeche = min(
+    GL x angenommene Breite,
+    Parzelle - Grenzabstaende ringsum (quadratisch approximiert),
+    Parzelle x (1 - GZ) wenn GZ vorhanden
+)
+
+Geschossflaeche = Grundflaeche x Vollgeschosse
+                + Grundflaeche x 60% (bei Schraegdach moeglich)
+```
+
+### Annahmen
+
+- **Gebaeudebreite-Default**: 12 m, gekappt durch GL
+- **Dachgeschoss-Anrechnung**: 60% bei Schraegdach (Fh tr/gi
+  vorhanden), 0% bei reinem Flachdach
+- **Parzellen-Geometrie**: quadratisch approximiert
+- **Grenzabstaende**: ringsum subtrahiert
+
+### Plausibilitaetscheck
+
+Falls in der JSON ein `vergleichswert_az_alt` hinterlegt ist, wird
+der Schaetz-Wert mit dem alten AZ-Recht verglichen:
+
+```
+AZ-Referenz = Parzellenflaeche x AZ-alt
+Faktor = Schaetzung / AZ-Referenz
+```
+
+Bewertung:
+- Faktor < 0.7: "auffaellig niedrig" (Annahme zu konservativ?)
+- Faktor 0.7-1.8: "plausibel im erwartbaren Bereich"
+- Faktor > 1.8: "auffaellig hoch" (Begrenzung in Praxis durch
+  andere Faktoren?)
+
+### Wichtig: Datenqualitaets-Markierung
+
+Schaetz-Werte werden im Output **klar von verbindlichen
+Berechnungen unterschieden**:
+- Header-Banner mit Warnung
+- "GROBSCHAETZUNG" statt "Theoretisch zulaessig"
+- Status "SCHAETZWERT" statt "GERING/MITTEL/HOCH"
+- Berechnungsbasis transparent
+- Annahmen offen kommuniziert
+- Reserve und Ausschoepfungsgrad werden NICHT ausgegeben (zwei
+  Schaetzungen vergleichen waere irrefuehrend)
+
 ## Stadt Bern
 
 ### Quelle
@@ -107,26 +163,24 @@ ist vorbereitet.
 - Steuerung ueber Hoehen, Grenzabstaende, Gebaeudelaenge,
   Gruenflaechenziffer
 
-### Art. 42 - Tabelle
+### Art. 42 - Tabelle (in thun.json hinterlegt)
 
-Vom Schwager geliefert, in `thun.json` eingepflegt:
-
-| Zone | kA | gA | GL | Fh tr | Fh gi | GZ |
-|---|---|---|---|---|---|---|
-| W2 | 4 | 8 | 15 | 7.0 | 11.0 | 0.45 |
-| W3 | ... | ... | ... | ... | ... | ... |
-| W4 | ... | ... | ... | ... | ... | ... |
-| WA3 | ... | ... | ... | ... | ... | ... |
-| WA4 | ... | ... | ... | ... | ... | ... |
-| WA5 | ... | ... | ... | ... | ... | ... |
-| Arbeiten A | ... | ... | ... | ... | ... | ... |
+| Zone | VG | kA | gA | GL | Fh tr | Fh gi | GZ | AZ alt |
+|---|---|---|---|---|---|---|---|---|
+| W2 | 2 | 4 | 8 | 15 | 7.0 | 11.0 | 0.45 | 0.5 |
+| W3 | 3 | 4 | 10 | 25 | 8.0 | 12.0 | 0.45 | 0.7 |
+| W4 | 4 | 5 | 12 | 30 | 11.0 | 15.0 | 0.40 | 0.9 |
+| WA3 | 3 | 4 | 10 | 25 | 8.0 | 12.0 | 0.30 | 0.8 |
+| WA4 | 4 | 5 | 12 | 30 | 11.0 | 15.0 | 0.25 | 1.0 |
+| WA5 | 5 | 6 | 14 | 40 | 14.0 | 18.0 | 0.20 | 1.2 |
+| Arbeiten A | 4 | 5 | 12 | 50 | 11.0 | 15.0 | 0.15 | - |
 
 ### Spezialfaelle
 
 - **Strukturgebiet**: Beirat Stadtbild kann Vorgaben machen, die
   das BR aushebeln. Tool erkennt das automatisch.
 - **Arealbonus**: Ab 3000 m^2 Parzelle plus ein Vollgeschoss
-  bewilligungsfaehig.
+  bewilligungsfaehig (in WA5 hinterlegt).
 
 ## Oberhofen am Thunersee
 
@@ -149,8 +203,6 @@ Hoehen-System ohne GZ. Steuerung ueber:
 - Erstwohnungsanteil 80% (EWA)
 
 ### Art. 212 - Tabelle
-
-Vier Wohn-/Mischzonen mit kompletten Werten:
 
 | Zone | kA | gA | GL | Fh tr | Fh gi | VG |
 |---|---|---|---|---|---|---|
@@ -204,7 +256,7 @@ erkennt das anhand der OEREB-Legende und gibt Hinweis aus.
 ### Arealbonus
 
 Schwellenwerte sind reglements- bzw. gemeindespezifisch:
-- Thun BR 2022: 3000 m^2 → +1 Geschoss
+- Thun BR 2022: 3000 m^2 → +1 Geschoss (in WA-Zonen)
 - Oberhofen: kein Arealbonus
 
 ### Baulinien
@@ -233,3 +285,5 @@ Aenderung" anzeigen, gibt das Tool eine Warnung aus.
   in Code umsetzen
 - Eventuell vierte Gemeinde aufnehmen (Koeniz wegen Test-Adresse
   Spiegel)
+- Schaetz-Annahmen feinjustieren falls sich in der Praxis zeigt,
+  dass 12 m Gebaeudebreite zu hoch oder zu niedrig ist
