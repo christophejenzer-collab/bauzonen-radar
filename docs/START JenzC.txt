@@ -14,4 +14,6 @@ python analyse_adresse.py "Marktgasse 1, 3011 Bern"
 python analyse_adresse.py "Bundesgasse 26, 3011 Bern"
 
 ## DEMO 10 Adressen
-
+cd C:\Tools\bauzonen-radar
+.\start.ps1
+.\demo.ps1

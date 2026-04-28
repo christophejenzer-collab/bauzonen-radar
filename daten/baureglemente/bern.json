@@ -3,131 +3,243 @@
   "bfs_nr": 351,
   "kanton": "BE",
   "stand": "2026-04-25",
-  "quelle": "Baurechtliche Grundordnung (BGO) der Stadt Bern",
-  "quelle_url": "https://www.bern.ch/themen/planen-und-bauen/nutzungsplanung/baurechtliche-grundordnung",
+  "quelle": "Bauordnung der Stadt Bern (BO) vom 24. September 2006, Stand 28. September 2023",
+  "quelle_kurz": "BO Bern, SSSB 721.1",
+  "quelle_url": "https://stadtrecht.bern.ch/lexoverview-home/lex-721_1",
+  "quelle_pdf": "https://oerebfiles.apps.be.ch/35101/5072/Bern_SSSB_721_1_Bauordnung_der_Stadt_Bern.pdf",
   "struktur": "bauklassen",
-  "system_default": "AZ",
-  "hinweis": "Stadt Bern trennt Nutzungszone und Bauklasse. Die klassische Ausnuetzungsziffer (AZ) sitzt auf der Bauklasse und variiert je nach Zone-Bauklasse-Kombination. Der Kanton Bern hat mit der BMBV den Wechsel zu GFZo vorgegeben - der Umstellungsstand der Stadt Bern ist mit Architekturbuero oder Amt fuer Hochbau zu verifizieren. Die Berner Altstadt verwendet statt der numerischen Bauklassen A-E gebietsspezifische Spezialregime mit eigenen Schutzauflagen (UNESCO-Weltkulturerbe). Zonen mit Planungspflicht erfordern eine Ueberbauungsordnung (UeO) vor Bebauung.",
+  "system_default": "GFZo",
+  "hinweis": "Stadt Bern wurde mit der Teilrevision vom 25.11.2018 (in Kraft seit 1.8.2019) an die kantonale BMBV (Begriffe und Messweisen im Bauwesen) angepasst. Das Mass der Nutzung wird seither anhand der oberirdischen Geschossflaechenziffer (GFZo) bestimmt (Art. 16 BO). Bauklassen 2 bis 6 entsprechen der zulaessigen Anzahl Vollgeschosse (Art. 28). Konkrete GFZo-Werte pro Zone-Bauklasse-Kombination sind im Bauklassenplan und im OEREB-Kataster zu finden - in dieser JSON sind aktuell nur die in der BO direkt benannten Werte hinterlegt (Bauklasse E gemaess Art. 57, Zonen FA-FD gemaess Art. 24). Die Berner Altstadt verwendet gebietsspezifische Spezialregime mit eigenen Schutzauflagen (UNESCO-Weltkulturerbe).",
 
   "bauklassen": {
-    "Bauklasse A": {
-      "system": "AZ",
-      "ausnuetzungsziffer": null,
+    "Bauklasse 2": {
+      "system": "GFZo",
       "geschossflaechenziffer_oberirdisch": null,
       "max_geschosse": 2,
-      "max_gebaeudehoehe_m": 7.5,
-      "grenzabstand_klein_m": null,
-      "grenzabstand_gross_m": null,
-      "hinweise": "Kleinste Bauklasse. Typisch fuer Einfamilienhaus-Quartiere. AZ pro Zone aus BGO zu entnehmen.",
-      "rechtsgrundlage": "BGO Stadt Bern, Bauklassen-Artikel"
+      "max_fassadenhoehe_m": 8.5,
+      "max_fassadenhoehe_attika_m": 11.5,
+      "grenzabstand_klein_m": 4.0,
+      "grenzabstand_gross_variabel": {
+        "_kommentar": "gGA haengt von Gebaeudelaenge ab (Art. 46 BO). Werte in Metern.",
+        "GL_15m": 9.0,
+        "GL_20m": 9.0,
+        "GL_30m": 10.0,
+        "GL_40m": 10.0,
+        "GL_50m": 11.0,
+        "GL_70m": 11.0,
+        "GL_90m": 12.0,
+        "GL_unbeschraenkt": 12.0
+      },
+      "anzahl_grosse_grenzabstaende": 1,
+      "hinweise": "Niedrigste Bauklasse fuer Wohnzonen. 2 Vollgeschosse. Bei groesseren Gebaeuden steigt der grosse Grenzabstand (gGA) gemaess Art. 46. Die GFZo ist im Bauklassenplan parzellenscharf definiert.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 28, 33, 42, 46"
     },
-    "Bauklasse B": {
-      "system": "AZ",
-      "ausnuetzungsziffer": null,
+    "Bauklasse 3": {
+      "system": "GFZo",
       "geschossflaechenziffer_oberirdisch": null,
       "max_geschosse": 3,
-      "max_gebaeudehoehe_m": 10.5,
-      "grenzabstand_klein_m": null,
-      "grenzabstand_gross_m": null,
-      "hinweise": "Mittlere Dichte. Reihen- und Mehrfamilienhaeuser.",
-      "rechtsgrundlage": "BGO Stadt Bern"
+      "max_fassadenhoehe_m": 11.5,
+      "max_fassadenhoehe_attika_m": 14.5,
+      "grenzabstand_klein_m": 5.0,
+      "grenzabstand_gross_variabel": {
+        "_kommentar": "gGA haengt von Gebaeudelaenge ab (Art. 46 BO). Werte in Metern.",
+        "GL_15m": 10.0,
+        "GL_20m": 10.0,
+        "GL_30m": 9.0,
+        "GL_40m": 9.0,
+        "GL_50m": 10.0,
+        "GL_70m": 10.0,
+        "GL_90m": 11.0,
+        "GL_unbeschraenkt": 11.0
+      },
+      "anzahl_grosse_grenzabstaende": 2,
+      "hinweise": "3 Vollgeschosse. Bei dieser Bauklasse sind ab GL 30m Grosse Grenzabstaende auf beiden Laengsseiten einzuhalten.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 28, 33, 42, 46"
     },
-    "Bauklasse C": {
-      "system": "AZ",
-      "ausnuetzungsziffer": null,
+    "Bauklasse 4": {
+      "system": "GFZo",
       "geschossflaechenziffer_oberirdisch": null,
       "max_geschosse": 4,
-      "max_gebaeudehoehe_m": 13.5,
-      "grenzabstand_klein_m": null,
-      "grenzabstand_gross_m": null,
-      "hinweise": "Urbane Dichte. Mehrfamilienhaeuser, oft mit Gewerbe im EG.",
-      "rechtsgrundlage": "BGO Stadt Bern"
+      "max_fassadenhoehe_m": 14.5,
+      "max_fassadenhoehe_attika_m": 17.5,
+      "grenzabstand_klein_m": 6.0,
+      "grenzabstand_gross_variabel": {
+        "_kommentar": "gGA haengt von Gebaeudelaenge ab (Art. 46 BO). Werte in Metern.",
+        "GL_20m": 11.0,
+        "GL_30m": 10.0,
+        "GL_40m": 10.0,
+        "GL_50m": 11.0,
+        "GL_70m": 11.0,
+        "GL_90m": 12.0,
+        "GL_unbeschraenkt": 12.0
+      },
+      "anzahl_grosse_grenzabstaende": 2,
+      "hinweise": "4 Vollgeschosse, urbane Dichte mit Mehrfamilienhaeusern.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 28, 33, 42, 46"
     },
-    "Bauklasse D": {
-      "system": "AZ",
-      "ausnuetzungsziffer": null,
+    "Bauklasse 5": {
+      "system": "GFZo",
       "geschossflaechenziffer_oberirdisch": null,
       "max_geschosse": 5,
-      "max_gebaeudehoehe_m": 16.5,
-      "grenzabstand_klein_m": null,
-      "grenzabstand_gross_m": null,
-      "hinweise": "Hohe Dichte. Grossere Gebaeudevolumen.",
-      "rechtsgrundlage": "BGO Stadt Bern"
+      "max_fassadenhoehe_m": 17.5,
+      "max_fassadenhoehe_attika_m": 20.5,
+      "grenzabstand_klein_m": 6.0,
+      "grenzabstand_gross_variabel": {
+        "_kommentar": "gGA haengt von Gebaeudelaenge ab (Art. 46 BO). Werte in Metern.",
+        "GL_30m": 11.0,
+        "GL_50m": 12.0,
+        "GL_70m": 12.0,
+        "GL_90m": 13.0,
+        "GL_unbeschraenkt": 13.0
+      },
+      "anzahl_grosse_grenzabstaende": 2,
+      "hinweise": "5 Vollgeschosse, hohe Dichte.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 28, 33, 42, 46"
     },
+    "Bauklasse 6": {
+      "system": "GFZo",
+      "geschossflaechenziffer_oberirdisch": null,
+      "max_geschosse": 6,
+      "max_fassadenhoehe_m": 20.5,
+      "max_fassadenhoehe_attika_m": 23.5,
+      "grenzabstand_klein_m": 6.0,
+      "grenzabstand_gross_variabel": {
+        "_kommentar": "gGA haengt von Gebaeudelaenge ab (Art. 46 BO). Werte in Metern.",
+        "GL_30m": 12.0,
+        "GL_50m": 13.0,
+        "GL_70m": 13.0,
+        "GL_90m": 14.0,
+        "GL_unbeschraenkt": 14.0
+      },
+      "anzahl_grosse_grenzabstaende": 2,
+      "hinweise": "Hoechste reguläre Bauklasse, 6 Vollgeschosse.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 28, 33, 42, 46"
+    },
+
     "Bauklasse E": {
       "system": "hoehen_und_gz",
-      "ausnuetzungsziffer": null,
+      "geschossflaechenziffer_oberirdisch": 0.5,
+      "_geschossflaechenziffer_kommentar": "0.5 bei 2 Geschossen, 0.6 bei 3+ Geschossen (Art. 57 Abs. 2). Im Standard wird die strengere Variante 0.5 verwendet, das Tool sollte beim 3+ Geschoss-Fall warnen.",
+      "geschossflaechenziffer_oberirdisch_3plus": 0.6,
       "max_geschosse": null,
       "max_gebaeudehoehe_m": null,
-      "hinweise": "Erhaltungsbauklasse: Bestandesgarantie, aber erhebliche Erweiterungseinschraenkungen. Keine fixe AZ - bestehende Volumetrie ist Richtgroesse. Das System entspricht de facto einer Hoehen-basierten Steuerung (via Bestand).",
-      "rechtsgrundlage": "BGO Stadt Bern, Erhaltungszonen-Artikel"
+      "hinweise": "Erhaltungsbauklasse (Erhaltung der bestehenden Bebauungsstruktur). Neu- und Umbauten muessen sich an Standort und Volumetrie des bestehenden Baukoerpers halten (Art. 56). Abweichungen vom Nutzungsmass nur bis GFZo 0.5 (2 Geschosse) bzw. 0.6 (3+ Geschosse) zulaessig (Art. 57). Es gelten die baupolizeilichen Masse der dem bestehenden Gebaeude entsprechenden Bauklasse 2-6.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 56, 57"
     },
     "Bauklasse E, Erhaltung der best. Bebauungsstruktur": {
       "system": "hoehen_und_gz",
-      "ausnuetzungsziffer": null,
+      "geschossflaechenziffer_oberirdisch": 0.5,
+      "geschossflaechenziffer_oberirdisch_3plus": 0.6,
       "max_geschosse": null,
       "max_gebaeudehoehe_m": null,
-      "hinweise": "Langform-Synonym zu 'Bauklasse E'. Erhaltungsregime - Potenzial ergibt sich nur aus genauer Analyse der Bestandsbauten.",
-      "rechtsgrundlage": "BGO Stadt Bern"
+      "hinweise": "Langform-Synonym zu 'Bauklasse E'. Erhaltungsregime gemaess Art. 56 und 57 BO.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 56, 57"
     },
 
     "Untere Altstadt und Wohngebiet Matte": {
       "system": "hoehen_und_gz",
-      "ausnuetzungsziffer": null,
+      "geschossflaechenziffer_oberirdisch": null,
       "max_geschosse": null,
       "max_gebaeudehoehe_m": null,
-      "hinweise": "Spezialregime der Stadt Bern fuer die Untere Altstadt und das Wohngebiet Matte. UNESCO-Weltkulturerbe. Erhaltungsregime mit strengen Schutzauflagen. Keine fixe Kennzahl - die Bebauung folgt dem historischen Bestand. Konkrete Vorgaben zu Geschossigkeit und Hoehen aus den BGO-Anhaengen.",
-      "rechtsgrundlage": "BGO Stadt Bern, Altstadt-Regelungen"
+      "hinweise": "Untere Altstadt inkl. Wohngebiet Matte ist als Baudenkmal integral geschuetzt (Art. 76, 81). UNESCO-Weltkulturerbe. Der Schutz erstreckt sich auf aeussere und innere Bauteile. Veraenderungen sind nur im Rahmen des Schutzzwecks moeglich. Gebaeudevolumen ueber dem 2. Vollgeschoss sind dem Wohnen vorbehalten (Art. 80). Fassaden aus Berner Sandstein (Art. 83), Daecher mit Biberschwanzziegeln (Art. 84). Brandmauern geschuetzt (Art. 82).",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 76-86"
     },
     "Obere Altstadt": {
       "system": "hoehen_und_gz",
-      "ausnuetzungsziffer": null,
+      "geschossflaechenziffer_oberirdisch": null,
       "max_geschosse": null,
       "max_gebaeudehoehe_m": null,
-      "hinweise": "Spezialregime der Stadt Bern fuer die Obere Altstadt. UNESCO-Weltkulturerbe. Erhaltungsregime - bestehende Volumetrie ist Richtgroesse. BGO-Anhaenge konsultieren.",
-      "rechtsgrundlage": "BGO Stadt Bern, Altstadt-Regelungen"
+      "hinweise": "Obere Altstadt inkl. Gewerbegebiet Matte ist Zone mit Planungspflicht (Art. 77). UNESCO-Weltkulturerbe. Brandmauern und im Bauinventar verzeichnete Gebaeude/Gebaeudeteile als Baudenkmaeler geschuetzt, uebrige Gebaeude erhaltenswert (Art. 76). Geschaefts- und Dienstleistungszentrum mit Wohnnutzung. Gebaeudevolumen ueber dem obersten Vollgeschoss dem Wohnen vorbehalten (Art. 78). Nutzungsmass: Erhaltung der bestehenden Bebauung; bei Erhoehung max. mittleres vorhandenes Nutzungsmass der angrenzenden Liegenschaften (Art. 79).",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 77-79"
     },
     "Innere Neustadt": {
       "system": "hoehen_und_gz",
-      "ausnuetzungsziffer": null,
+      "geschossflaechenziffer_oberirdisch": null,
       "max_geschosse": null,
       "max_gebaeudehoehe_m": null,
-      "hinweise": "Spezialregime der Stadt Bern fuer die Innere Neustadt. Teil des historischen Stadtkerns. Erhaltungsregime mit denkmalpflegerischen Auflagen.",
-      "rechtsgrundlage": "BGO Stadt Bern, Altstadt-Regelungen"
+      "hinweise": "Teil des historischen Stadtkerns mit denkmalpflegerischen Auflagen. Bei Bauvorhaben ist die Denkmalpflege einzubeziehen.",
+      "rechtsgrundlage": "BO Stadt Bern"
     },
     "Aeussere Neustadt": {
       "system": "hoehen_und_gz",
-      "ausnuetzungsziffer": null,
+      "geschossflaechenziffer_oberirdisch": null,
       "max_geschosse": null,
       "max_gebaeudehoehe_m": null,
-      "hinweise": "Spezialregime der Stadt Bern fuer die Aeussere Neustadt. Erweiterung des historischen Stadtkerns. Erhaltungsregime mit denkmalpflegerischen Auflagen.",
-      "rechtsgrundlage": "BGO Stadt Bern, Altstadt-Regelungen"
+      "hinweise": "Erweiterung des historischen Stadtkerns mit denkmalpflegerischen Auflagen.",
+      "rechtsgrundlage": "BO Stadt Bern"
     },
 
     "Untere Altstadt und Wohngebiet Matte, Zone mit Planungspflicht": {
       "system": "hoehen_und_gz",
-      "ausnuetzungsziffer": null,
+      "geschossflaechenziffer_oberirdisch": null,
       "max_geschosse": null,
-      "max_gebaeudehoehe_m": null,
-      "hinweise": "Spezialregime der Stadt Bern fuer die Untere Altstadt und das Wohngebiet Matte mit zusaetzlicher Planungspflicht. UNESCO-Weltkulturerbe. Vor einer Bebauung ist eine Ueberbauungsordnung (UeO) zu erstellen. Strenge Erhaltungs- und Schutzauflagen.",
-      "rechtsgrundlage": "BGO Stadt Bern, Altstadt-Regelungen mit Planungspflicht"
+      "hinweise": "Untere Altstadt mit zusaetzlicher Planungspflicht. Vor einer Bebauung ist eine Ueberbauungsordnung (UeO) zu erstellen. Strenge Erhaltungs- und Schutzauflagen analog Art. 80, 81.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 76, 80, 81"
     },
     "Obere Altstadt, Zone mit Planungspflicht": {
       "system": "hoehen_und_gz",
-      "ausnuetzungsziffer": null,
+      "geschossflaechenziffer_oberirdisch": null,
       "max_geschosse": null,
-      "max_gebaeudehoehe_m": null,
-      "hinweise": "Spezialregime der Stadt Bern fuer die Obere Altstadt mit zusaetzlicher Planungspflicht. UNESCO-Weltkulturerbe. Vor einer Bebauung ist eine Ueberbauungsordnung (UeO) zu erstellen. Strenge Erhaltungs- und Schutzauflagen.",
-      "rechtsgrundlage": "BGO Stadt Bern, Altstadt-Regelungen mit Planungspflicht"
+      "hinweise": "Obere Altstadt mit zusaetzlicher Planungspflicht (Art. 77). UeO erforderlich. Schutz der historischen Bebauungsstruktur, der altstadtpraegenden Gebaeudevolumen, Geschosszahlen, Gebaeudefluchten, Dachformen, Fassaden, Lauben und Brandmauern.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 77-79"
     },
 
-    "Zone im öffentlichen Interesse": {
-      "system": "hoehen_und_gz",
-      "ausnuetzungsziffer": null,
+    "Zone für öffentliche Nutzungen FA": {
+      "system": "GFZo",
+      "geschossflaechenziffer_oberirdisch": 0.1,
       "max_geschosse": null,
-      "max_gebaeudehoehe_m": null,
-      "hinweise": "Spezialzone fuer oeffentliche Bauten und Anlagen (Schulen, Verwaltung, Spitaeler, Kirchen, Sportanlagen). Bebauung folgt dem oeffentlichen Bedarf, nicht einer fixen Kennzahl. Konkrete Vorgaben sind im jeweiligen Sondernutzungsplan oder in der Ueberbauungsordnung zu finden.",
-      "rechtsgrundlage": "BGO Stadt Bern, ZoeN-Regelungen"
+      "hinweise": "Stark durchgruente Anlagen (Sport, Erholung). GFZo = 0.1 (Art. 24 Abs. 2 BO).",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 24"
+    },
+    "Zone für öffentliche Nutzungen FB": {
+      "system": "GFZo",
+      "geschossflaechenziffer_oberirdisch": 0.6,
+      "max_geschosse": null,
+      "hinweise": "Fuer Ueberbauung bestimmte oeffentliche Anlagen. GFZo = 0.6 (Art. 24 Abs. 3a BO).",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 24"
+    },
+    "Zone für öffentliche Nutzungen FC": {
+      "system": "GFZo",
+      "geschossflaechenziffer_oberirdisch": 1.2,
+      "max_geschosse": null,
+      "hinweise": "Verdichtete oeffentliche Bauten. GFZo = 1.2 (Art. 24 Abs. 3b BO).",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 24"
+    },
+    "Zone für öffentliche Nutzungen FD": {
+      "system": "GFZo",
+      "geschossflaechenziffer_oberirdisch": null,
+      "max_geschosse": null,
+      "hinweise": "Nutzungsmass des bewilligungsfaehigen Bauprojekts (Art. 24 Abs. 3c BO). Konkrete Werte aus Anhang II der BO oder aus Ueberbauungsordnung.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 24, Anhang II"
+    },
+    "Zone im öffentlichen Interesse": {
+      "system": "GFZo",
+      "geschossflaechenziffer_oberirdisch": null,
+      "max_geschosse": null,
+      "hinweise": "Sammelbezeichnung fuer ZoeN gemaess Art. 18c BO. Konkrete GFZo-Werte richten sich nach Subtyp FA/FB/FC/FD und stehen in Art. 24 BO oder Anhang II.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 18, 24"
+    },
+
+    "Schutzzone A (SZA) Landschafts- + Ortsbildschutzareal": {
+      "system": "hoehen_und_gz",
+      "geschossflaechenziffer_oberirdisch": null,
+      "max_geschosse": null,
+      "hinweise": "Bauverbot fuer nicht standortgebundene Bauten (Art. 25 Abs. 2 BO). Bestehende Bauten duerfen im Rahmen der Besitzstandsgarantie veraendert und in untergeordnetem Mass erweitert werden.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 25"
+    },
+    "Schutzzone B (SZB)": {
+      "system": "hoehen_und_gz",
+      "geschossflaechenziffer_oberirdisch": null,
+      "max_geschosse": null,
+      "hinweise": "Landschafts- und Ortsbildschutzareal mit gelockerten Vorschriften gegenueber SZA. Neue Bauten dem Schutzzweck dienlich oder ihn nicht wesentlich schmaelernd (Art. 25 Abs. 3 BO).",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 25"
+    },
+    "Schutzzone C (SZC)": {
+      "system": "hoehen_und_gz",
+      "geschossflaechenziffer_oberirdisch": null,
+      "max_geschosse": null,
+      "hinweise": "Naturschutzareal. Nur Bauten zulaessig, die dem Schutzzweck dienen (Art. 25 Abs. 5 BO).",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 25"
     }
   },
 
@@ -135,73 +247,159 @@
     "Wohnzone (W)": {
       "nutzung": "Wohnen",
       "mischnutzung_erlaubt": false,
-      "hinweise": "Reine Wohnzone. Stilles Gewerbe im Wohnumfeld begrenzt zulaessig."
+      "hinweise": "Reine Wohnzone. Bis 10% Hauptnutzflaeche fuer nicht-stoerende Arbeitsnutzungen erlaubt (Art. 19 Abs. 2). In Bauklassen 4-6 mit Laermempfindlichkeitsstufe III bis 1 Vollgeschoss Arbeitsnutzungen.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 18a.1, 19"
     },
-    "Wohn- und Gewerbezone (WG)": {
-      "nutzung": "Wohnen + Gewerbe",
+    "Wohnzone W": {
+      "nutzung": "Wohnen",
+      "mischnutzung_erlaubt": false,
+      "hinweise": "Synonym zu 'Wohnzone (W)'.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 19"
+    },
+    "Gemischte Wohnzone (WG)": {
+      "nutzung": "Wohnen + Arbeiten",
       "mischnutzung_erlaubt": true,
-      "hinweise": "Laermunempfindliches Gewerbe zugelassen."
+      "hinweise": "Mindestens 50% Hauptnutzflaeche dem Wohnen vorbehalten (Art. 20 Abs. 2). Nicht-stoerende Arbeitsnutzungen.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 18a.2, 20"
+    },
+    "Gemischte Wohnzone WG": {
+      "nutzung": "Wohnen + Arbeiten",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "Synonym zu 'Gemischte Wohnzone (WG)'.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 20"
     },
     "Kernzone (K)": {
       "nutzung": "Wohnen + Gewerbe + Oeffentlich",
       "mischnutzung_erlaubt": true,
-      "hinweise": "Ortskerne mit hoeherer Nutzungsvielfalt und Schutzcharakter."
+      "hinweise": "Foerderung von Quartierzentren (Art. 21). Vorschriften der Wohnzone W ergaenzt um besondere Berechnungsweisen fuer Ladengeschaefte und Gastgewerbe.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 21"
     },
+    "Kernzone K": {
+      "nutzung": "Wohnen + Gewerbe + Oeffentlich",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "Synonym zu 'Kernzone (K)'.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 21"
+    },
+    "Dienstleistungszone (D)": {
+      "nutzung": "Arbeiten",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "Fuer Arbeitsnutzungen bestimmt (Art. 22). Wohnen bis 50% (in Laermempfindlichkeitsstufe II bis 100%). Werkhoefe und offene Materiallager ausgeschlossen.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 18b.1, 22"
+    },
+    "Dienstleistungszone D": {
+      "nutzung": "Arbeiten",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "Synonym zu 'Dienstleistungszone (D)'.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 22"
+    },
+    "Industrie- und Gewerbezone (IG)": {
+      "nutzung": "Industrie + Gewerbe",
+      "mischnutzung_erlaubt": false,
+      "hinweise": "Produktions-, Reparatur- und Lagernutzungen (Art. 23). Wohnen nur betrieblich notwendig (Hausmeister).",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 18b.2, 23"
+    },
+    "Industrie- und Gewerbezone IG": {
+      "nutzung": "Industrie + Gewerbe",
+      "mischnutzung_erlaubt": false,
+      "hinweise": "Synonym zu 'Industrie- und Gewerbezone (IG)'.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 23"
+    },
+
     "Altstadtperimeter BO.06": {
       "nutzung": "Altstadt-Spezialregime",
       "mischnutzung_erlaubt": true,
-      "hinweise": "UNESCO-Weltkulturerbe. Strenge Erhaltungsvorschriften, Denkmalpflege zwingend einzubeziehen."
+      "hinweise": "UNESCO-Weltkulturerbe. Strenge Erhaltungsvorschriften gemaess Art. 76-86 BO. Denkmalpflege zwingend einzubeziehen.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 76-86"
     },
     "Untere Altstadt und Wohngebiet Matte": {
       "nutzung": "Altstadt-Spezialregime",
       "mischnutzung_erlaubt": true,
-      "hinweise": "Teil der Berner Altstadt (UNESCO). Erhaltungspflichten, detaillierte BGO-Anhaenge konsultieren."
+      "hinweise": "Integral geschuetztes Baudenkmal (Art. 81). Veraenderungen nur im Rahmen des Schutzzwecks. Gebaeudevolumen ueber dem 2. Vollgeschoss dem Wohnen vorbehalten (Art. 80).",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 80, 81"
     },
     "Obere Altstadt": {
       "nutzung": "Altstadt-Spezialregime",
       "mischnutzung_erlaubt": true,
-      "hinweise": "Teil der Berner Altstadt (UNESCO). Erhaltungspflichten, detaillierte BGO-Anhaenge konsultieren."
+      "hinweise": "Zone mit Planungspflicht (Art. 77). UeO erforderlich. Geschaefts- und Dienstleistungszentrum mit Wohnnutzung (Art. 78). Volumen ueber oberstem Vollgeschoss = Wohnen.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 77-79"
     },
     "Innere Neustadt": {
       "nutzung": "Altstadt-Spezialregime",
       "mischnutzung_erlaubt": true,
-      "hinweise": "Teil des historischen Stadtkerns. Denkmalpflege bei Bauvorhaben einzubeziehen."
+      "hinweise": "Teil des historischen Stadtkerns. Denkmalpflege einzubeziehen.",
+      "rechtsgrundlage": "BO Stadt Bern"
     },
     "Aeussere Neustadt": {
       "nutzung": "Altstadt-Spezialregime",
       "mischnutzung_erlaubt": true,
-      "hinweise": "Teil des historischen Stadtkerns. Denkmalpflege bei Bauvorhaben einzubeziehen."
+      "hinweise": "Teil des historischen Stadtkerns. Denkmalpflege einzubeziehen.",
+      "rechtsgrundlage": "BO Stadt Bern"
     },
+
     "Schutzzone A (SZA) Landschafts- + Ortsbildschutzareal": {
       "nutzung": "Schutzzone",
       "mischnutzung_erlaubt": false,
-      "hinweise": "Landschafts- und Ortsbildschutzareal. Strenge Schutzauflagen, Bebauung in der Regel ausgeschlossen oder stark eingeschraenkt."
+      "hinweise": "Bauverbot fuer nicht standortgebundene Bauten (Art. 25 BO).",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 25"
     },
     "ZPP Obere Altstadt": {
       "nutzung": "Zone mit Planungspflicht",
       "mischnutzung_erlaubt": true,
-      "hinweise": "Zone mit Planungspflicht in der Oberen Altstadt. UeO erforderlich vor Bebauung."
+      "hinweise": "Zone mit Planungspflicht (Art. 77). UeO erforderlich vor Bebauung. Schutz der historischen Bebauungsstruktur.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 77"
     },
     "Obere Altstadt, Zone mit Planungspflicht": {
       "nutzung": "Zone mit Planungspflicht",
       "mischnutzung_erlaubt": true,
-      "hinweise": "Zone mit Planungspflicht in der Oberen Altstadt. Ueberbauungsordnung (UeO) erforderlich."
+      "hinweise": "Zone mit Planungspflicht in der Oberen Altstadt. UeO definiert konkrete Werte.",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 77"
     },
     "UeO Laubenlinien Marktgasse": {
       "nutzung": "Ueberbauungsordnung",
       "mischnutzung_erlaubt": true,
-      "hinweise": "Spezielle Ueberbauungsordnung zu den Laubenlinien an der Marktgasse. Detaillierte Vorgaben zur Lauben-Architektur."
+      "hinweise": "Spezielle Ueberbauungsordnung (Laubenlinienplan vom 31.12.1992) fuer Marktgasse und Spitalgasse. Detaillierte Vorgaben zur Lauben-Architektur. Im Erdgeschoss an den Lauben nur Warenverkauf oder Gastgewerbe (Art. 78 Abs. 6).",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 78, 85, 91"
+    },
+
+    "Landwirtschaftszone": {
+      "nutzung": "Landwirtschaft",
+      "mischnutzung_erlaubt": false,
+      "hinweise": "Bestimmungen des eidgenoessischen und kantonalen Rechts (Art. 26 BO).",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 18d, 26"
+    },
+    "Weilerzone": {
+      "nutzung": "Wohnen + maessig stoerende Arbeit",
+      "mischnutzung_erlaubt": true,
+      "hinweise": "Zeitgemaesse Weiterverwendung bestehender Bauvolumen in laendlichen Kleinsiedlungen (Art. 27).",
+      "rechtsgrundlage": "BO Stadt Bern, Art. 27"
     }
   },
 
+  "_arbeitszonen_fassadenhoehen": {
+    "_kommentar": "Fassadenhoehen FH/FHA in Arbeitszonen gemaess Art. 58 BO. Werte in Metern.",
+    "Bauklasse 1": {"FH": 6.5, "FHA": 9.5},
+    "Bauklasse 2": {"FH": 9.5, "FHA": 12.5},
+    "Bauklasse 3": {"FH": 12.5, "FHA": 15.5},
+    "Bauklasse 4": {"FH": 15.5, "FHA": 18.5},
+    "Bauklasse 5": {"FH": 18.5, "FHA": 21.5},
+    "Bauklasse 6": {"FH": 21.5, "FHA": 24.5}
+  },
+
+  "_altstadt_spezialvorschriften": {
+    "_quelle": "BO Stadt Bern, 6. Titel (Art. 76-86)",
+    "fassaden": "Aus Berner Sandstein (Art. 83)",
+    "daecher": "Mit Biberschwanzziegeln zu decken (Art. 84)",
+    "lukarnen_breite_max": "1/3 Fassadenlaenge im 1. Dachgeschoss, 1/5 im 2. Dachgeschoss (nur Obere Altstadt)",
+    "dacheinschnitte": "Untersagt (Art. 84 Abs. 6)",
+    "brandmauern": "In historischem Bestand geschuetzt (Art. 82). Max. 3 Tuerdurchbrueche im EG/1.OG, sonst 1.",
+    "dachneigung_max": "45 Grad (Art. 8)"
+  },
+
   "_todo": [
-    "Umstellungsstand der Stadt Bern auf GFZo verifizieren (Amt fuer Hochbau oder Architekturbuero).",
-    "AZ-Werte pro Bauklasse x Zone-Kombination aus BGO einpflegen.",
-    "GFZo-Werte ergaenzen, sobald Stadt Bern die entsprechenden Artikel in Kraft gesetzt hat.",
-    "Weitere Nutzungszonen ergaenzen (ZPP, ZoeN, Gruenzonen).",
-    "Grenzabstaende pro Bauklasse ergaenzen.",
-    "Laermempfindlichkeitsstufe pro Zone ergaenzen.",
-    "Spezifische Hoehen- und Geschoss-Vorgaben fuer die Altstadt-Bereiche aus BGO-Anhaengen recherchieren.",
-    "Weitere ZoeN-Spezifika (Schulen, Spitaeler, Kirchen) bei Bedarf detaillieren."
+    "Konkrete GFZo-Werte pro Zone-Bauklasse-Kombination aus dem Bauklassenplan (BKP) ergaenzen - aktuell sind diese in der BO selbst nicht spezifiziert, sondern parzellenscharf im OEREB-Kataster.",
+    "Bauklassenplan-Verknuepfung pruefen: kann das Tool aus dem OEREB-Auszug die exakte GFZo-Zahl pro Parzelle direkt entnehmen?",
+    "ZPP-Anhaenge (Anhang III) detailliert aufschluesseln, sobald Schwager spezifische ZPPs erfasst.",
+    "Zonen FA-FD Subtyp-Unterscheidung im OEREB pruefen - aktuell wird nur 'Zone im oeffentlichen Interesse' geliefert.",
+    "Variable gGA-Werte aus Tabelle Art. 46 in Code umsetzen - aktuell nur als Datenstruktur."
   ]
 }

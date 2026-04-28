@@ -10,31 +10,25 @@ Systemwechsel im Kanton Bern:
 Der Kanton Bern hat die klassische Ausnuetzungsziffer (AZ) durch die
 Geschossflaechenziffer oberirdisch (GFZo) ersetzt (BMBV-Verordnung,
 basierend auf der IVHB-Vereinbarung). Gemeinden muessen ihre Baureglemente
-schrittweise anpassen. Solange das nicht geschehen ist, gelten die alten
-AZ-Bestimmungen (BauV Art. 93-98) weiter.
+schrittweise anpassen.
 
 Einige Gemeinden (Beispiel Thun, BR 2022 ab Februar 2025) gehen noch
 einen Schritt weiter und verzichten auch auf die GFZo: Die bauliche
-Dichte wird dort primaer ueber Gebaeudehoehen und die Gruenflaechenziffer
-gesteuert.
+Dichte wird dort primaer ueber Gebaeudehoehen, Grenzabstaende,
+Gebaeudelaenge und Gruenflaechenziffer gesteuert.
 
-Das Datenmodell unterstuetzt alle drei Bemessungssysteme:
-  - AZ            : Klassische Ausnuetzungsziffer (alt, immer noch gueltig
-                    wo Revision fehlt)
-  - GFZo          : Geschossflaechenziffer oberirdisch (IVHB-konform)
-  - hoehen_und_gz : Steuerung ueber Gebaeudehoehen + Gruenflaechenziffer
-                    (Thun-Stil)
+Das Datenmodell unterstuetzt drei Bemessungssysteme:
+  - AZ            : Klassische Ausnuetzungsziffer
+  - GFZo          : Geschossflaechenziffer oberirdisch
+  - hoehen_und_gz : Steuerung ueber Hoehen + Gruenflaechenziffer
+                    (Thun-Stil, mit differenzierten Fassadenhoehen)
 
-Dualitaet: In Uebergangsphasen (z.B. Thun seit Maerz 2022) gelten beide
-Regelwerke parallel. In dem Fall werden beide Kennzahlen im JSON gepflegt;
-der Berechner waehlt die jeweils relevante aus.
-
-Strukturvarianten der JSON-Dateien:
-  - "bauklassen"  - Stadt-Bern-Stil mit getrennten Eintraegen fuer
-                    Nutzungszone und Bauklasse. Parameter typischerweise
-                    auf der Bauklasse.
-  - "kombiniert"  - Land-Stil (Thun, Koeniz), Zone und Bauklasse in einem
-                    Eintrag.
+Spezialeffekte:
+  - Arealbonus: Bei grossen Parzellen oder Parzellen-Zusammenlegungen
+                kann ein zusaetzliches Geschoss bewilligt werden
+                (Thun: Schwellenwert 3000 m^2)
+  - Strukturgebiet: Beirat Stadtbild kann das Baureglement teilweise
+                    aushebeln und gestalterische Vorgaben machen
 """
 
 from __future__ import annotations
@@ -52,15 +46,7 @@ from modelle import Parzelle, Restriction
 # ---------------------------------------------------------------------------
 
 class BemessungsSystem(Enum):
-    """
-    Welches Regelwerk steuert die Bebauungsdichte dieser Zone?
-
-    AZ            - Klassische Ausnuetzungsziffer (altes Recht, BauV Art. 93-98)
-    GFZo          - Geschossflaechenziffer oberirdisch (IVHB-konform)
-    HOEHEN_UND_GZ - Steuerung primaer durch Gebaeudehoehen und Gruenflaechenziffer
-    DUALITAET     - Uebergangsphase: altes und neues Recht gelten parallel
-    UNBEKANNT     - System nicht im Reglement erfasst
-    """
+    """Welches Regelwerk steuert die Bebauungsdichte dieser Zone?"""
     AZ = "AZ"
     GFZO = "GFZo"
     HOEHEN_UND_GZ = "hoehen_und_gz"
@@ -69,7 +55,7 @@ class BemessungsSystem(Enum):
 
     @classmethod
     def from_string(cls, text: str | None) -> "BemessungsSystem":
-        """Parst einen JSON-String in das Enum. Toleriert verschiedene Schreibweisen."""
+        """Parst einen JSON-String in das Enum."""
         if not text:
             return cls.UNBEKANNT
         norm = text.strip().lower().replace("-", "_")
@@ -97,90 +83,101 @@ class Bauparameter:
     """
     Die konkreten Reglement-Eckwerte einer Zone.
 
-    Kann Werte fuer AZ, GFZo und/oder Hoehen+GZ enthalten, je nachdem
-    welches System die Gemeinde verwendet. Bei Uebergangsphasen (Dualitaet)
-    sind alte und neue Werte gleichzeitig gepflegt.
-
-    Alle Zahlen-Felder sind optional, damit die Klasse mit Reglementen
-    in unterschiedlichem Revisions-Stand umgehen kann.
+    Felder folgen dem Berner Baurecht und der Thun BR-2022-Tabelle:
+    - Grenzabstaende klein/gross (kA, gA)
+    - Gebaeudelaenge (GL)
+    - Fassadenhoehen differenziert nach Dachform:
+        * traufseitig bei Schraegdach (Fh tr)
+        * giebelseitig bei Schraegdach (Fh gi)
+        * andere Dachformen wie Flachdach (Fh)
+    - Gruenflaechenziffer (GZ)
+    - AZ und GFZo als Kennzahlen
     """
-    quelle_eintrag: str                              # z.B. "Bauklasse E" oder "Wohnzone W2"
+    quelle_eintrag: str
     system: BemessungsSystem = BemessungsSystem.UNBEKANNT
 
-    # Klassische AZ (altes Recht)
+    # Klassische Kennzahlen
     ausnuetzungsziffer: float | None = None
-
-    # GFZo (neues Recht nach IVHB)
     geschossflaechenziffer_oberirdisch: float | None = None
 
-    # Hoehen-basierte Steuerung
-    max_gebaeudehoehe_m: float | None = None
-    max_fassadenhoehe_m: float | None = None
+    # Hoehen-Steuerung
     max_geschosse: int | None = None
+    max_gebaeudehoehe_m: float | None = None
+    max_fassadenhoehe_traufseitig_m: float | None = None      # Fh tr (Schraegdach)
+    max_fassadenhoehe_giebelseitig_m: float | None = None     # Fh gi (Schraegdach)
+    max_fassadenhoehe_anderes_dach_m: float | None = None     # Fh (Flachdach etc.)
 
-    # Gruenflaechenziffer (wie viel der Parzelle unversiegelt bleibt)
-    gruenflaechenziffer: float | None = None
+    # Geometrie
+    max_gebaeudelaenge_m: float | None = None                 # GL
+    grenzabstand_klein_m: float | None = None                 # kA
+    grenzabstand_gross_m: float | None = None                 # gA
 
-    # Abstaende
-    grenzabstand_klein_m: float | None = None
-    grenzabstand_gross_m: float | None = None
+    # Gruenflaechen
+    gruenflaechenziffer: float | None = None                  # GZ
+
+    # Arealbonus (zusaetzliches Geschoss bei grossen Parzellen)
+    arealbonus_ab_flaeche_m2: float | None = None             # Schwellenwert
+    arealbonus_zusaetzliche_geschosse: int | None = None      # Bonus
 
     # Meta
-    rechtsgrundlage: str = ""        # z.B. "BR 2022 Art. 23" oder "BR 2002 Art. 15"
+    rechtsgrundlage: str = ""
     hinweise: str = ""
-    gueltig_ab: str | None = None    # z.B. "2025-02-01" bei neuem Recht
+    gueltig_ab: str | None = None
 
     # ----- Abgeleitete Eigenschaften -----
 
     @property
     def ist_berechenbar(self) -> bool:
-        """
-        True, wenn irgendein Wert zur Potenzialberechnung verfuegbar ist.
-
-        Eine AZ, eine GFZo oder Gebaeudehoehe+Gruenflaechenziffer genuegt.
-        """
+        """True, wenn irgendein Wert zur Potenzialberechnung verfuegbar ist."""
         if self.ausnuetzungsziffer is not None:
             return True
         if self.geschossflaechenziffer_oberirdisch is not None:
             return True
         if self.max_gebaeudehoehe_m is not None and self.gruenflaechenziffer is not None:
             return True
+        if self.max_fassadenhoehe_traufseitig_m is not None and self.gruenflaechenziffer is not None:
+            return True
         return False
 
     def hauptkennzahl(self) -> tuple[str, float] | None:
-        """
-        Gibt die fuer die Potenzialberechnung relevante Kennzahl zurueck.
-
-        Prioritaet:
-          1. GFZo (neues Recht)
-          2. AZ (altes Recht)
-          3. None (muss via Hoehen+GZ berechnet werden)
-        """
+        """Gibt die fuer die Berechnung relevante Kennzahl zurueck."""
         if self.geschossflaechenziffer_oberirdisch is not None:
             return ("GFZo", self.geschossflaechenziffer_oberirdisch)
         if self.ausnuetzungsziffer is not None:
             return ("AZ", self.ausnuetzungsziffer)
         return None
 
-    # ----- Textausgabe -----
+    def hat_arealbonus(self, parzellenflaeche_m2: float) -> bool:
+        """Prueft, ob die Parzelle Anspruch auf einen Arealbonus hat."""
+        if self.arealbonus_ab_flaeche_m2 is None:
+            return False
+        return parzellenflaeche_m2 >= self.arealbonus_ab_flaeche_m2
 
     def zusammenfassung(self) -> str:
-        """Kurze Textuebersicht fuer Debugging und Ausgabe."""
+        """Kurze Textuebersicht."""
         teile = [f"{self.quelle_eintrag} [{self.system.value}]:"]
 
         if self.ausnuetzungsziffer is not None:
             teile.append(f"AZ={self.ausnuetzungsziffer}")
         if self.geschossflaechenziffer_oberirdisch is not None:
             teile.append(f"GFZo={self.geschossflaechenziffer_oberirdisch}")
-        if self.max_gebaeudehoehe_m is not None:
-            teile.append(f"max. {self.max_gebaeudehoehe_m} m Hoehe")
-        if self.max_geschosse is not None:
-            teile.append(f"max. {self.max_geschosse} Gesch.")
+        if self.max_fassadenhoehe_traufseitig_m is not None:
+            teile.append(f"Fh tr={self.max_fassadenhoehe_traufseitig_m}m")
+        if self.max_fassadenhoehe_giebelseitig_m is not None:
+            teile.append(f"Fh gi={self.max_fassadenhoehe_giebelseitig_m}m")
+        if self.max_fassadenhoehe_anderes_dach_m is not None:
+            teile.append(f"Fh={self.max_fassadenhoehe_anderes_dach_m}m")
+        if self.max_gebaeudelaenge_m is not None:
+            teile.append(f"GL={self.max_gebaeudelaenge_m}m")
         if self.gruenflaechenziffer is not None:
             teile.append(f"GZ={self.gruenflaechenziffer}")
+        if self.grenzabstand_klein_m is not None:
+            teile.append(f"kA={self.grenzabstand_klein_m}m")
+        if self.grenzabstand_gross_m is not None:
+            teile.append(f"gA={self.grenzabstand_gross_m}m")
 
         if not self.ist_berechenbar:
-            teile.append("(keine Kennzahlen - Potenzialberechnung nicht moeglich)")
+            teile.append("(keine Kennzahlen)")
 
         return " ".join(teile)
 
@@ -191,13 +188,7 @@ class Bauparameter:
 
 @dataclass
 class Baureglement:
-    """
-    Reglement einer Gemeinde. Wird aus einer JSON-Datei geladen.
-
-    Struktur-Varianten:
-      - struktur="bauklassen"  -> Parameter aus dem 'bauklassen'-Block
-      - struktur="kombiniert"  -> Parameter aus dem 'nutzungszonen'-Block
-    """
+    """Reglement einer Gemeinde, geladen aus JSON."""
     gemeinde: str
     bfs_nr: int
     kanton: str
@@ -208,28 +199,16 @@ class Baureglement:
     bauklassen: dict[str, dict] = field(default_factory=dict)
     nutzungszonen: dict[str, dict] = field(default_factory=dict)
 
-    # ----- Laden -----
-
     @classmethod
     def laden(cls, gemeinde: str,
               basis_pfad: Path | str | None = None) -> "Baureglement":
-        """
-        Laedt das Baureglement einer Gemeinde aus der JSON-Datei.
-
-        Sucht standardmaessig unter ../../daten/baureglemente/<gemeinde>.json
-        relativ zum Modul. Alternativer Pfad kann uebergeben werden.
-
-        Umlaute werden fuer den Dateinamen zu ae/oe/ue umgewandelt.
-
-        Raises: FileNotFoundError, wenn die Datei fehlt.
-        """
+        """Laedt das Baureglement einer Gemeinde aus der JSON-Datei."""
         if basis_pfad is None:
             hier = Path(__file__).resolve().parent
             basis_pfad = hier.parent.parent / "daten" / "baureglemente"
         else:
             basis_pfad = Path(basis_pfad)
 
-        # Umlaute fuer dateisystem-sichere Namen ersetzen
         umlaute = {"ä": "ae", "ö": "oe", "ü": "ue",
                    "Ä": "Ae", "Ö": "Oe", "Ü": "Ue"}
         name = gemeinde
@@ -262,20 +241,13 @@ class Baureglement:
     # ----- Matching -----
 
     def finde_bauparameter(self, parzelle: Parzelle) -> list[Bauparameter]:
-        """
-        Findet fuer eine Parzelle die passenden Bauparameter.
-
-        Gibt eine Liste zurueck, weil eine Parzelle in mehreren Zonen
-        liegen kann. Wenn kein Match gefunden wird, ist die Liste leer.
-        """
+        """Findet fuer eine Parzelle die passenden Bauparameter."""
         if self.struktur == "bauklassen":
             return self._match_bauklassen(parzelle)
         return self._match_kombiniert(parzelle)
 
     def _match_bauklassen(self, parzelle: Parzelle) -> list[Bauparameter]:
-        """
-        Stadt-Bern-Stil: Bauklasse bestimmt die Parameter.
-        """
+        """Stadt-Bern-Stil: Bauklasse bestimmt die Parameter."""
         treffer: list[Bauparameter] = []
         for bauklasse_parzelle in parzelle.bauklassen():
             parameter = self._suche_in_dict(
@@ -286,9 +258,7 @@ class Baureglement:
         return treffer
 
     def _match_kombiniert(self, parzelle: Parzelle) -> list[Bauparameter]:
-        """
-        Land-Stil: Grundnutzung-Eintrag liefert Zone+Bauklasse in einem.
-        """
+        """Land-Stil: Grundnutzung-Eintrag liefert Zone+Bauklasse in einem."""
         treffer: list[Bauparameter] = []
         for grundnutzung in parzelle.grundnutzungen_allgemein():
             parameter = self._suche_in_dict(
@@ -300,31 +270,19 @@ class Baureglement:
 
     def _suche_in_dict(self, quelle: dict[str, dict],
                        suchtext: str) -> Bauparameter | None:
-        """
-        Durchsucht ein Reglement-Dict nach einem passenden Eintrag.
-
-        Match-Strategien in Reihenfolge:
-          1. Exakte Uebereinstimmung
-          2. Suchtext ist Teilstring eines Schluessels
-          3. Schluessel ist Teilstring des Suchtexts
-        """
+        """Drei-Stufen-Matching: exakt, Suchtext-in-Schluessel, Schluessel-in-Suchtext."""
         if not quelle or not suchtext:
             return None
 
-        # Interne Platzhalter ignorieren
-        effektiv = {k: v for k, v in quelle.items()
-                    if not k.startswith("_")}
+        effektiv = {k: v for k, v in quelle.items() if not k.startswith("_")}
 
-        # 1. Exakte Uebereinstimmung
         if suchtext in effektiv:
             return self._baue_parameter(suchtext, effektiv[suchtext])
 
-        # 2. Suchtext ist Teil des Schluessels
         for key, value in effektiv.items():
             if suchtext in key:
                 return self._baue_parameter(key, value)
 
-        # 3. Schluessel ist Teil des Suchtexts
         for key, value in effektiv.items():
             if key in suchtext:
                 return self._baue_parameter(key, value)
@@ -333,12 +291,7 @@ class Baureglement:
 
     def _baue_parameter(self, quelle_eintrag: str,
                         daten: dict) -> Bauparameter:
-        """
-        Erstellt ein Bauparameter-Objekt aus einem JSON-Dict.
-
-        Verwendet das System aus dem Eintrag oder faellt auf den
-        Gemeinde-Default zurueck.
-        """
+        """Erstellt ein Bauparameter-Objekt aus einem JSON-Dict."""
         system_text = daten.get("system")
         system = (BemessungsSystem.from_string(system_text)
                   if system_text else self.system_default)
@@ -350,12 +303,17 @@ class Baureglement:
             geschossflaechenziffer_oberirdisch=daten.get(
                 "geschossflaechenziffer_oberirdisch"
             ),
-            max_gebaeudehoehe_m=daten.get("max_gebaeudehoehe_m"),
-            max_fassadenhoehe_m=daten.get("max_fassadenhoehe_m"),
             max_geschosse=daten.get("max_geschosse"),
-            gruenflaechenziffer=daten.get("gruenflaechenziffer"),
+            max_gebaeudehoehe_m=daten.get("max_gebaeudehoehe_m"),
+            max_fassadenhoehe_traufseitig_m=daten.get("max_fassadenhoehe_traufseitig_m"),
+            max_fassadenhoehe_giebelseitig_m=daten.get("max_fassadenhoehe_giebelseitig_m"),
+            max_fassadenhoehe_anderes_dach_m=daten.get("max_fassadenhoehe_anderes_dach_m"),
+            max_gebaeudelaenge_m=daten.get("max_gebaeudelaenge_m"),
             grenzabstand_klein_m=daten.get("grenzabstand_klein_m"),
             grenzabstand_gross_m=daten.get("grenzabstand_gross_m"),
+            gruenflaechenziffer=daten.get("gruenflaechenziffer"),
+            arealbonus_ab_flaeche_m2=daten.get("arealbonus_ab_flaeche_m2"),
+            arealbonus_zusaetzliche_geschosse=daten.get("arealbonus_zusaetzliche_geschosse"),
             rechtsgrundlage=daten.get("rechtsgrundlage", ""),
             hinweise=daten.get("hinweise", ""),
             gueltig_ab=daten.get("gueltig_ab"),
@@ -370,7 +328,7 @@ if __name__ == "__main__":
     import sys
     from bern import BernOerebQuelle
 
-    adresse = sys.argv[1] if len(sys.argv) > 1 else "Thunstrasse 40, 3005 Bern"
+    adresse = sys.argv[1] if len(sys.argv) > 1 else "Hirschweg 7, 3604 Thun"
 
     print(f"Suche Bauparameter fuer: {adresse}")
     print("=" * 70)
@@ -401,11 +359,6 @@ if __name__ == "__main__":
 
     if not parameter_liste:
         print("Keine Bauparameter gefunden.")
-        print("Zone ist im Reglement noch nicht erfasst.")
-        print()
-        print("Zonen der Parzelle:")
-        for r in parzelle.grundnutzungen():
-            print(f"  - {r.legende}")
         sys.exit(0)
 
     print(f"Gefundene Bauparameter ({len(parameter_liste)}):")
@@ -413,7 +366,8 @@ if __name__ == "__main__":
         print(f"  - {p.zusammenfassung()}")
         if p.rechtsgrundlage:
             print(f"    Rechtsgrundlage: {p.rechtsgrundlage}")
+        if p.hat_arealbonus(parzelle.flaeche_m2):
+            print(f"    !!! Arealbonus: +{p.arealbonus_zusaetzliche_geschosse} "
+                  f"Geschoss(e) ab {p.arealbonus_ab_flaeche_m2:.0f} m^2")
         if p.hinweise:
-            print(f"    Hinweis:         {p.hinweise}")
-        if p.gueltig_ab:
-            print(f"    Gueltig ab:      {p.gueltig_ab}")
+            print(f"    Hinweis: {p.hinweise}")

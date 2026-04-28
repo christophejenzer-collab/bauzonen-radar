@@ -11,6 +11,35 @@ Format pro Session:
 
 ---
 
+## 27. April 2026 (Vormittag, ~2 Stunden)
+
+### Kontext
+Praxistests in Vorbereitung auf Mitstudentin-Termin morgen. 
+Erstellung Erfassungsdokument fuer Schwager.
+
+### Geleistet
+- Test mit 7 Adressen aus Stadt Bern und Thun
+- Bug-Fix bern.json: 3 weitere Bauklassen ergaenzt 
+  (Planungspflicht-Varianten, Zone im oeffentlichen Interesse)
+- Bug-Fix bern.json: 4 weitere Nutzungszonen ergaenzt
+- demo.ps1 erstellt fuer 10-Adressen-Regressionstest
+- Erfassungs-Dokument fuer Schwager: Excel mit 4 Tabs, 8 Tabellen
+
+### Getestete Adressen
+- Junkerngasse 47, Marktgasse 1, Bundesgasse 26 (alle 3011 Bern)
+- (plus die bisherigen 7 als Regressionstest)
+
+### Git
+- bern.json mit Planungspflicht-Varianten und ZoeN
+- demo.ps1 fuer 10-Adressen-Test
+- Excel-Erfassungsdokument
+
+### Gelernt
+- Bauklassen koennen "Zone mit Planungspflicht" als Suffix haben
+- "Zone im oeffentlichen Interesse" ist eigene Bauklasse-Kategorie
+- Praxistests in Stadtteilen sind unverzichtbar fuer Software-Reife
+- Tool zeigt jetzt mehrere gefundene Bauklassen, nicht nur die erste
+
 ## 25. April 2026 (Vormittag + Mittag, ~2 Stunden)
 
 ### Kontext
