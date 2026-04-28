@@ -1,34 +1,55 @@
 # Bauzonen-Radar
 
-Ein Python-Tool zur automatisierten Analyse des Bebauungspotenzials von Schweizer Grundstuecken im Kanton Bern.
+> Schweizer Bauland-Analyse-Tool fuer den Kanton Bern.
+> Adresse rein, Bauland-Potenzial raus.
 
-> **Status:** In aktiver Entwicklung. Erste echte Potenzialberechnung funktioniert. Pipeline End-to-End fuer Stadt Bern und Stadt Thun verifiziert.
+Python-Abschlussprojekt im Rahmen der Weiterbildung.
+Stand: 28. April 2026.
 
-## Inhalt
+## Worum geht es
 
-- [Was macht das Tool?](#was-macht-das-tool)
-- [Datenfluss](#datenfluss)
-- [Installation und Setup](#installation-und-setup)
-- [Verwendung](#verwendung)
-- [Aktueller Stand](#aktueller-stand)
-- [Drei Bemessungssysteme](#drei-bemessungssysteme)
-- [Datenquellen](#datenquellen)
-- [Projektstruktur](#projektstruktur)
-- [Roadmap](#roadmap)
-- [Team](#team)
+Architekten, Investoren und Eigentuemer wollen oft schnell wissen:
+*Was darf ich auf dieser Parzelle bauen? Wie viel Reserve ist noch da?*
 
-## Was macht das Tool?
+Bauzonen-Radar beantwortet das automatisiert:
 
-Fuer eine beliebige Adresse im Kanton Bern liefert das Tool:
+1. Adresse eingeben (z.B. "Hirschweg 7, 3604 Thun")
+2. Tool holt sich Parzellen- und Zonen-Daten aus dem offiziellen
+   OEREB-Webservice des Kantons Bern
+3. Tool laedt das passende Gemeinde-Baureglement
+4. Tool rechnet das theoretische Bebauungspotenzial aus und vergleicht
+   es mit der Ist-Bebauung
+5. Ausgabe: Strukturierter Bericht mit Status (HOCH / MITTEL / GERING /
+   AUSGESCHOEPFT)
 
-1. **Parzellen-Identifikation** via swisstopo-Geocoding
-2. **OEREB-Daten** via offiziellen Webservice (Bauzonen, Naturgefahren, Baulinien, Schutzgebiete, etc.)
-3. **Reglement-Match** mit gemeindespezifischen Baureglementen
-4. **Potenzialberechnung** unter Beruecksichtigung von Bauklasse, Hoehenvorgaben, Strukturgebieten und Arealbonus
+## Aktueller Funktionsumfang
 
-**Beispiel-Output (Thunstrasse 40, 3005 Bern):**
+- Geocoding ueber swisstopo SearchAPI
+- OEREB-Datenabruf ueber Kanton Bern OEREB-Webservice
+- XML-Parser fuer alle relevanten OEREB-Themen
+- Drei Bemessungssysteme parallel unterstuetzt:
+    - **AZ** (klassische Ausnuetzungsziffer)
+    - **GFZo** (Geschossflaechenziffer oberirdisch, IVHB-konform)
+    - **Hoehen + GZ** (mit oder ohne Gruenflaechenziffer)
+- Spezialfall-Erkennung: Strukturgebiet (Thun), Arealbonus,
+  Naturgefahren, Baulinien, Ueberlagerungen
+- Drei Gemeinden hinterlegt: Stadt Bern, Stadt Thun,
+  Oberhofen am Thunersee
+- Regressionstest mit zehn realen Adressen via `demo.ps1`
+
+## Beispiel-Ausgabe
+
 ```
-Parzellenflaeche:       237 m^2
+Bauzonen-Radar - Analyse fuer: Thunstrasse 40, 3005 Bern
+======================================================================
+Parzelle 337 (Bern, BE)
+Flaeche:  237 m^2
+
+Nutzungszone: Wohnzone (W)
+Bauklasse:    Bauklasse E, Erhaltung der best. Bebauungsstruktur
+
+Potenzialanalyse
+----------------------------------------
 Verwendetes System:     GFZo
 Kennzahl:               GFZo = 0.5
 Theoretisch zulaessig:  118 m^2
@@ -38,217 +59,124 @@ Ausschoepfungsgrad:     80%
 Status:                 GERING
 ```
 
-## Datenfluss
-
-```
-Adresse
-   ↓
-swisstopo Geocoding (LV95-Koordinaten)
-   ↓
-OEREB GetEGRID (Parzellen-ID)
-   ↓
-OEREB GetExtract (XML mit allen Bestimmungen)
-   ↓
-XML-Parser (modelle.py) → Parzelle-Objekt mit Restrictions
-   ↓
-Baureglement-Match (bern.json / thun.json)
-   ↓
-Potenzialberechnung (potenzial.py)
-   ↓
-Textbericht
-```
-
-## Installation und Setup
+## Schnellstart
 
 ### Voraussetzungen
-- Windows mit PowerShell 5.1+ oder Linux/macOS
-- Python 3.13+
-- Git
 
-### Setup unter Windows
+- Python 3.13
+- Windows mit PowerShell 7 (oder Linux/Mac mit angepassten Skripten)
+- Internetverbindung (fuer swisstopo + OEREB)
+
+### Installation
 
 ```powershell
 git clone https://github.com/christophejenzer-collab/bauzonen-radar.git
 cd bauzonen-radar
 python -m venv .venv
-.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-### Erste Verwendung
+### Erste Abfrage
 
 ```powershell
 .\start.ps1
 python analyse_adresse.py "Hirschweg 7, 3604 Thun"
 ```
 
-`start.ps1` aktiviert die venv und wechselt in den Modul-Ordner.
-
-### Vollstaendiger Demo-Lauf (10 Adressen)
+### Regressionstest mit zehn Adressen
 
 ```powershell
-.\start.ps1
-.\..\..\demo.ps1
+.\demo.ps1
 ```
 
-## Verwendung
+## Test-Adressen
 
-```powershell
-python analyse_adresse.py "<Adresse>"
-```
-
-**Beispiele:**
-```powershell
-python analyse_adresse.py "Marktgasse 1, 3011 Bern"
-python analyse_adresse.py "Rathausplatz 1, 3600 Thun"
-python analyse_adresse.py "Kramgasse 49, 3011 Bern"
-```
-
-## Aktueller Stand
-
-### Vollstaendig getestete Gemeinden
-- **Stadt Bern** (BFS 351): 11 Bauklassen, 18 Nutzungszonen erfasst
-- **Stadt Thun** (BFS 942): 12 Wohn-/Misch-/Spezialzonen erfasst
-
-### Verifizierte Test-Adressen (10)
-
-| Adresse | Besonderheit |
-|---|---|
-| Kramgasse 1, 3000 Bern | Untere Altstadt, UNESCO |
-| Kramgasse 49, 3011 Bern | Untere Altstadt, UNESCO |
-| Junkerngasse 47, 3011 Bern | Zwei Bauklassen (Altstadt + ZoeN) |
-| Marktgasse 1, 3011 Bern | Obere Altstadt mit Laubenfluchtlinie |
-| Bundesgasse 26, 3011 Bern | Obere Altstadt mit Planungspflicht |
-| Thunstrasse 40, 3005 Bern | Bauklasse E - **berechnet** |
-| Rathausplatz 1, 3600 Thun | Bestand + Ufer, 4 Naturgefahren |
-| Hirschweg 7, 3604 Thun | Wohnen W2 mit Strukturgebiet |
-| Dorfstrasse 10, 3095 Spiegel | Koeniz, kein Reglement (sauber) |
-| Untere Sadelstrasse 1, 3653 Oberhofen | Naturgefahren-Hinweis |
-
-## Drei Bemessungssysteme
-
-Das Tool unterstuetzt drei Regelwerke fuer die bauliche Dichte:
-
-### 1. AZ - Klassische Ausnuetzungsziffer
-- Altes Recht (BauV Art. 93-98)
-- Wenige Gemeinden im Kanton Bern verwenden noch dieses System
-
-### 2. GFZo - Geschossflaechenziffer oberirdisch
-- Neues Recht (IVHB-konform via BMBV)
-- Stadt Bern: BO 2006/2023, Bauklasse E mit GFZo 0.5/0.6
-- ZoeN gemaess Art. 24: FA=0.1, FB=0.6, FC=1.2
-
-### 3. Hoehen + GZ - Hoehenbasiert mit Gruenflaechenziffer
-- Stadt Thun BR 2022 ab Februar 2025
-- AZ in Wohnzonen abgeschafft
-- Steuerung ueber Fassadenhoehen (Fh tr/gi/Fh), Gebaeudelaenge (GL),
-  Grenzabstaende (kA/gA), Gruenflaechenziffer (GZ)
-
-## Spezialeffekte
-
-### Strukturgebiet (Thun)
-Wenn auf einer Parzelle ein "Strukturgebiet" liegt, kann der **Beirat Stadtbild
-der Stadt Thun** gestalterische Vorgaben machen, die das Baureglement teilweise
-aushebeln. Das Tool warnt automatisch.
-
-### Arealbonus (Thun)
-Bei Parzellen ueber 3000 m^2 oder bei Zusammenlegungen kann ein **zusaetzliches
-Geschoss** bewilligt werden. Das Tool weist automatisch darauf hin.
-
-## Datenquellen
-
-### Webservices
-- **swisstopo SearchAPI:** https://api3.geo.admin.ch/rest/services/api/SearchServer
-- **OEREB-Webservice Kanton Bern:** https://www.oereb2.apps.be.ch/
-- **OEREB-Schema V2.0** (Bundesstandard)
-
-### Reglement-Quellen
+Verifizierte Adressen, die das Tool zum Funktionieren bringen sollte:
 
 **Stadt Bern:**
-- Bauordnung (BO) vom 24.9.2006, Stand 28.9.2023
-- Stadtrecht-Plattform: https://stadtrecht.bern.ch/lexoverview-home/lex-721_1
-- PDF: https://oerebfiles.apps.be.ch/35101/5072/Bern_SSSB_721_1_Bauordnung_der_Stadt_Bern.pdf
+- Thunstrasse 40, 3005 Bern (Bauklasse E - berechnet GFZo)
+- Kramgasse 1, 3000 Bern (Untere Altstadt UNESCO)
+- Marktgasse 1, 3011 Bern (Obere Altstadt mit Laubenfluchtlinie)
+- Junkerngasse 47, 3011 Bern (zwei Bauklassen)
+- Bundesgasse 26, 3011 Bern
 
 **Stadt Thun:**
-- Baureglement BR 2022/2025 (Ortsplanungsrevision OPR)
-- URL: https://www.thun.ch/verwaltung/stadtplanung/ortsplanungsrevision
+- Hirschweg 7, 3604 Thun (Wohnen W2 mit Strukturgebiet)
+- Rathausplatz 1, 3600 Thun (Bestandeszone, Uferzone, vier Naturgefahren)
+
+**Region Bern-Mittelland und Berner Oberland:**
+- Untere Stadelstrasse 1, 3653 Oberhofen (Wohnzone W1, Hoehen-System)
+- Dorfstrasse 10, 3095 Spiegel (Koeniz - Reglement noch nicht hinterlegt)
 
 ## Projektstruktur
 
 ```
-C:\Tools\bauzonen-radar\
-├── README.md                          (diese Datei)
-├── requirements.txt                   (Python-Abhaengigkeiten)
-├── .gitignore
-├── start.ps1                          (venv aktivieren + Modul-Ordner)
-├── demo.ps1                           (Regressionstest, 10 Adressen)
-│
-├── docs/
-│   ├── konzept.md                     (Pflichtdokument fuer Kursabgabe)
-│   ├── projektplan.md                 (8-Wochen-Plan bis 17. Juni)
-│   ├── journal.md                     (Entwicklungs-Journal)
-│   ├── fachliche_grundlagen.md        (Berner Baurecht-Recherche)
-│   └── erfassung_baureglemente.xlsx   (Erfassungs-Excel fuer Schwager)
-│
-├── daten/
-│   └── baureglemente/
-│       ├── bern.json                  (Stadt Bern, Stand 2026-04-25)
-│       └── thun.json                  (Stadt Thun, Stand 2026-04-27)
-│
-└── src/bauzonenradar/
-    ├── __init__.py
-    ├── modelle.py                     (Parzelle, Restriction, Lawstatus)
-    ├── bern.py                        (BernOerebQuelle: OEREB-API)
-    ├── baureglement.py                (Bauparameter, BemessungsSystem)
-    ├── analyse_adresse.py             (CLI-Hauptschnittstelle)
-    └── analyse/
-        ├── __init__.py
-        └── potenzial.py               (PotenzialBerechner)
+bauzonen-radar/
+|-- README.md                       Diese Datei
+|-- requirements.txt                Python-Abhaengigkeiten
+|-- start.ps1                       venv aktivieren, in Modul-Ordner wechseln
+|-- demo.ps1                        Regressionstest fuer alle Test-Adressen
+|-- docs/                           Konzept, Plan, Journal, Recherche
+|   |-- konzept.md
+|   |-- projektplan.md
+|   |-- journal.md
+|   |-- fachliche_grundlagen.md
+|   `-- erfassung_baureglemente.xlsx
+|-- daten/baureglemente/            Gemeinde-spezifische Reglement-Daten
+|   |-- bern.json
+|   |-- thun.json
+|   `-- oberhofen_am_thunersee.json
+`-- src/bauzonenradar/              Python-Module
+    |-- modelle.py                  Datenklassen Parzelle/Restriction/...
+    |-- bern.py                     OEREB-Webservice-Anbindung Kanton Bern
+    |-- baureglement.py             Reglement-Lade-Modul
+    |-- analyse_adresse.py          Hauptprogramm
+    `-- analyse/
+        `-- potenzial.py            Potenzialberechnung
 ```
-
-## Roadmap
-
-### Iteration 1: Pipeline End-to-End ✅
-- swisstopo-Geocoding
-- OEREB-Webservice
-- XML-Parser
-- Erste Reglement-Anbindung
-
-### Iteration 2: Reglement-Daten ✅
-- thun.json mit echten Werten aus Art. 42
-- bern.json mit Bauklassen 2-6 + E
-- Strukturgebiet- und Arealbonus-Erkennung
-- Erste echte GFZo-Berechnung
-
-### Iteration 3: Vervollstaendigung der Reglement-Werte (in Arbeit)
-- Werte vom Schwager: Bauklassenplan Stadt Bern (GFZo pro Zone-Bauklasse)
-- Variable gGA aus Art. 46 BO Bern in Code umsetzen
-- Weitere Subzonen pruefen (Innere/Aeussere Neustadt)
-
-### Iteration 4: GUI und UX
-- Streamlit-GUI fuer einfache Bedienung (Mitstudentin)
-- Karten-Darstellung der Parzelle
-- PDF-Export fuer Kundendossiers
-
-### Iteration 5: Erweiterung
-- swissBUILDINGS3D fuer echte Ist-Bebauung (statt 40%-Platzhalter)
-- Weitere Gemeinden: Koeniz, Steffisburg, Muensingen
-- Rangliste mehrerer Adressen nach Reserve-Potenzial
-
-### Iteration 6: Kanton Zuerich
-- Zuerich OEREB-Webservice anbinden
-- Erste Zuercher Gemeinden modellieren
 
 ## Team
 
-- **Christophe Jenzer** ([christophejenzer-collab](https://github.com/christophejenzer-collab))
-- **[Name Teampartner:in]** (Mitstudentin, Iteration 4-5)
-- **[Name Schwager]** (Architekt, Reglement-Verifikation)
+- **Christophe "Matis" Jenzer** - Backend, OEREB-Pipeline, Reglement-Daten,
+  Potenzialberechnung
+- **Fabienne** - Dokumentation, Streamlit-Webseite (Iteration 4),
+  Requirements-Engineering-Pruefung
 
-## Kontakt
+## Datenquellen
 
-Bei Fragen: christophejenzer@gmail.com
+- swisstopo SearchAPI:
+  https://api3.geo.admin.ch/rest/services/api/SearchServer
+- OEREB-Webservice Kanton Bern:
+  https://www.oereb2.apps.be.ch/
+- Stadt Bern Bauordnung (BO 2006, Stand 2023):
+  https://stadtrecht.bern.ch/lexoverview-home/lex-721_1
+- Stadt Thun Ortsplanungsrevision:
+  https://www.thun.ch/verwaltung/stadtplanung/ortsplanungsrevision
+- Oberhofen Baureglement:
+  https://www.oberhofen.ch/verwaltung/reglemente-verordnungen
 
----
+## Hinweise zur Erstellung
 
-*Bauzonen-Radar - Schweizer Bauland-Analyse mit OEREB-Daten und gemeindespezifischen Baureglementen.*
+Das Schweizer Baurecht ist hochkomplex: drei Bemessungssysteme parallel,
+gemeindespezifische Reglemente, kantonale Uebergangsphasen, Spezialregimes
+fuer Altstaedte und Schutzgebiete. Eine korrekte Umsetzung erfordert
+exakte Werte aus offiziellen Reglementen.
+
+Fuer die Erstellung dieses Projekts wurde Claude.AI (Anthropic) als
+Programmier-Assistent eingesetzt. Konkret unterstuetzte Claude bei
+Architektur-Entscheidungen, Code-Generierung, Strukturierung der
+Reglement-JSONs, Recherche gegen offizielle Quellen sowie der
+Dokumentations-Erstellung.
+
+Die fachlichen Entscheidungen, die Verifikation der Werte gegen die
+offiziellen Reglemente und die finale Architektur lagen beim Projektteam.
+Externe Verifikation der Werte durch einen Architekten ist Teil der
+laufenden Iteration 3.
+
+## Lizenz und Rechtliches
+
+Hochschul-Projekt, nicht zur kommerziellen Nutzung freigegeben. Die
+Reglement-Daten sind Eigeninterpretation der oeffentlichen Reglemente
+und ersetzen keine rechtsverbindliche Auskunft der zustaendigen
+Bauverwaltung.

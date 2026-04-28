@@ -1,181 +1,167 @@
-# Entwicklungs-Journal Bauzonen-Radar
+# Journal: Bauzonen-Radar
 
-Fortlaufendes Journal aller Entwicklungssitzungen.
-Neueste Eintraege oben.
+Chronologisches Arbeitsjournal zum Python-Abschlussprojekt.
 
----
+## Hinweis zum KI-Einsatz
 
-## 27. April 2026 (Vormittag bis Nachmittag, ca. 4 Stunden)
-
-### Kontext
-Tag vor dem Mitstudentin-Termin. Vorbereitung der Demo, Praxistests an realen Adressen, Ueberarbeitung der Reglement-Daten gegen die offiziellen Quellen.
-
-### Geleistet
-
-**Praxistests an Adressen:**
-- Untere Sadelstrasse 1, 3653 Oberhofen → kein Reglement, aber Naturgefahren erkannt
-- Hirschweg 7, 3604 Thun → Bug entdeckt (OEREB-Schreibweise vs. Reglement-Schreibweise)
-- Kramgasse 1, 3000 Bern → Berner Altstadt-Spezialregime entdeckt
-- Junkerngasse 47, 3011 Bern → "Zone im oeffentlichen Interesse" entdeckt
-- Marktgasse 1 + Bundesgasse 26 → "Obere Altstadt, Zone mit Planungspflicht"
-- Thunstrasse 40 → **erste echte GFZo-Berechnung** (Bauklasse E, GFZo 0.5)
-
-**Datenmodell-Erweiterungen (`baureglement.py`):**
-- Differenzierte Fassadenhoehen-Felder (traufseitig, giebelseitig, andere Dachform)
-- Gebaeudelaenge als eigenes Feld
-- Arealbonus-Felder (Schwellenwert, zusaetzliche Geschosse)
-- Methode `hat_arealbonus()` zur parzellen-spezifischen Pruefung
-
-**thun.json komplett ueberarbeitet:**
-- Echte Werte aus Art. 42 BR 2022 (Tabelle vom Schwager)
-- 7 Wohn-/Mischzonen mit allen kA, gA, GL, Fh tr, Fh gi, Fh, GZ
-- Strukturgebiet-Konzept als Datenfeld
-- Arealbonus mit Schwelle 3000 m^2 / +1 Geschoss
-
-**bern.json komplett ueberarbeitet:**
-- Quelle: Bauordnung der Stadt Bern (BO 2006, Stand 28.9.2023)
-- Bauklassen 2-6 statt A-E (mein Fehler korrigiert)
-- Bauklasse E mit GFZo 0.5/0.6 aus Art. 57
-- Zonen FA/FB/FC/FD mit GFZo 0.1/0.6/1.2 aus Art. 24
-- Berner Altstadt-Spezialregime mit Verweis auf Art. 76-86
-- Variable Grenzabstaende aus Art. 46 als Datenstruktur (fuer spaeter)
-- 11 Bauklassen + 18 Nutzungszonen erfasst
-
-**potenzial.py erweitert:**
-- Strukturgebiet-Erkennung mit prominenter Warnung
-- Arealbonus-Pruefung pro Parzelle
-- Hoehen+GZ-Ausgabe mit konkreter unversiegelter Flaeche in m^2
-- Mehrere berechenbare Parameter werden alle ausgegeben
-
-**Erfassungs-Excel fuer Schwager:**
-- 4 Tabellenblaetter (Anleitung, Stadt Bern, Stadt Thun, Test-Adressen)
-- 8 Tabellen mit gelben Eingabefeldern
-- Lachsfarbene Markierung fuer Annahmen, die zu verifizieren sind
-
-**Tooling:**
-- `start.ps1` wechselt automatisch in Modul-Ordner
-- `demo.ps1` fuer 10-Adressen-Regressionstest
-
-### Erkenntnisse
-
-**Fachlich:**
-- OEREB- und Reglement-Schreibweisen koennen differieren ("Wohnen W2" vs. "Wohnzone W2")
-- Stadt Bern verwendet Bauklassen 2-6, nicht A-E
-- Stadt Bern: gGA haengt von Gebaeudelaenge ab (zweidimensionale Tabelle)
-- Berner Altstadt: vier Spezialregime, davon zwei mit Planungspflicht
-- "Zone im oeffentlichen Interesse" ist eigene Bauklasse-Kategorie
-- Stadt Bern: GFZo wird parzellenscharf im Bauklassenplan (BKP) festgelegt, nicht in der BO
-- Stadt Thun: Strukturgebiet-Ueberlagerung kann BR aushebeln (Beirat Stadtbild)
-- Stadt Thun: Arealbonus ab 3000 m^2 gibt +1 Geschoss
-
-**Architektonisch (Software):**
-- Praxistests in verschiedenen Stadtteilen sind unverzichtbar
-- Tool zeigt jetzt mehrere gefundene Bauklassen, nicht nur die erste
-- Tool macht erste echte Potenzialberechnung (Thunstrasse 40)
-
-### Getestete Adressen heute (10)
-- Kramgasse 1 + 49, 3000/3011 Bern (beide Untere Altstadt)
-- Junkerngasse 47, 3011 Bern (zwei Bauklassen!)
-- Marktgasse 1, 3011 Bern (Obere Altstadt mit Laubenfluchtlinie)
-- Bundesgasse 26, 3011 Bern (Obere Altstadt mit Planungspflicht)
-- Thunstrasse 40, 3005 Bern (Bauklasse E - berechnet)
-- Rathausplatz 1, 3600 Thun (Bestand+Ufer, 4 Gefahren)
-- Hirschweg 7, 3604 Thun (Wohnen W2 mit Strukturgebiet)
-- Dorfstrasse 10, 3095 Spiegel (Koeniz, kein Reglement)
-- Untere Sadelstrasse 1, 3653 Oberhofen (Naturgefahren)
-
-### Git
-- thun.json: OEREB-Schreibweisen ergaenzt
-- bern.json: Komplett neu gegen BO 2006/2023
-- baureglement.py: Datenmodell erweitert
-- potenzial.py: Strukturgebiet, Arealbonus, Hoehen-Ausgabe
-- start.ps1, demo.ps1: Tooling
-- erfassung_baureglemente.xlsx: Vorlage fuer Schwager
-
-### Naechster Schritt
-- Excel an Schwager senden mit Begleittext
-- Mitstudentin-Termin morgen 28.4.2026 (30 Min):
-  Konzept und Projektplan gemeinsam durchgehen, Aufgabenverteilung
-- Sobald Werte vom Schwager kommen: in JSONs eintragen
+Fuer die Erstellung dieses Projekts wird Claude.AI (Anthropic) als
+Programmier-Assistent eingesetzt. Architektur, Code-Generierung,
+Reglement-Strukturierung und Dokumentation entstehen in
+Zusammenarbeit mit Claude. Fachliche Entscheidungen, Verifikation
+der Werte und finale Architektur liegen beim Projektteam.
 
 ---
 
-## 25. April 2026 (Vormittag, ca. 1 Stunde)
+## 28. April 2026 (Dienstag) - Termin mit Fabienne, Oberhofen integriert
 
-### Kontext
-Praxistest mit drei neuen Adressen vor dem Mitstudentin-Termin.
+**Dauer**: ca. 2 Stunden
 
-### Geleistet
-- Test mit Untere Sadelstrasse 1, Oberhofen → kein Reglement, Naturgefahren
-- Test mit Hirschweg 7, Thun → OEREB-Schreibweise "Wohnen W2" entdeckt
-- Test mit Kramgasse 1, Bern → Berner Altstadt-Spezialregime entdeckt
-- Fix thun.json: "Wohnen W2/W3" zusaetzlich zu "Wohnzone W2/W3"
-- Fix bern.json: 4 Altstadt-Bereiche als Spezialbauklassen
-- Fix start.ps1: Wechselt automatisch in Modul-Ordner
+### Termin mit Fabienne (Mitstudentin)
 
-### Gelernt
-- OEREB-Schreibweise und Baureglement-Schreibweise koennen differieren
-- Berner Altstadt verwendet Spezialnamen statt numerischer Bauklassen
-- Praxistests in verschiedenen Stadtteilen sind unverzichtbar
+Aufgabenverteilung fixiert:
+- **Fabienne**: Dokumentation, Streamlit-Webseite (Iteration 4),
+  Requirements-Engineering-Pruefung
+- **Christophe**: Backend, OEREB-Pipeline, Reglement-Daten
+
+Naechste Schritte fuer Fabienne:
+- GitHub-Username an Christophe senden
+- Repo durchklicken
+- Erste Anforderungs-Liste erstellen
+- Implizite Annahmen im Code identifizieren
+
+### Oberhofen integriert
+
+Vierter Schritt (nach Bern und Thun): Kleine Gemeinde abdecken.
+
+**Recherche**:
+- Offizielles Baureglement Oberhofen am Thunersee gefunden
+- Quelle: BR vom 14. Mai 2012, Nachfuehrung bis 31. Dezember 2024,
+  AGR-genehmigt
+- PDF-URL:
+  https://www.oberhofen.ch/images/files/Reglemente-und-Verordnungen/Bau/AGR-Gemeindebaureglement.pdf
+- Art. 212 mit Tabelle: vier Wohn-/Mischzonen W1, W2, W3, M2
+- Werte fuer kA, gA, GL, Fh tr, Fh gi, VG aus Reglement extrahiert
+- Plus elf ZOEN, zehn ZPP, sechs Ortsbildschutzgebiete
+
+**Erkenntnis**: Oberhofen verwendet Hoehen-System ohne
+Gruenflaechenziffer (Unterschied zu Thun BR 2022). Das bricht
+unsere bisherige `ist_berechenbar`-Logik.
+
+### Bug-Fixes
+
+**Problem**: Bei Oberhofen-Test schlug `_behandle_hoehen_und_gz`
+nicht an, weil keine GZ in den Daten war.
+
+**Fix 1 in baureglement.py**: `ist_berechenbar`-Property erweitert.
+Schon eine Hoehenangabe genuegt jetzt fuer "berechenbar". GZ ist
+optional.
+
+**Fix 2 in potenzial.py**: `_behandle_hoehen_und_gz` arbeitet sich
+durch alle vorhandenen Werte. Einleitungstext unterscheidet
+zwischen "mit GZ" (Thun-Stil) und "ohne GZ" (Oberhofen-Stil).
+Vollgeschosse werden ausgegeben.
+
+### Verifikations-Tests (alle drei Gemeinden)
+
+| Adresse | System | Ergebnis |
+|---|---|---|
+| Thunstrasse 40, Bern | GFZo | 118 m^2 zulaessig, 80%, Status GERING |
+| Hirschweg 7, Thun | Hoehen+GZ | Komplette Werte, Strukturgebiet erkannt |
+| U. Stadelstrasse 1, Oberhofen | Hoehen | Komplette Werte mit Vollgeschossen |
+
+**Status**: Drei Bemessungssysteme im selben Tool funktional.
+
+### Dokumentation aktualisiert
+
+- README.md: Stand 28.04., Oberhofen-Test-Adresse, Fabienne-Eintrag,
+  KI-Hinweis am Ende
+- docs/konzept.md: Iteration 1+2 abgeschlossen markiert,
+  Aufgabenverteilung mit Fabienne, KI-Werkzeuge-Sektion
+- docs/projektplan.md: Iteration 3 als laufend markiert,
+  Iteration 4 verfeinert, Risiken-Tabelle ergaenzt
+- docs/journal.md: Dieser Eintrag
+- docs/fachliche_grundlagen.md: Oberhofen-Sektion ergaenzt
 
 ---
 
-## 24. April 2026 (Abend, ca. 1 Stunde)
+## 27. April 2026 (Montag) - Mehrsystem-Modell und Reglement-Daten
 
-### Kontext
-Erste komplette Pipeline funktioniert. Aufraeumen, Dokumentation, Repo-Setup.
+**Dauer**: ca. 4 Stunden
 
-### Geleistet
-- README.md professionell gestaltet
-- Konzept-Dokument fuer Kursabgabe erstellt
-- Projektplan mit 8 Wochen bis 17. Juni
-- Fachliche Grundlagen dokumentiert
-- Repo aufgeraeumt (persoenliche Dateien entfernt, .gitignore erweitert)
+### Erkenntnis des Tages: Drei Bemessungssysteme parallel
 
-### Naechster Schritt
-- Praxistests an mehr Adressen
-- Schwager kontaktieren fuer Reglement-Werte
-- Mitstudentin terminieren
+Der Kanton Bern hat den Systemwechsel von AZ zu GFZo
+(IVHB-konform) eingelaeutet, aber Gemeinden setzen ihn
+unterschiedlich schnell um. Stadt Thun BR 2022 verzichtet sogar
+ganz auf eine flaechen-bezogene Kennzahl und steuert ueber Hoehen
+und Gruenflaechenziffer.
+
+Datenmodell entsprechend erweitert:
+- `BemessungsSystem`-Enum
+- Felder fuer Hoehen, Grenzabstaende, Gebaeudelaenge, GZ
+- `Bauparameter.ist_berechenbar` und `hauptkennzahl()`
+
+### Stadt Bern komplett
+
+Recherche gegen offizielle Bauordnung BO 2006 (Stand 28.09.2023):
+- Bauklassen 2-6 mit FH/FHA/kGA/gGA (Art. 46)
+- Bauklasse E mit GFZo 0.5 / 0.6 (Art. 57)
+- ZoeN FA-FD mit GFZo (Art. 24)
+- Arbeitszonen mit FH/FHA pro Bauklasse 1-6 (Art. 58)
+- Altstadt-Spezialregimes Untere/Obere Altstadt (Art. 76-86)
+
+`bern.json` mit 30+ Eintraegen vollstaendig erfasst. Hinweis: Die
+GFZo-Werte pro Bauklasse-Zone-Kombination liegen aber im
+Bauklassenplan (BKP), nicht in der BO. Schwager wird die liefern.
+
+### Stadt Thun komplett
+
+Schwager-Tabelle mit Art.-42-Werten BR 2022 eingepflegt:
+- W2/W3/W4/WA3-WA5/Arbeiten A
+- Strukturgebiet als Spezialfall
+- Arealbonus ab 3000 m^2
+
+`thun.json` mit allen Werten erfasst.
+
+### Erste echte GFZo-Berechnung
+
+Thunstrasse 40, 3005 Bern (Bauklasse E):
+- Parzellenflaeche: 237 m^2
+- GFZo = 0.5
+- Theoretisch zulaessig: 118 m^2
+- Status: GERING (80% Ausschoepfung)
+
+Tool funktioniert technisch und fachlich.
+
+### Erfassungs-Excel fuer Schwager
+
+`docs/erfassung_baureglemente.xlsx` mit vier Tabs und acht
+Tabellen erstellt. Soll dem Schwager helfen, die fehlenden
+Bauklassenplan-Werte effizient nachzuliefern.
+
+### Test-Adressen-Suite
+
+Zehn realweltliche Adressen verifiziert. `demo.ps1` als
+Regressionstest erstellt.
 
 ---
 
-## 23. April 2026 (Tagsueber, ca. 4 Stunden)
+## (frueheres) - Iteration 1 abgeschlossen
 
-### Kontext
-Konzeption und Implementierung der ersten Pipeline-Iteration.
-
-### Geleistet
-- Modulstruktur entworfen: modelle.py, bern.py, baureglement.py, potenzial.py
-- swisstopo-Geocoding integriert (Adresse → LV95-Koordinaten)
-- OEREB-Webservice Kanton Bern angebunden (GetEGRID, GetExtract)
-- XML-Parser fuer alle relevanten OEREB-Subcodes
-- Erste thun.json mit historischen AZ-Werten (W2: 0.5, W3: 0.7)
-- Erste bern.json mit Bauklassen-Struktur
-
-### Gelernt
-- OEREB-XML ist gut strukturiert, aber tief verschachtelt
-- LV95-Koordinaten sind Pflicht fuer Schweizer Webservices
-- Parzellen koennen mehrere Zonenausschnitte haben (Anteilsberechnung)
+Pipeline End-to-End funktional. Geocoding, OEREB-Abfrage,
+XML-Parsing, Datenmodell. Erste Test-Adressen liefern korrekte
+Daten.
 
 ---
 
-## 22. April 2026 (Abend)
+## Verschiedene Beobachtungen
 
-### Kontext
-Projekt-Idee: Bauzonen-Radar fuer den Kanton Bern als Abschlussprojekt fuer
-den Python-Kurs. Abgabe 17. Juni 2026.
-
-### Geleistet
-- Projekt-Repository auf GitHub erstellt
-- Python venv eingerichtet (requests, owslib, geopandas, shapely, pyproj, folium, guizero)
-- Erstes geocode-Experiment mit swisstopo
-- Erste OEREB-Anfrage an https://www.oereb2.apps.be.ch/
-
-### Erste Pitch-Idee
-"Schweizer Bauland-Analyse: Zeigt fuer jede Adresse das verbleibende
-Bebauungspotenzial - ungenutzte Reserve unter Beruecksichtigung von OEREB-Daten,
-Naturgefahren und Baulinien."
-
-### Naechster Schritt
-- Pipeline End-to-End bauen
-- Ein Reglement (Thun) als Prototyp einbinden
+- Windows-PowerShell mit `start.ps1` automatisiert venv-Aktivierung
+  und Wechsel ins Modul-Verzeichnis. Spart bei jedem Start drei
+  Befehle.
+- `demo.ps1` verwendet `$PSScriptRoot`, also ortsunabhaengig
+  aufrufbar.
+- OEREB-Webservice antwortet meist in unter 5 Sekunden, ab und zu
+  laengere Wartezeiten.
+- swisstopo SearchAPI ist sehr schnell und tolerant gegenueber
+  Tippfehlern in Adressen.

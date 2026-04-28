@@ -1,297 +1,235 @@
-# Fachliche Grundlagen: Berner Baurecht
+# Fachliche Grundlagen: Bauzonen-Radar
 
-Dokumentation der fachlichen Recherche zum schweizerischen und kantonalen Baurecht im Kontext des Bauzonen-Radar-Projekts.
+Sammlung der baurechtlichen Recherche fuer das Projekt.
+Stand: 28. April 2026.
 
-**Stand:** 27. April 2026
+## Schweizer Baurecht im Ueberblick
 
----
+Das Baurecht in der Schweiz ist dreistufig:
 
-## 1. Hierarchie der Rechtsgrundlagen
+1. **Bund**: Raumplanungsgesetz (RPG), Raumplanungsverordnung (RPV)
+2. **Kanton**: Baugesetz (BauG), Bauverordnung (BauV)
+3. **Gemeinde**: Baureglement (BR), Zonenplan, Sondernutzungsplaene
 
-### Bundesebene
-- **Raumplanungsgesetz (RPG)** - SR 700
-- **Wohnraumfoerderungsverordnung** - SR 842.1
+Fuer das Bebauungspotenzial einer konkreten Parzelle ist primaer
+das Gemeinde-Baureglement massgebend, eingebettet in die
+kantonalen Vorgaben.
 
-### Kantonsebene Bern
-- **Baugesetz (BauG)** - BSG 721.0
-- **Bauverordnung (BauV)** - BSG 721.1
-- **Verordnung ueber Begriffe und Messweisen im Bauwesen (BMBV)** - BSG 721.3
-
-### Gemeindeebene
-- **Bauordnung (BO)** mit Anhaengen
-- **Nutzungszonenplan (NZP)**
-- **Bauklassenplan (BKP)**
-- **Laermempfindlichkeitsstufenplan**
-- **Naturgefahrenplan**
-- **Ueberbauungsordnungen (UeO)** - gebietsweise
-
----
-
-## 2. Drei Bemessungssysteme
+## Drei Bemessungssysteme
 
 ### AZ - Klassische Ausnuetzungsziffer
-- Verhaeltnis Hauptnutzflaeche zu anrechenbarer Grundstuecksflaeche
-- Altes Recht, vor BMBV-Anpassung
-- Wenige Gemeinden im Kanton Bern verwenden noch dieses System
+
+Verhaeltnis der zulaessigen Geschossflaeche zur Parzellenflaeche.
+AZ = 0.5 bedeutet: Auf einer 1000 m^2 Parzelle duerfen 500 m^2
+Geschossflaeche realisiert werden. Verbreitetes altes System,
+wird zunehmend durch GFZo abgeloest.
 
 ### GFZo - Geschossflaechenziffer oberirdisch
-- Verhaeltnis oberirdische Geschossflaeche zu Grundstuecksflaeche
-- Neues Recht gemaess BMBV (interkantonal harmonisiert nach IVHB)
-- Stadt Bern: Seit 1.8.2019 (Teilrevision BO 25.11.2018)
 
-### Hoehen + GZ - Hoehenbasiert mit Gruenflaechenziffer
-- Steuerung ueber Fassadenhoehen, Grenzabstaende, Gebaeudelaenge, GZ
-- Stadt Thun BR 2022 ab Februar 2025
+Aehnlich wie AZ, aber:
+- Nur oberirdische Geschossflaeche
+- Definitionen nach Interkantonaler Vereinbarung ueber die
+  Harmonisierung der Baubegriffe (IVHB)
+- Im Kanton Bern eingefuehrt mit der BMBV-Verordnung
+- Stadt Bern verwendet GFZo seit BO 2006
+
+### Hoehen + GZ - Steuerung ueber Gebaeudemasse
+
+Statt einer Flaechen-Kennzahl werden steuern:
+- Maximale Vollgeschosse
+- Fassadenhoehen (traufseitig, giebelseitig)
+- Maximale Gebaeudelaenge
+- Grenzabstaende klein und gross
+- Optional: Gruenflaechenziffer (mindestens unversiegelt zu
+  haltende Flaeche)
+
+Stadt Thun verwendet dieses System seit BR 2022.
+Oberhofen verwendet es seit BR 2012, allerdings ohne GZ.
+
+## Stadt Bern
+
+### Quelle
+
+- Bauordnung der Stadt Bern (BO 2006), Stand 28.09.2023
+- URL: https://stadtrecht.bern.ch/lexoverview-home/lex-721_1
+- PDF: https://oerebfiles.apps.be.ch/35101/5072/Bern_SSSB_721_1_Bauordnung_der_Stadt_Bern.pdf
+
+### Bauklassen 2-6
+
+- Art. 46 BO: Tabelle mit FH (Fassadenhoehe), FHA (FH Anbau),
+  kGA (kleiner Grenzabstand), gGA (grosser Grenzabstand)
+- gGA variiert mit Gebaeudelaenge - zweidimensionale Tabelle
+- TODO: Variable gGA noch nicht in Code umgesetzt
+
+### Bauklasse E
+
+- Art. 56-57 BO: Erhaltung der bestehenden Bebauungsstruktur
+- GFZo 0.5 (zwei Geschosse) oder 0.6 (drei und mehr Geschosse)
+- Beispiel Thunstrasse 40, 3005 Bern: GFZo 0.5
+
+### Zonen mit Nutzungsplanung (ZoeN)
+
+- Art. 24 BO: Sondernutzungen mit individueller GFZo
+- FA = 0.1 (Freihaltezonen)
+- FB = 0.6
+- FC = 1.2
+- FD = projekt-abhaengig
+
+### Arbeitszonen
+
+- Art. 58 BO: FH/FHA pro Bauklasse 1-6
+
+### Altstadt-Spezialregimes
+
+- Art. 76-86 BO
+- Untere Altstadt: UNESCO-Welterbe, strenge Vorschriften
+- Obere Altstadt: Laubenfluchtlinien, Sandstein-Pflicht
+- Biberschwanzziegel als Pflichtmaterial fuer Daecher
+
+### Offene Punkte
+
+GFZo-Werte pro Zone-Bauklasse-Kombination liegen im
+**Bauklassenplan (BKP)**, nicht in der BO. Schwager (Architekt)
+soll diese Werte aus seiner Bueropraxis liefern. Erfassungs-Excel
+ist vorbereitet.
+
+## Stadt Thun
+
+### Quelle
+
+- Baureglement (BR) der Stadt Thun, Februar 2025
+- Ortsplanungsrevision OPR 2022
+- URL: https://www.thun.ch/verwaltung/stadtplanung/ortsplanungsrevision
+
+### Wesentliche Aenderung gegenueber BR 2002
+
 - AZ in Wohnzonen abgeschafft
+- Steuerung ueber Hoehen, Grenzabstaende, Gebaeudelaenge,
+  Gruenflaechenziffer
 
----
+### Art. 42 - Tabelle
 
-## 3. Stadt Bern - Bauordnung 2006
+Vom Schwager geliefert, in `thun.json` eingepflegt:
 
-### Quelle
-- **Erlassdatum:** 24. September 2006
-- **Aktueller Stand:** 28. September 2023
-- **Quelle URL:** https://stadtrecht.bern.ch/lexoverview-home/lex-721_1
-- **PDF:** https://oerebfiles.apps.be.ch/35101/5072/Bern_SSSB_721_1_Bauordnung_der_Stadt_Bern.pdf
-- **Erlassnummer:** SSSB 721.1
+| Zone | kA | gA | GL | Fh tr | Fh gi | GZ |
+|---|---|---|---|---|---|---|
+| W2 | 4 | 8 | 15 | 7.0 | 11.0 | 0.45 |
+| W3 | ... | ... | ... | ... | ... | ... |
+| W4 | ... | ... | ... | ... | ... | ... |
+| WA3 | ... | ... | ... | ... | ... | ... |
+| WA4 | ... | ... | ... | ... | ... | ... |
+| WA5 | ... | ... | ... | ... | ... | ... |
+| Arbeiten A | ... | ... | ... | ... | ... | ... |
 
-### Wichtige Teilrevisionen
-- **9. Juni 2013** - Schutz Wohnraum, preisguenstiger Wohnungsbau
-- **18. Mai 2014** - Wohn-Initiative, Bonus 20% bei preisguenstigem Wohnraum
-- **25. November 2018** - Anpassung an BMBV (Hauptrevision), in Kraft seit 1.8.2019
-- **13. Mai 2020** - Zone FD*1 Uni Muesmatt
-- **19. Mai 2021** - Zonen mit Planungspflicht (ZPP)
-- **28. November 2021** - Lauben-Geschosse Altstadt
+### Spezialfaelle
 
-### Nutzungszonen (Art. 18)
+- **Strukturgebiet**: Beirat Stadtbild kann Vorgaben machen, die
+  das BR aushebeln. Tool erkennt das automatisch.
+- **Arealbonus**: Ab 3000 m^2 Parzelle plus ein Vollgeschoss
+  bewilligungsfaehig.
 
-#### Wohnzonen
-- **Wohnzone W** (Art. 19) - reine Wohnzone, max. 10% Arbeitsnutzung
-- **Gemischte Wohnzone WG** (Art. 20) - mind. 50% Wohnen
-- **Kernzone K** (Art. 21) - Foerderung Quartierzentren
-
-#### Arbeitszonen
-- **Dienstleistungszone D** (Art. 22) - Buero, Wohnen bis 50%
-- **Industrie- und Gewerbezone IG** (Art. 23)
-
-#### Zonen im oeffentlichen Interesse
-- **FA** - stark durchgruente Anlagen, **GFZo = 0.1** (Art. 24 Abs. 2)
-- **FB** - oeffentliche Anlagen, **GFZo = 0.6** (Art. 24 Abs. 3a)
-- **FC** - verdichtete oeffentliche Bauten, **GFZo = 1.2** (Art. 24 Abs. 3b)
-- **FD** - Nutzungsmass projektabhaengig (Art. 24 Abs. 3c)
-- **FA*, FB*, FC*, FD*** - private Bauten im allg. Interesse
-
-#### Schutzzonen
-- **SZA** - Landschafts- und Ortsbildschutzareal, Bauverbot fuer nicht standortgebundene Bauten
-- **SZB** - mit gelockerten Vorschriften gegenueber SZA
-- **SZC** - Naturschutzareal, nur Bauten dem Schutzzweck dienend
-
-### Bauklassen (Art. 28)
-
-In den Bauklassen 2 bis 6 entspricht die Ziffer der zulaessigen Anzahl Vollgeschosse.
-
-**Wichtig:** Die Bauklassen sind 2 bis 6, NICHT A bis E. "Bauklasse E" ist eine Sonder-Bauklasse fuer Erhaltungsregimes.
-
-### Baupolizeiliche Masse (Art. 46)
-
-Pro Bauklasse mit Abhaengigkeit von der Gebaeudelaenge GL:
-
-| BK | FH | FHA | kGA | Anzahl gGA |
-|----|------|------|-----|------------|
-| 2  | 8.5 m | 11.5 m | 4 m | 1 |
-| 3  | 11.5 m | 14.5 m | 5 m | 2 |
-| 4  | 14.5 m | 17.5 m | 6 m | 2 |
-| 5  | 17.5 m | 20.5 m | 6 m | 2 |
-| 6  | 20.5 m | 23.5 m | 6 m | 2 |
-
-**gGA variiert mit Gebaeudelaenge:**
-- Bei kuerzeren Gebaeuden: kleinerer gGA
-- Bei laengeren Gebaeuden: groesserer gGA
-- Detaillierte Werte in der BO Art. 46
-
-**FH** = Fassadenhoehe bei Schraegdach traufseitig oder bei Flachdach ohne Attika
-**FHA** = Fassadenhoehe bei nicht zurueckversetztem Attika
-
-### Bauklasse E (Erhaltung)
-
-Die Bauklasse E ist die Erhaltungsbauklasse:
-
-- Neu- und Umbauten muessen sich an Standort und Volumetrie des bestehenden Baukoerpers halten (Art. 56)
-- Abweichungen vom Nutzungsmass moeglich, sofern folgende GFZo nicht ueberschritten:
-  - **GFZo = 0.5 bei 2 Geschossen** (Art. 57 Abs. 2a)
-  - **GFZo = 0.6 bei 3 oder mehr Geschossen** (Art. 57 Abs. 2b)
-- Sonst gelten die baupolizeilichen Masse der entsprechenden Bauklasse 2-6
-
-### Arbeitszonen (Art. 58)
-
-Eigene Fassadenhoehen pro Bauklasse:
-
-| BK | FH | FHA |
-|----|------|------|
-| 1  | 6.5 m | 9.5 m |
-| 2  | 9.5 m | 12.5 m |
-| 3  | 12.5 m | 15.5 m |
-| 4  | 15.5 m | 18.5 m |
-| 5  | 18.5 m | 21.5 m |
-| 6  | 21.5 m | 24.5 m |
-
-Grenzabstand: Haelfte der Fassadenhoehe, mind. 4 m, max. 8 m.
-
-### Berner Altstadt - Spezialregimes
-
-**Bestandteile (Art. 76):**
-- **Obere Altstadt** inkl. Gewerbegebiet Matte
-- **Untere Altstadt** inkl. Wohngebiet Matte
-
-UNESCO-Weltkulturerbe.
-
-**Untere Altstadt (Art. 80, 81):**
-- Integral als Baudenkmal geschuetzt
-- Schutz erstreckt sich auf aeussere und innere Bauteile
-- Veraenderungen nur im Rahmen des Schutzzwecks
-- Gebaeudevolumen ueber 2. Vollgeschoss = Wohnen
-- Brandmauern in historischem Bestand geschuetzt (Art. 82)
-
-**Obere Altstadt (Art. 77-79):**
-- Zone mit Planungspflicht (UeO erforderlich)
-- Geschaefts- und Dienstleistungszentrum mit Wohnnutzung
-- Volumen ueber oberstem Vollgeschoss = Wohnen
-- Erdgeschoss-Lauben in Spitalgasse, Marktgasse, Neuengasse: nur Warenverkauf oder Gastgewerbe (Art. 78 Abs. 6)
-- Nutzungsmass: Erhaltung; bei Erhoehung max. mittleres Mass der Nachbarn (Art. 79)
-
-**Bauliche Detailvorschriften:**
-- Fassaden aus Berner Sandstein (Art. 83)
-- Daecher mit Biberschwanzziegeln (Art. 84)
-- Lukarnen max. 1/3 Fassadenlaenge im 1. Dachgeschoss
-- Dacheinschnitte untersagt
-- Brandmauern: max. 3 Tuerdurchbrueche im EG/1.OG
-
-### GFZo-Werte pro Zone-Bauklasse-Kombination
-
-**Wichtig:** Die konkreten GFZo-Werte pro Zone-Bauklasse-Kombination sind nicht in der BO selbst spezifiziert. Sie stehen im **Bauklassenplan (BKP)** parzellenscharf hinterlegt.
-
-Diese Werte muessen entweder:
-- Aus dem OEREB-Auszug pro Parzelle entnommen werden, oder
-- Aus dem BKP fuer die Stadt Bern bezogen werden
-
-**Status im Tool:** Aktuell nicht hinterlegt, Recherche und Schwager-Verifikation ausstehend.
-
----
-
-## 4. Stadt Thun - Baureglement BR 2022
+## Oberhofen am Thunersee
 
 ### Quelle
-- **Reglement:** BR 2022 (Ortsplanungsrevision OPR)
-- **Inkraftsetzung:** Februar 2025 (schrittweise)
-- **URL:** https://www.thun.ch/verwaltung/stadtplanung/ortsplanungsrevision
 
-### Systemwechsel
+- Baureglement (BR) der Einwohnergemeinde Oberhofen am Thunersee
+  vom 14. Mai 2012
+- Nachfuehrung bis 31. Dezember 2024
+- AGR-genehmigt (Amt fuer Gemeinden und Raumordnung)
+- URL: https://www.oberhofen.ch/verwaltung/reglemente-verordnungen
+- PDF: https://www.oberhofen.ch/images/files/Reglemente-und-Verordnungen/Bau/AGR-Gemeindebaureglement.pdf
 
-Mit BR 2022 hat Thun nicht nur die AZ abgeschafft (wie der Kanton es vorgibt), sondern auch keine GFZo eingefuehrt. Stattdessen Steuerung ueber:
+### System
 
-- Grenzabstaende (kA/gA)
-- Gebaeudelaenge (GL)
-- Fassadenhoehen, differenziert nach Dachform:
-  - Fh tr (traufseitig bei Schraegdach)
-  - Fh gi (giebelseitig bei Schraegdach)
-  - Fh (anderes Dach, z.B. Flachdach)
-- Gruenflaechenziffer (GZ)
+Hoehen-System ohne GZ. Steuerung ueber:
+- Vollgeschosse
+- Fassadenhoehen
+- Gebaeudelaenge
+- Grenzabstaende
+- Erstwohnungsanteil 80% (EWA)
 
-### Baupolizeiliche Masse (Art. 42)
+### Art. 212 - Tabelle
 
-| Zone | kA | gA | GL | Fh tr | Fh gi | Fh | GZ |
-|------|-----|-----|------|-------|-------|------|------|
-| W2 | 4.0 | 8.0 | 15.0 | 7.0 | 11.0 | (3) | 0.45 |
-| W3 | 4.0 | 10.0 | 25.0 | 8.0 | 12.0 | 10.0 | 0.45 |
-| W4 | 4.0 | 10.0 | 60.0 | 11.0 | 15.0 | 13.0 | 0.45 |
-| WA3 | 4.0 | 10.0 | 25.0 | 9.0 | 13.0 | 11.0 | 0.35 |
-| WA4 | 4.0 | 10.0 | 60.0 | 12.0 | 16.0 | 14.0 | – |
-| WA5 | 4.0 | 10.0 | 60.0 | 15.0 | 19.0 | 17.0 | – |
-| A | 4.0 | – | – | – | – | 17.5 | – |
+Vier Wohn-/Mischzonen mit kompletten Werten:
 
-**Fussnoten:**
-- (1) Bei geschlossener Bauweise koennen kleinere Grenzabstaende gelten
-- (2) Grenzabstand 10 m gemaess Art. 28 Abs. 3
-- (3) Volumen und Dachformen frei waehlbar innerhalb gleichgeneigtes Satteldach
-- (4) Bei begehbarer Flachdach-Bruestung mit offener Absturzsicherung +1 m
+| Zone | kA | gA | GL | Fh tr | Fh gi | VG |
+|---|---|---|---|---|---|---|
+| W1 | 3.0 | 6.0 | 20.0 | 6.0 | 9.0 | 1 |
+| W2 | 4.0 | 8.0 | 20.0 | 7.0 | 10.0 | 2 |
+| W3 | 4.0 | 8.0 | 25.0 | 9.5 | 13.0 | 3 |
+| M2 | 2.0 | 6.0 | 20.0 | 8.5 | 13.5 | 2 |
 
-### Strukturgebiet (Ueberlagerung)
+Plus Fussnoten:
+- Reduktion gA an Steilhaengen um 2.0 m
+- Bei Bauten am Hang +1.0 m Mehrhoehe (ausser Hangseite)
+- W2 gegenueber Rebbauzone 10.0 m Abstand
+- M2 seeseitig max. 15.0 m Gebaeudebreite
 
-In bestimmten Gebieten der Stadt Thun gilt eine **Strukturgebiet-Ueberlagerung**.
+### Weitere Zonen
 
-In diesen Gebieten kann der **Beirat Stadtbild** der Stadt Thun gestalterische Vorgaben machen, die die regulaeren BR-Werte teilweise aushebeln. Konkrete Bebauung muss mit der Stadt abgestimmt werden.
+- Zonen fuer oeffentliche Nutzungen (ZOEN 1-11): Schule, Kirche,
+  Schloessli, Laendte, Mehrzweckhalle usw.
+- Zehn Zonen mit Planungspflicht (ZPP A-J)
+- Sechs Ortsbildschutzgebiete (O I bis O VI)
+- Landwirtschaftszone (LWZ)
+- Rebbauzone (RB) - Bauverbot
+- Gruenzone (GR) - Freihaltezone
 
-**Im Tool:** Wird automatisch erkannt aus den OEREB-Daten und in der Potenzialanalyse prominent gewarnt.
+### Dachgestaltung (Art. 414)
+
+- Satteldach: Neigung 22-40 Grad
+- Flachdach grundsaetzlich nicht zulaessig (nur in ZOEN/ZPP/UeO)
+- Dachvorspruenge traufseitig 0.2-2.5 m
+- Dachaufbauten max. 35% der Fassadenbreite (50% bei
+  qualifiziertem Verfahren)
+
+## Naturgefahren
+
+OEREB liefert Naturgefahrengebiete als separate Restrictions:
+- Mittlere Gefaehrdung
+- Geringe Gefaehrdung
+- Restgefahrengebiet
+
+Tool gibt Warnung aus: "Bebaubarkeit muss im Detail geprueft
+werden."
+
+## Spezialfaelle
+
+### Strukturgebiet (Thun)
+
+Spezielle Ueberlagerung der Stadt Thun. Beirat Stadtbild kann
+gestalterische Vorgaben machen, die das BR aushebeln. Tool
+erkennt das anhand der OEREB-Legende und gibt Hinweis aus.
 
 ### Arealbonus
 
-Bei **Parzellen ueber 3000 m^2 oder bei Zusammenlegungen** kann ein zusaetzliches Geschoss bewilligt werden (Arealbonus).
+Schwellenwerte sind reglements- bzw. gemeindespezifisch:
+- Thun BR 2022: 3000 m^2 → +1 Geschoss
+- Oberhofen: kein Arealbonus
 
-**Im Tool:** Wird automatisch geprueft anhand der Parzellenflaeche.
+### Baulinien
 
-### Historische Werte BR 2002
+OEREB liefert Baulinien als Restrictions. Tool gibt Hinweis aus,
+dass die effektive Bauflaeche kleiner als die Gesamtflaeche ist.
 
-Vor BR 2022 galten Ausnuetzungsziffern in den Wohnzonen:
-- W2: AZ = 0.5
-- W3: AZ = 0.7
+### Laufende Aenderungen
 
-Diese sind im Tool als `ausnuetzungsziffer_historisch` hinterlegt - rein als Referenz.
+Wenn die OEREB-Daten "laufendes Verfahren" oder "geplante
+Aenderung" anzeigen, gibt das Tool eine Warnung aus.
 
----
+## Quellen-Zusammenfassung
 
-## 5. OEREB-Konzept
+| Gemeinde | Reglement | Stand | URL |
+|---|---|---|---|
+| Bern | BO 2006 | 28.09.2023 | stadtrecht.bern.ch |
+| Thun | BR 2022 | Februar 2025 | thun.ch |
+| Oberhofen | BR 2012 | 31.12.2024 | oberhofen.ch |
 
-### Was ist OEREB?
-Oeffentlich-rechtliche Eigentumsbeschraenkungen (OEREB) sind Einschraenkungen oder Auflagen, die ein Grundeigentuemer aufgrund oeffentlichen Rechts dulden muss.
+## Zu klaerende Punkte
 
-### Themenbereiche (im Kanton Bern relevant)
-
-- **ch.Nutzungsplanung** - Bauzonen, Bauklassen, Linien, Sonderbauvorschriften
-- **ch.BE.Naturgefahren** - Hochwasser, Rutsch, Sturzgefahren
-- **ch.BE.Bauinventar** - Schutzwerte Gebaeudegruppen
-- **ch.BE.Denkmalschutzobjekte** - Einzelobjekte unter Denkmalschutz
-- **ch.BE.ArchaeologischesInventar** - Archaeologische Schutzgebiete
-- **ch.BE.Gewaesserschutzbereiche** - Trinkwasserschutz
-- **ch.Gewaesserraum** - Uferbereich
-- **ch.Laermempfindlichkeitsstufen** - ES I/II/III/IV
-
-### OEREB-XML-Struktur
-
-Pro Parzelle gibt es:
-- Eine `Extract`-Wurzel mit Header-Informationen
-- Mehrere `RealEstate`-Elemente (typisch: 1)
-- Pro RealEstate: `RestrictionOnLandownership`-Listen pro Themenbereich
-
-### Wichtige SubCodes (im Tool implementiert)
-
-- `ch.NutzungsplanungGrundnutzung` - Hauptzonen (Bauzone)
-- `ch.NutzungsplanungUeberlagerung` - Ueberlagerungen (Schutz, Strukturgebiet)
-- `ch.NutzungsplanungSondernutzung` - UeOs, ZPPs
-- `ch.NutzungsplanungGefahrengebiete` - Naturgefahren
-- `ch.NutzungsplanungFlaecheAndere` - sonstige Flaechen (Strukturgebiet, Altstadtgebiet)
-- `ch.NutzungsplanungLinie` - Baulinien
-
----
-
-## 6. Quellen und Referenzen
-
-### Offizielle Quellen
-- **swisstopo SearchAPI:** https://api3.geo.admin.ch/rest/services/api/SearchServer
-- **OEREB-Webservice Kanton Bern:** https://www.oereb2.apps.be.ch/
-- **OEREB-Schema V2.0** (Bundesstandard)
-- **Bauordnung Stadt Bern:** https://stadtrecht.bern.ch/lexoverview-home/lex-721_1
-- **Stadt Thun OPR:** https://www.thun.ch/verwaltung/stadtplanung/ortsplanungsrevision
-- **BMBV (kantonal):** https://www.belex.sites.be.ch/data/721.3/de
-
-### Verwendete Bundesgesetze
-- **Baugesetz (BauG):** BSG 721.0
-- **Bauverordnung (BauV):** BSG 721.1
-- **BMBV:** BSG 721.3
-- **Raumplanungsgesetz (RPG):** SR 700
-- **Wohnraumfoerderungsverordnung:** SR 842.1
-
-### Verwendete Stadt-Bern-Erlasse
-- **Bauordnung Stadt Bern (BO):** SSSB 721.1
-- **Nutzungszonenplan:** SSSB 721.41
-- **Bauklassenplan (BKP):** SSSB 721.31
-- **Laermempfindlichkeitsstufenplan:** SSSB 721.5
+- Stadt Bern Bauklassenplan: GFZo-Werte pro Zone-Bauklasse-
+  Kombination (von Schwager)
+- Variable gGA aus Art. 46 BO Bern (zweidimensionale Tabelle)
+  in Code umsetzen
+- Eventuell vierte Gemeinde aufnehmen (Koeniz wegen Test-Adresse
+  Spiegel)
