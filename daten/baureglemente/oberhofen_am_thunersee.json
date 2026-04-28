@@ -1,0 +1,369 @@
+{
+  "gemeinde": "Oberhofen am Thunersee",
+  "bfs_nr": 924,
+  "kanton": "BE",
+  "stand": "2026-04-27",
+  "quelle": "Baureglement (BR) der Einwohnergemeinde Oberhofen am Thunersee vom 14. Mai 2012, mit Nachfuehrung bis 31. Dezember 2024",
+  "quelle_kurz": "BR Oberhofen, Art. 212",
+  "quelle_url": "https://www.oberhofen.ch/verwaltung/reglemente-verordnungen",
+  "quelle_pdf": "https://www.oberhofen.ch/images/files/Reglemente-und-Verordnungen/Bau/AGR-Gemeindebaureglement.pdf",
+  "struktur": "kombiniert",
+  "system_default": "hoehen_und_gz",
+  "hinweis": "Baureglement der Gemeinde Oberhofen am Thunersee. Steuerung der Bebauung ueber Grenzabstaende, Gebaeudelaenge, Fassadenhoehen und Vollgeschosse (analog Thun, aber ohne Gruenflaechenziffer und ohne Arealbonus). Erstwohnungsanteil (EWA) >= 80 % in allen Wohn- und Mischzonen. AGR-genehmigt mit Nachfuehrung bis 31.12.2024.",
+
+  "nutzungszonen": {
+    "Wohnzone W1": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Wohnen",
+      "mischnutzung_erlaubt": false,
+      "max_geschosse": 1,
+      "grenzabstand_klein_m": 3.0,
+      "grenzabstand_gross_m": 6.0,
+      "max_gebaeudelaenge_m": 20.0,
+      "max_fassadenhoehe_traufseitig_m": 6.0,
+      "max_fassadenhoehe_giebelseitig_m": 9.0,
+      "max_fassadenhoehe_anderes_dach_m": null,
+      "gruenflaechenziffer": null,
+      "arealbonus_ab_flaeche_m2": null,
+      "arealbonus_zusaetzliche_geschosse": null,
+      "erstwohnungsanteil_prozent": 80,
+      "laermempfindlichkeitsstufe": "II",
+      "hinweise": "Wohnzone mit 1 Vollgeschoss. Stille Gewerbe (Buero, Arztpraxis, Coiffeur, Atelier) zulaessig. EWA min. 80%. An Steilhaengen Reduktion gA um 2.0 m moeglich. Bei Bauten am Hang +1.0 m Mehrhoehe (ausser Hangseite).",
+      "rechtsgrundlage": "BR Oberhofen, Art. 211 + Art. 212",
+      "gueltig_ab": "2012-05-14"
+    },
+    "Wohnzone W2": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Wohnen",
+      "mischnutzung_erlaubt": false,
+      "max_geschosse": 2,
+      "grenzabstand_klein_m": 4.0,
+      "grenzabstand_gross_m": 8.0,
+      "max_gebaeudelaenge_m": 20.0,
+      "max_fassadenhoehe_traufseitig_m": 7.0,
+      "max_fassadenhoehe_giebelseitig_m": 10.0,
+      "max_fassadenhoehe_anderes_dach_m": null,
+      "gruenflaechenziffer": null,
+      "arealbonus_ab_flaeche_m2": null,
+      "arealbonus_zusaetzliche_geschosse": null,
+      "erstwohnungsanteil_prozent": 80,
+      "laermempfindlichkeitsstufe": "II",
+      "hinweise": "Wohnzone mit 2 Vollgeschossen, inkl. 'W2 Laueli' (besondere baurechtliche Ordnung). EWA min. 80%. Gegenueber Rebbauzone 10.0 m Abstand. An Steilhaengen Reduktion gA um 2.0 m moeglich. Bei Bauten am Hang +1.0 m Mehrhoehe.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 211 + Art. 212",
+      "gueltig_ab": "2012-05-14"
+    },
+    "Wohnzone W3": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Wohnen",
+      "mischnutzung_erlaubt": false,
+      "max_geschosse": 3,
+      "grenzabstand_klein_m": 4.0,
+      "grenzabstand_gross_m": 8.0,
+      "max_gebaeudelaenge_m": 25.0,
+      "max_fassadenhoehe_traufseitig_m": 9.5,
+      "max_fassadenhoehe_giebelseitig_m": 13.0,
+      "max_fassadenhoehe_anderes_dach_m": null,
+      "gruenflaechenziffer": null,
+      "arealbonus_ab_flaeche_m2": null,
+      "arealbonus_zusaetzliche_geschosse": null,
+      "erstwohnungsanteil_prozent": 80,
+      "laermempfindlichkeitsstufe": "II",
+      "hinweise": "Wohnzone mit 3 Vollgeschossen. EWA min. 80%. Bei Bauten am Hang +1.0 m Mehrhoehe (ausser Hangseite).",
+      "rechtsgrundlage": "BR Oberhofen, Art. 211 + Art. 212",
+      "gueltig_ab": "2012-05-14"
+    },
+    "Mischzone M2": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Wohnen + Arbeiten",
+      "mischnutzung_erlaubt": true,
+      "max_geschosse": 2,
+      "grenzabstand_klein_m": 2.0,
+      "grenzabstand_gross_m": 6.0,
+      "max_gebaeudelaenge_m": 20.0,
+      "max_gebaeudebreite_seeseitig_m": 15.0,
+      "max_fassadenhoehe_traufseitig_m": 8.5,
+      "max_fassadenhoehe_giebelseitig_m": 13.5,
+      "max_fassadenhoehe_anderes_dach_m": null,
+      "gruenflaechenziffer": null,
+      "arealbonus_ab_flaeche_m2": null,
+      "arealbonus_zusaetzliche_geschosse": null,
+      "erstwohnungsanteil_prozent": 80,
+      "laermempfindlichkeitsstufe": "III",
+      "hinweise": "Mischzone fuer Wohnen, stille bis maessig stoerende Gewerbe, Gastgewerbe und Verkauf bis 500 m^2 Geschossflaeche. EWA min. 80%. Seeseitig max. 15 m Gebaeudebreite. Detailhandel ueber 500 m^2 erfordert UeO. Entlang Kantonsstrasse in erster Bautiefe ES III.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 211 + Art. 212",
+      "gueltig_ab": "2012-05-14"
+    },
+
+    "Wohnzone 1 W1": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Wohnen",
+      "mischnutzung_erlaubt": false,
+      "max_geschosse": 1,
+      "grenzabstand_klein_m": 3.0,
+      "grenzabstand_gross_m": 6.0,
+      "max_gebaeudelaenge_m": 20.0,
+      "max_fassadenhoehe_traufseitig_m": 6.0,
+      "max_fassadenhoehe_giebelseitig_m": 9.0,
+      "hinweise": "Synonym zu 'Wohnzone W1' fuer alternative OEREB-Schreibweise.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 211 + Art. 212"
+    },
+    "Wohnzone 2 W2": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Wohnen",
+      "mischnutzung_erlaubt": false,
+      "max_geschosse": 2,
+      "grenzabstand_klein_m": 4.0,
+      "grenzabstand_gross_m": 8.0,
+      "max_gebaeudelaenge_m": 20.0,
+      "max_fassadenhoehe_traufseitig_m": 7.0,
+      "max_fassadenhoehe_giebelseitig_m": 10.0,
+      "hinweise": "Synonym zu 'Wohnzone W2'.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 211 + Art. 212"
+    },
+    "Wohnzone 3 W3": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Wohnen",
+      "mischnutzung_erlaubt": false,
+      "max_geschosse": 3,
+      "grenzabstand_klein_m": 4.0,
+      "grenzabstand_gross_m": 8.0,
+      "max_gebaeudelaenge_m": 25.0,
+      "max_fassadenhoehe_traufseitig_m": 9.5,
+      "max_fassadenhoehe_giebelseitig_m": 13.0,
+      "hinweise": "Synonym zu 'Wohnzone W3'.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 211 + Art. 212"
+    },
+    "W1": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Wohnen",
+      "mischnutzung_erlaubt": false,
+      "max_geschosse": 1,
+      "grenzabstand_klein_m": 3.0,
+      "grenzabstand_gross_m": 6.0,
+      "max_gebaeudelaenge_m": 20.0,
+      "max_fassadenhoehe_traufseitig_m": 6.0,
+      "max_fassadenhoehe_giebelseitig_m": 9.0,
+      "hinweise": "Kurzform-Synonym zu 'Wohnzone W1'.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 212"
+    },
+    "W2": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Wohnen",
+      "mischnutzung_erlaubt": false,
+      "max_geschosse": 2,
+      "grenzabstand_klein_m": 4.0,
+      "grenzabstand_gross_m": 8.0,
+      "max_gebaeudelaenge_m": 20.0,
+      "max_fassadenhoehe_traufseitig_m": 7.0,
+      "max_fassadenhoehe_giebelseitig_m": 10.0,
+      "hinweise": "Kurzform-Synonym zu 'Wohnzone W2'.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 212"
+    },
+    "W3": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Wohnen",
+      "mischnutzung_erlaubt": false,
+      "max_geschosse": 3,
+      "grenzabstand_klein_m": 4.0,
+      "grenzabstand_gross_m": 8.0,
+      "max_gebaeudelaenge_m": 25.0,
+      "max_fassadenhoehe_traufseitig_m": 9.5,
+      "max_fassadenhoehe_giebelseitig_m": 13.0,
+      "hinweise": "Kurzform-Synonym zu 'Wohnzone W3'.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 212"
+    },
+    "M2": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Wohnen + Arbeiten",
+      "mischnutzung_erlaubt": true,
+      "max_geschosse": 2,
+      "grenzabstand_klein_m": 2.0,
+      "grenzabstand_gross_m": 6.0,
+      "max_gebaeudelaenge_m": 20.0,
+      "max_fassadenhoehe_traufseitig_m": 8.5,
+      "max_fassadenhoehe_giebelseitig_m": 13.5,
+      "hinweise": "Kurzform-Synonym zu 'Mischzone M2'.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 212"
+    },
+
+    "Landwirtschaftszone (LWZ)": {
+      "system": "unbekannt",
+      "nutzung": "Landwirtschaft",
+      "mischnutzung_erlaubt": false,
+      "hinweise": "Bestimmungen des eidgenoessischen und kantonalen Rechts (RPG, RPV, BauG). Gebaeudemasse werden im Einzelfall nach FAT-Normen festgelegt. Lärmempfindlichkeitsstufe III.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 241"
+    },
+    "Rebbauzone (RB)": {
+      "system": "unbekannt",
+      "nutzung": "Rebbau",
+      "mischnutzung_erlaubt": false,
+      "hinweise": "Keine Bauten und Anlagen gestattet. Vorbehalten bleibt Bewirtschaftung der Rebbauzone (Minimum). Bauvorhaben sind der Fachberatung vorzulegen.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 242"
+    },
+    "Gruenzone (GR)": {
+      "system": "unbekannt",
+      "nutzung": "Freihalte",
+      "mischnutzung_erlaubt": false,
+      "hinweise": "Freihaltezone gemaess Art. 79 BauG. Bestandesgarantie fuer bestehende Bauten. Im Bereich des Trockenstandorts von regionaler Bedeutung sind keine unterirdischen Bauten zulaessig.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 232"
+    },
+
+    "ZOEN 1 Schulanlage": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Schule + Sport",
+      "mischnutzung_erlaubt": false,
+      "max_geschosse": 3,
+      "grenzabstand_klein_m": 4.0,
+      "grenzabstand_gross_m": 8.0,
+      "max_fassadenhoehe_traufseitig_m": 9.5,
+      "max_fassadenhoehe_giebelseitig_m": 13.0,
+      "laermempfindlichkeitsstufe": "II",
+      "hinweise": "Schulanlagen und Sportanlagen. Baupolizeiliche Masse der Wohnzone W3 ohne Gebaeudelaenge.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 221"
+    },
+    "ZOEN 2 Kirche": {
+      "system": "unbekannt",
+      "nutzung": "Kirche + Friedhof",
+      "mischnutzung_erlaubt": false,
+      "hinweise": "Kirche, Pfarrhaus, Friedhof. Baupolizeiliche Masse fuer An- und Kleinbauten gemaess Art. 212 Abs. 2 lit. a. Liegt im Ortsbildschutzgebiet O III 'Kirche'. Entlang Kantonsstrasse in erster Bautiefe ES III.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 221, 511"
+    },
+    "ZOEN 3 Schloessli": {
+      "system": "unbekannt",
+      "nutzung": "Verwaltung",
+      "mischnutzung_erlaubt": false,
+      "laermempfindlichkeitsstufe": "II",
+      "hinweise": "Gemeindeverwaltung. Liegt im Ortsbildschutzgebiet O IV 'Schoren'. Erhaltung der Parkanlage.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 221, 511"
+    },
+    "ZOEN 4 Laendte-Stiftplatz": {
+      "system": "unbekannt",
+      "nutzung": "Schiffanlegestelle + oeffentlicher Platz",
+      "mischnutzung_erlaubt": true,
+      "laermempfindlichkeitsstufe": "II",
+      "hinweise": "Schiffanlegestelle, oeffentlicher Platz, Pausen- und Sportplatz, Parkplatz, Trockenplaetze, Einwasserungsstelle, Gastgewerbe. Qualifiziertes Verfahren erforderlich. Liegt in Ortsbildschutzgebieten O I 'Dorfkern' und O V 'Schloss'.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 221, 422, 511"
+    },
+    "ZOEN 5 Schulanlage": {
+      "system": "unbekannt",
+      "nutzung": "Schule",
+      "mischnutzung_erlaubt": false,
+      "laermempfindlichkeitsstufe": "II",
+      "hinweise": "Schulhaus bestehend. Liegt im Ortsbildschutzgebiet O I 'Dorfkern' und im Bauinventar.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 221"
+    },
+    "ZOEN 6 Bunker": {
+      "system": "unbekannt",
+      "nutzung": "Parkplatz",
+      "mischnutzung_erlaubt": false,
+      "laermempfindlichkeitsstufe": "III",
+      "hinweise": "Parkplatz, ehemalige Bunkeranlage. Bestand.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 221"
+    },
+    "ZOEN 7 Mehrzweckhalle": {
+      "system": "unbekannt",
+      "nutzung": "Halle + Werkhof",
+      "mischnutzung_erlaubt": false,
+      "laermempfindlichkeitsstufe": "III",
+      "hinweise": "Mehrzweckhalle, Wehrdienstmagazin, Werkhof. Bestand.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 221"
+    },
+    "ZOEN 8 Umformerstation": {
+      "system": "unbekannt",
+      "nutzung": "Umformerstation",
+      "mischnutzung_erlaubt": false,
+      "laermempfindlichkeitsstufe": "II",
+      "hinweise": "Umformerstation. Bestand.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 221"
+    },
+    "ZOEN 9 Kindergarten": {
+      "system": "hoehen_und_gz",
+      "nutzung": "Kindergarten",
+      "mischnutzung_erlaubt": false,
+      "max_geschosse": 2,
+      "grenzabstand_klein_m": 4.0,
+      "grenzabstand_gross_m": 8.0,
+      "max_gebaeudelaenge_m": 20.0,
+      "max_fassadenhoehe_traufseitig_m": 7.0,
+      "max_fassadenhoehe_giebelseitig_m": 10.0,
+      "laermempfindlichkeitsstufe": "II",
+      "hinweise": "Kindergarten. Baupolizeiliche Masse der Wohnzone W2.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 221"
+    },
+    "ZOEN 10 Parkplatz": {
+      "system": "unbekannt",
+      "nutzung": "Parkplatz",
+      "mischnutzung_erlaubt": false,
+      "laermempfindlichkeitsstufe": "II",
+      "hinweise": "Oeffentlicher Parkplatz. Bestand.",
+      "rechtsgrundlage": "BR Oberhofen, Art. 221"
+    },
+    "ZOEN 11 Pistolenstand": {
+      "system": "unbekannt",
+      "nutzung": "Sportanlage",
+      "mischnutzung_erlaubt": false,
+      "laermempfindlichkeitsstufe": "III",
+      "hinweise": "Pistolenstand. Bestand. Vgl. Art. 552 BR (Gefahrengebiete).",
+      "rechtsgrundlage": "BR Oberhofen, Art. 221"
+    }
+  },
+
+  "_zonen_mit_planungspflicht": {
+    "_kommentar": "ZPP A bis J - Zonen mit Planungspflicht. Detaillierte Vorgaben in Art. 312-321 BR. Vor Bebauung ist eine Ueberbauungsordnung erforderlich.",
+    "ZPP A Moy/Victoria": {
+      "art_der_nutzung": "Mischzone M",
+      "ewa_prozent": 80,
+      "max_geschosse_erweiterung": 3,
+      "max_fassadenhoehe_traufseitig_m": 13.5,
+      "max_gebaeudelaenge_m": 50.0,
+      "grenzabstand_m": 2.0,
+      "hinweise": "Erhaltung der schuetzenswerten Bauten und sorgfaeltige Neueingliederung von Erweiterungsbauten. Vgl. UeO Moy/Victoria."
+    },
+    "ZPP B Gaessli": {
+      "art_der_nutzung": "Mischzone M",
+      "masse": "gemaess Mischzone M2",
+      "hinweise": "Bereits realisiert via UeO Gaessli."
+    },
+    "ZPP D Schlossgasse": {
+      "art_der_nutzung": "Mischzone M",
+      "masse": "gemaess Mischzone M2",
+      "hinweise": "Erneuerung der bestehenden Bebauung im Dorfkern. Liegt in Ortsbildschutzgebiet O I."
+    }
+  },
+
+  "_ortsbildschutzgebiete": {
+    "_kommentar": "Schutzgebiete gemaess Art. 86 BauG (kantonal). Bauliche Massnahmen sind besonders sorgfaeltig in das Ortsbild einzufuegen.",
+    "O I Dorfkern": "Giebelstaendige Stellung, gleichgeneigte Satteldaecher 28-40 Grad, vom Schweizer Holzbaustil abgeleitete Fassadenproportionen, Steinpflaesterung Burchgasse",
+    "O II Kloesterli": "Ehemaliges Herbsthaus mit Oekonomiebau, Gewerbebauten entlang Richstattstrasse",
+    "O III Kirche": "Kirche, Pfarrhaus, Ofen- und Waschhaus",
+    "O IV Schoren": "Uferbebauung entlang Kantonsstrasse mit Schloessli und Parkanlage",
+    "O V Schloss": "Ehemaliges Wasserschloss mit Bergfried, Landschaftspark",
+    "O VI Wichterheer": "Ehemaliges Rebgut, heute Kulturzentrum"
+  },
+
+  "_dachgestaltung_default": {
+    "_kommentar": "Allgemeine Dachgestaltungsvorschriften aus Art. 414 BR fuer Hauptgebaeude.",
+    "satteldach_neigung_min_grad": 22,
+    "satteldach_neigung_max_grad": 40,
+    "flachdach_zulaessig": false,
+    "flachdach_ausnahme": "In Zonen mit besonderen baurechtlichen Ordnungen (ZOEN, ZPP, UeO, Uferschutzplaene) oder auf Grund qualifizierten Verfahrens. Auf An- und Kleinbauten erlaubt.",
+    "dachvorspruengetraufseitig_min_m": 0.2,
+    "dachvorspruengetraufseitig_max_m": 2.5,
+    "dachaufbauten_max_breite_prozent": 35,
+    "dachaufbauten_max_breite_prozent_qualifiziert": 50
+  },
+
+  "_an_und_kleinbauten": {
+    "_kommentar": "Allgemeine Vorschriften fuer An- und Kleinbauten gemaess Art. 212 Abs. 2 lit. a BR.",
+    "grenzabstand_min_m": 2.0,
+    "max_fassadenhoehe_traufseitig_m": 4.0,
+    "max_anrechenbare_gebaeudeflaeche_m2": 60
+  },
+
+  "_todo": [
+    "ZPP C, E, F, G, H, I, J im Detail aufnehmen falls fuer Test-Adressen relevant",
+    "Ueberlagerungen aus den verschiedenen UeO erfassen (Stadel, Chilcheri, Wendelsee etc.)",
+    "Vergleichstest mit Kanton Bern OEREB-Webservice: liefert dieser fuer Oberhofen-Adressen die korrekten Zonenbezeichnungen?",
+    "Ggf. Anpassung der Zonenbezeichnungen falls OEREB andere Schreibweisen liefert"
+  ]
+}

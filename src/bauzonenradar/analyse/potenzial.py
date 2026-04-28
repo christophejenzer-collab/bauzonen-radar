@@ -7,13 +7,18 @@ zu einer Potenzialabschaetzung.
 Drei Bemessungssysteme werden unterstuetzt:
   - AZ            : Klassische Ausnuetzungsziffer
   - GFZo          : Geschossflaechenziffer oberirdisch
-  - hoehen_und_gz : Steuerung ueber Hoehen + Gruenflaechenziffer
+  - hoehen_und_gz : Steuerung ueber Hoehen (+ optional Gruenflaechenziffer)
 
 Spezialeffekte:
   - Arealbonus: Bei grossen Parzellen kann ein zusaetzliches Geschoss
                 bewilligt werden (Thun: Schwelle 3000 m^2)
   - Strukturgebiet: Beirat Stadtbild kann Vorgaben aushebeln
                     (Thun-spezifisches Konzept)
+
+Ausgabe-Logik:
+  - AZ/GFZo vorhanden  → echte m^2-Berechnung mit Status HOCH/MITTEL/...
+  - Hoehen vorhanden   → qualitative Beschreibung mit allen Reglement-Werten
+  - Nichts vorhanden   → fachlicher Hinweis was fehlt
 """
 
 from __future__ import annotations
@@ -101,13 +106,23 @@ class PotenzialBerechner:
 
     def berechne(self, parzelle: Parzelle,
                  reglement: Baureglement | None) -> PotenzialErgebnis:
-        """Fuehrt die Potenzialanalyse durch."""
+        """Fuehrt die Potenzialanalyse durch.
+
+        Logik-Fluss:
+        1. Strukturgebiet pruefen (Thun-Spezial)
+        2. Reglement geladen?       Nein -> nur Warnungen
+        3. Zone gefunden?           Nein -> Hinweis "Zone fehlt"
+        4. Berechenbar?             Nein -> Liste was fehlt
+        5. Arealbonus pruefen
+        6. AZ/GFZo vorhanden?       Ja -> echte Berechnung
+                                     Nein -> Hoehen-Bericht (Oberhofen-Stil)
+        """
         ergebnis = PotenzialErgebnis(
             parzellenflaeche_m2=parzelle.flaeche_m2,
             anrechenbare_flaeche_m2=parzelle.flaeche_m2,
         )
 
-        # Strukturgebiet-Pruefung schon hier - betrifft alle weiteren Schritte
+        # Strukturgebiet schon hier pruefen - betrifft alle Pfade
         strukturgebiet_warnung = self._pruefe_strukturgebiet(parzelle)
 
         # Kein Reglement
@@ -156,16 +171,18 @@ class PotenzialBerechner:
                 f"koennten bewilligt werden."
             )
 
+        # Direkte Kennzahl (AZ/GFZo)?
         hauptkennzahl = parameter.hauptkennzahl()
 
         if hauptkennzahl is None:
-            # Hoehen+GZ-System
+            # Hoehen-System (mit oder ohne GZ)
             self._behandle_hoehen_und_gz(parameter, parzelle, ergebnis)
             if strukturgebiet_warnung:
                 ergebnis.bemerkungen.insert(0, strukturgebiet_warnung)
+            ergebnis.bemerkungen.extend(self._sammle_warnhinweise(parzelle))
             return ergebnis
 
-        # AZ oder GFZo
+        # AZ oder GFZo - echte m^2-Berechnung
         system_code, kennzahl = hauptkennzahl
         ergebnis.verwendetes_system = system_code
         ergebnis.verwendete_kennzahl = kennzahl
@@ -224,8 +241,9 @@ class PotenzialBerechner:
     def _behandle_nicht_berechenbar(parameter_liste: list[Bauparameter],
                                     parzelle: Parzelle,
                                     ergebnis: PotenzialErgebnis) -> None:
+        """Wenn KEIN einziger Wert hinterlegt ist (alles None)."""
         ergebnis.bemerkungen.append(
-            "In keiner der Zonen ist eine Kennzahl (AZ oder GFZo) zur "
+            "In keiner der Zonen ist eine Kennzahl oder Hoehenangabe zur "
             "Potenzialberechnung hinterlegt."
         )
         for p in parameter_liste:
@@ -241,13 +259,31 @@ class PotenzialBerechner:
     def _behandle_hoehen_und_gz(parameter: Bauparameter,
                                 parzelle: Parzelle,
                                 ergebnis: PotenzialErgebnis) -> None:
-        """Fuellt das Ergebnis bei Hoehen+GZ-System (z.B. Thun BR 2022)."""
+        """Fuellt das Ergebnis bei Hoehen-System (Thun BR 2022, Oberhofen).
+
+        Funktioniert mit oder ohne Gruenflaechenziffer:
+          - Mit GZ (Thun-Stil): zeigt zusaetzlich min. unversiegelte Flaeche
+          - Ohne GZ (Oberhofen-Stil): zeigt nur Hoehen, GL, Grenzabstaende
+        """
         ergebnis.verwendetes_system = parameter.system.value
 
-        ergebnis.bemerkungen.append(
-            f"Zone '{parameter.quelle_eintrag}' wird ueber Gebaeudemasse "
-            f"und Gruenflaechenziffer gesteuert (kein AZ/GFZo)."
-        )
+        # Einleitung anpassen je nach GZ-Vorhandensein
+        if parameter.gruenflaechenziffer is not None:
+            ergebnis.bemerkungen.append(
+                f"Zone '{parameter.quelle_eintrag}' wird ueber Gebaeudemasse "
+                f"und Gruenflaechenziffer gesteuert (kein AZ/GFZo)."
+            )
+        else:
+            ergebnis.bemerkungen.append(
+                f"Zone '{parameter.quelle_eintrag}' wird ueber Gebaeudemasse "
+                f"und Vollgeschosse gesteuert (kein AZ/GFZo, keine GZ)."
+            )
+
+        # Vollgeschosse
+        if parameter.max_geschosse is not None:
+            ergebnis.bemerkungen.append(
+                f"Maximale Vollgeschosse: {parameter.max_geschosse}"
+            )
 
         # Hoehen-Werte
         if parameter.max_fassadenhoehe_traufseitig_m is not None:
@@ -265,6 +301,10 @@ class PotenzialBerechner:
                 f"Fassadenhoehe (Flachdach o.ae.): "
                 f"max. {parameter.max_fassadenhoehe_anderes_dach_m} m"
             )
+        if parameter.max_gebaeudehoehe_m is not None:
+            ergebnis.bemerkungen.append(
+                f"Maximale Gebaeudehoehe: {parameter.max_gebaeudehoehe_m} m"
+            )
 
         # Gebaeudegeometrie
         if parameter.max_gebaeudelaenge_m is not None:
@@ -280,7 +320,7 @@ class PotenzialBerechner:
                 f"Grosser Grenzabstand: {parameter.grenzabstand_gross_m} m"
             )
 
-        # Gruenflaechen
+        # Gruenflaechen (nur wenn vorhanden)
         if parameter.gruenflaechenziffer is not None:
             min_gruen_m2 = parzelle.flaeche_m2 * parameter.gruenflaechenziffer
             ergebnis.bemerkungen.append(
@@ -288,25 +328,21 @@ class PotenzialBerechner:
                 f"(min. {min_gruen_m2:.0f} m^2 unversiegelt zu halten)"
             )
 
+        # Zonen-Hinweis aus Reglement
         if parameter.hinweise:
             ergebnis.bemerkungen.append(
                 f"Zone '{parameter.quelle_eintrag}': {parameter.hinweise}"
             )
 
-        ergebnis.bemerkungen.extend(
-            PotenzialBerechner._sammle_warnhinweise(parzelle)
-        )
-
     # ----- Strukturgebiet-Erkennung ------------------------------------
 
     @staticmethod
     def _pruefe_strukturgebiet(parzelle: Parzelle) -> str | None:
+        """Prueft, ob die Parzelle im Strukturgebiet liegt (Thun-Spezial).
+
+        Strukturgebiet erscheint typischerweise als 'FlaecheAndere' oder
+        'Ueberlagerung' in den OEREB-Daten.
         """
-        Prueft, ob die Parzelle im Strukturgebiet liegt (Thun-Spezial).
-        Strukturgebiet liegt typischerweise als 'FlaecheAndere' oder
-        'Ueberlagerung' vor.
-        """
-        # Suche in allen Restrictions nach 'Strukturgebiet'
         for r in parzelle.restrictions:
             if r.legende and "strukturgebiet" in r.legende.lower():
                 return (
@@ -321,11 +357,15 @@ class PotenzialBerechner:
 
     @staticmethod
     def _schaetze_ist_bebauung(parzelle: Parzelle) -> float:
-        """Platzhalter: 40% der Parzellenflaeche."""
+        """Platzhalter: 40% der Parzellenflaeche.
+
+        TODO: Spaetere Iteration ersetzt das durch swissBUILDINGS3D-Daten.
+        """
         return parzelle.flaeche_m2 * 0.4
 
     @staticmethod
     def _bestimme_status(ausschoepfung: float | None) -> PotenzialStatus:
+        """Klassifiziert den Ausschoepfungsgrad in einen Status."""
         if ausschoepfung is None:
             return PotenzialStatus.NICHT_BERECHENBAR
         if ausschoepfung >= 95:

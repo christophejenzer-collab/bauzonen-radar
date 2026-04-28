@@ -12,16 +12,20 @@ Geschossflaechenziffer oberirdisch (GFZo) ersetzt (BMBV-Verordnung,
 basierend auf der IVHB-Vereinbarung). Gemeinden muessen ihre Baureglemente
 schrittweise anpassen.
 
-Einige Gemeinden (Beispiel Thun, BR 2022 ab Februar 2025) gehen noch
-einen Schritt weiter und verzichten auch auf die GFZo: Die bauliche
-Dichte wird dort primaer ueber Gebaeudehoehen, Grenzabstaende,
-Gebaeudelaenge und Gruenflaechenziffer gesteuert.
+Einige Gemeinden gehen noch einen Schritt weiter und verzichten auch
+auf die GFZo: Die bauliche Dichte wird dort primaer ueber Gebaeudehoehen,
+Grenzabstaende, Gebaeudelaenge und (optional) Gruenflaechenziffer
+gesteuert.
+
+Beispiele:
+  - Stadt Bern: Bauklassen 2-6 mit GFZo (parzellenscharf im BKP)
+  - Stadt Thun (BR 2022): Hoehen + Gruenflaechenziffer
+  - Oberhofen (BR 2012/2024): Hoehen + Vollgeschosse (ohne GZ)
 
 Das Datenmodell unterstuetzt drei Bemessungssysteme:
   - AZ            : Klassische Ausnuetzungsziffer
   - GFZo          : Geschossflaechenziffer oberirdisch
-  - hoehen_und_gz : Steuerung ueber Hoehen + Gruenflaechenziffer
-                    (Thun-Stil, mit differenzierten Fassadenhoehen)
+  - hoehen_und_gz : Steuerung ueber Hoehen (+ optional GZ)
 
 Spezialeffekte:
   - Arealbonus: Bei grossen Parzellen oder Parzellen-Zusammenlegungen
@@ -90,7 +94,7 @@ class Bauparameter:
         * traufseitig bei Schraegdach (Fh tr)
         * giebelseitig bei Schraegdach (Fh gi)
         * andere Dachformen wie Flachdach (Fh)
-    - Gruenflaechenziffer (GZ)
+    - Gruenflaechenziffer (GZ) - optional
     - AZ und GFZo als Kennzahlen
     """
     quelle_eintrag: str
@@ -112,7 +116,7 @@ class Bauparameter:
     grenzabstand_klein_m: float | None = None                 # kA
     grenzabstand_gross_m: float | None = None                 # gA
 
-    # Gruenflaechen
+    # Gruenflaechen (optional - nicht alle Gemeinden haben das)
     gruenflaechenziffer: float | None = None                  # GZ
 
     # Arealbonus (zusaetzliches Geschoss bei grossen Parzellen)
@@ -128,19 +132,39 @@ class Bauparameter:
 
     @property
     def ist_berechenbar(self) -> bool:
-        """True, wenn irgendein Wert zur Potenzialberechnung verfuegbar ist."""
+        """
+        True, wenn irgendein Wert zur qualifizierten Beurteilung verfuegbar ist.
+
+        Drei Stufen der Berechenbarkeit (von strikt zu locker):
+        1. AZ oder GFZo: ergibt direkte Quadratmeter-Berechnung
+        2. Hoehen mit GZ: qualifizierte Berechnung mit unversiegelter Flaeche (Thun-Stil)
+        3. Nur Hoehen: qualitative Beschreibung mit Reglement-Werten (Oberhofen-Stil)
+
+        Wichtig: Ein Reglement ohne Gruenflaechenziffer (z.B. Oberhofen) ist
+        trotzdem 'berechenbar' im Sinne dieser Methode - es gibt fachlich
+        relevante Werte aus, auch wenn keine direkte m^2-Berechnung moeglich ist.
+        """
         if self.ausnuetzungsziffer is not None:
             return True
         if self.geschossflaechenziffer_oberirdisch is not None:
             return True
-        if self.max_gebaeudehoehe_m is not None and self.gruenflaechenziffer is not None:
+        # Hoehen-System: schon eine Hoehenangabe genuegt
+        if self.max_fassadenhoehe_traufseitig_m is not None:
             return True
-        if self.max_fassadenhoehe_traufseitig_m is not None and self.gruenflaechenziffer is not None:
+        if self.max_gebaeudehoehe_m is not None:
+            return True
+        if self.max_fassadenhoehe_anderes_dach_m is not None:
             return True
         return False
 
     def hauptkennzahl(self) -> tuple[str, float] | None:
-        """Gibt die fuer die Berechnung relevante Kennzahl zurueck."""
+        """
+        Gibt die fuer die direkte Quadratmeter-Berechnung relevante Kennzahl zurueck.
+
+        Nur AZ oder GFZo liefern eine Hauptkennzahl. Hoehen-Systeme geben
+        None zurueck und werden im PotenzialBerechner ueber die Hoehen-Pfad
+        behandelt.
+        """
         if self.geschossflaechenziffer_oberirdisch is not None:
             return ("GFZo", self.geschossflaechenziffer_oberirdisch)
         if self.ausnuetzungsziffer is not None:
@@ -161,6 +185,8 @@ class Bauparameter:
             teile.append(f"AZ={self.ausnuetzungsziffer}")
         if self.geschossflaechenziffer_oberirdisch is not None:
             teile.append(f"GFZo={self.geschossflaechenziffer_oberirdisch}")
+        if self.max_geschosse is not None:
+            teile.append(f"VG={self.max_geschosse}")
         if self.max_fassadenhoehe_traufseitig_m is not None:
             teile.append(f"Fh tr={self.max_fassadenhoehe_traufseitig_m}m")
         if self.max_fassadenhoehe_giebelseitig_m is not None:
@@ -202,7 +228,12 @@ class Baureglement:
     @classmethod
     def laden(cls, gemeinde: str,
               basis_pfad: Path | str | None = None) -> "Baureglement":
-        """Laedt das Baureglement einer Gemeinde aus der JSON-Datei."""
+        """Laedt das Baureglement einer Gemeinde aus der JSON-Datei.
+
+        Konvertiert Umlaute (ae/oe/ue), schreibt Kleinbuchstaben und
+        ersetzt Leerzeichen durch Unterstriche. So wird aus
+        'Oberhofen am Thunersee' der Dateiname 'oberhofen_am_thunersee.json'.
+        """
         if basis_pfad is None:
             hier = Path(__file__).resolve().parent
             basis_pfad = hier.parent.parent / "daten" / "baureglemente"
@@ -270,19 +301,25 @@ class Baureglement:
 
     def _suche_in_dict(self, quelle: dict[str, dict],
                        suchtext: str) -> Bauparameter | None:
-        """Drei-Stufen-Matching: exakt, Suchtext-in-Schluessel, Schluessel-in-Suchtext."""
+        """Drei-Stufen-Matching: exakt, Suchtext-in-Schluessel, Schluessel-in-Suchtext.
+
+        Eintraege mit '_' am Anfang werden ignoriert (Kommentare/Metadaten).
+        """
         if not quelle or not suchtext:
             return None
 
         effektiv = {k: v for k, v in quelle.items() if not k.startswith("_")}
 
+        # Stufe 1: exakter Match
         if suchtext in effektiv:
             return self._baue_parameter(suchtext, effektiv[suchtext])
 
+        # Stufe 2: Suchtext ist Teil eines Schluessels
         for key, value in effektiv.items():
             if suchtext in key:
                 return self._baue_parameter(key, value)
 
+        # Stufe 3: Schluessel ist Teil des Suchtexts
         for key, value in effektiv.items():
             if key in suchtext:
                 return self._baue_parameter(key, value)
