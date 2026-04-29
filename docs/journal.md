@@ -12,6 +12,120 @@ der Werte und finale Architektur liegen beim Projektteam.
 
 ---
 
+## 29. April 2026 (Mittwoch) - Bugs aus Stichproben-Test gefixt
+
+**Dauer**: ca. 1 Stunde
+
+### Ausgangsproblem
+
+User hat auffaellig viele 100% Ausschoepfung in Thun beobachtet. Aus
+gestrigem Journal-Eintrag waren drei Bugs identifiziert:
+
+1. **Murifeld-Bug**: Bei kleinen Parzellen + grossen Grenzabstaenden
+   liefert die Begrenzer-Logik 0 m^2.
+2. **Effinger-Bug**: Bei `Gebaeudelaenge unbeschraenkt` bricht die
+   Schaetzung komplett ab.
+3. **Anzeige-Bug**: Bei >100% Ausschoepfung wurde stillschweigend auf
+   100% gedeckelt - kein Hinweis dass die Schaetzung versagt hat.
+
+### Code-Analyse
+
+In `_formatiere_empfehlung()`:
+```python
+ausschoepfung = max(0.0, min(100.0, self.ausschoepfungsgrad_prozent))
+```
+Hard cap auf 100%, ohne Warnung.
+
+In `_schaetze_geschossflaeche_hoehen()`:
+```python
+if parameter.max_gebaeudelaenge_m is None:
+    return None  # ← komplett aussteigen
+```
+
+In der quadratischen Naeherung:
+```python
+seite_m = parzelle.flaeche_m2 ** 0.5
+nutzbare_seite_lang = max(0, seite_m - 2 * gA)  # ← bei kleinen Parzellen 0
+```
+
+In `_schaetze_ist_bebauung()`:
+```python
+return parzelle.flaeche_m2 * 0.4  # 40% war fuer Wohnzonen zu hoch
+```
+
+### Vier Fixes umgesetzt
+
+**Fix 1**: Ist-Platzhalter von 40% auf 25% gesenkt (realistischer fuer
+Schweizer Wohnzonen, wo Bebauungsdichte typisch 20-30% ist).
+
+**Fix 2**: Ehrliche Anzeige bei >100%:
+```python
+ausschoepfung_echt = max(0.0, self.ausschoepfungsgrad_prozent)
+ueberzeichnet = ausschoepfung_echt > 100.0
+ausschoepfung = min(100.0, ausschoepfung_echt)  # nur fuer Balken
+```
+Bei Ueberzeichnung wird der echte Prozentwert mit Warnung angezeigt:
+```
+Ausschoepfung: [####################] 230.1% (!! Ist > Soll - Schaetzung versagt)
+```
+
+**Fix 3**: Bei `max_gebaeudelaenge_m is None` (unbeschraenkt) wird der
+Geometrie-Begrenzer auf `float("inf")` gesetzt statt komplett
+auszusteigen. Damit greifen die anderen zwei Begrenzer (Parzelle, GZ)
+und es kommt erstmals ein Schaetzwert raus.
+
+**Fix 4**: Realistischere Parzellen-Form (1:1.5 statt Quadrat). Bei
+einer 336 m^2 Parzelle ist das Verhaeltnis dann nicht mehr 18.3 x 18.3 m
+sondern 14.5 x 21.8 m. Das verhindert dass eine Seite negativ wird.
+
+### Verifikation: 12/12 Stichproben
+
+Vergleich vor und nach den Fixes (gleiche Adressen):
+
+| Adresse | Vorher | Nachher |
+|---|---|---|
+| Effingerstrasse 35 (BK_5) | kein Wert | 219 m^2, 61.1% |
+| Murifeldweg 8 (BK_3, 336m^2) | 0 m^2, stiller Deckel | 37 m^2, 230% mit Warnung |
+| Wankdorffeldstrasse 102 | kein Wert (BK_4 ohne BKP-Bauweise) | 12506 m^2, 10.2% |
+| Frutigenstrasse 25 | 54.9% | 34.3% |
+| Berntorstrasse 4 | 58.4% | 35.7% |
+| Hauptstrasse 30 Oberhofen | 70.3% | 43.9% |
+| Saegeweg 1 Gwatt | 63.4% | 33.4% |
+
+Alle Werte sind jetzt plausibel. Bei der einen Edge-Case-Adresse
+(Murifeld) wird die Schaetzungs-Schwaeche **ehrlich angezeigt** statt
+versteckt.
+
+### Aufbewahrung
+
+Beide Patch-Skripte sind aufgehoben:
+- `patch_potenzial.ps1` (Fixes 1+2)
+- `patch_begrenzer_bugs.ps1` (Fixes 3+4)
+
+Plus jeweils Backup-Dateien:
+- `src\bauzonenradar\analyse\potenzial.py.bak` (Stand vor Fixes 1+2)
+- `src\bauzonenradar\analyse\potenzial.py.bak2` (Stand vor Fixes 3+4)
+
+### Backlog reduziert
+
+Aus dem gestrigen Backlog **erledigt**:
+- [x] Bug: Begrenzer-Logik bei kleinen Parzellen
+- [x] Bug: Begrenzer-Logik bei `Gebaeudelaenge unbeschraenkt`
+- [x] Anzeige: Ehrliche >100% Anzeige
+
+Im Backlog **verbleibend** (kein Bug, sondern Datenerweiterung):
+- [ ] Daten: WA4 und ZPP in `thun.json` ergaenzen
+
+### Erkenntnis
+
+Die **Architektur** der Drei-Begrenzer-Logik ist solide. Die Bugs waren
+typische Edge-Cases (kleine Parzelle, unbegrenzte Geometrie) die in
+realen Adressen nun sauber abgedeckt sind. Wo die Schaetzung **wirklich**
+versagt (Murifeld zu klein), wird das jetzt **transparent angezeigt**
+statt versteckt.
+
+---
+
 ## 28. April 2026 (Dienstag, sehr spaeter Abend) - Stichproben-Test mit 12 Adressen
 
 **Dauer**: ca. 30 Minuten (10 Minuten Skript + Live-Test)

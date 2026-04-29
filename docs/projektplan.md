@@ -6,11 +6,12 @@ Abgabe: 17. Juni 2026.
 ## Iterationen im Ueberblick
 
 ```
-Iteration 1: Pipeline               [ABGESCHLOSSEN] Marz/April 2026
+Iteration 1: Pipeline               [ABGESCHLOSSEN] Maerz/April 2026
 Iteration 2: Potenzialberechnung    [ABGESCHLOSSEN] April 2026
 Iteration 3: Verifikation           [ABGESCHLOSSEN] 28. April 2026
-Iteration 4: Webseite               [GEPLANT]       Mai/Juni 2026
-Iteration 5: Generalprobe           [GEPLANT]       Mitte Juni 2026
+Iteration 4: Webseite (Streamlit)   [GEPLANT]       Mai 2026
+Iteration 5: Gemeinde-Analyse       [GEPLANT]       Anfang Juni 2026
+Iteration 6: Generalprobe           [GEPLANT]       Mitte Juni 2026
 ```
 
 ## Iteration 1: Pipeline (abgeschlossen)
@@ -129,7 +130,29 @@ Bauklassenplan vervollstaendigen.
 - Auch Anforderungs-Spezifikation `docs/anforderungen.md`
   vollenden
 
-## Iteration 5: Generalprobe (geplant)
+## Iteration 5: Gemeinde-Analyse (geplant)
+
+**Zeitraum**: Anfang Juni 2026
+
+**Ziel**: Statt Einzeladressen abzufragen, eine ganze Gemeinde
+analysieren und eine priorisierte Excel-Liste der Verdichtungs-
+Kandidaten ausgeben.
+
+**Detail-Konzept**: siehe `docs/konzept_gemeinde_analyse.md`
+
+**Inhalte**:
+- Neues Modul `gwr.py` (GWR-API fuer bestehende Gebaeude)
+- Neues Modul `parzellen_liste.py` (alle Parzellen einer Gemeinde)
+- Neues Modul `gemeinde_analyse.py` (Massen-Pipeline)
+- Excel-Export mit den im Konzept definierten Spalten
+- Test-Lauf mit Oberhofen am Thunersee als Pilot-Gemeinde
+- Aufwand: ca. 2 Tage Entwicklung
+
+**Use-Case**: Architekten und Investoren bekommen eine Top-50-Liste
+der Parzellen mit dem groessten Verdichtungs-Potenzial in einer
+Gemeinde - sortierbar und filterbar in Excel.
+
+## Iteration 6: Generalprobe (geplant)
 
 **Zeitraum**: Mitte Juni 2026
 
@@ -139,6 +162,7 @@ Bauklassenplan vervollstaendigen.
 - Pitch-Text auf 5 Minuten trimmen
 - Live-Demo-Adressen auswaehlen und proben
   (idealerweise eine pro Datenqualitaets-Stufe)
+- Live-Demo Gemeinde-Analyse (z.B. Oberhofen)
 - Drei moegliche Code-Fragen vorbereiten
 - Backup-Plan falls Internet/OEREB-Webservice down
 - README finalisieren
@@ -152,10 +176,13 @@ Bauklassenplan vervollstaendigen.
 | Streamlit-GUI nicht fertig | Fallback: CLI-Demo reicht fuer Bewertung |
 | Bauklassenplan-Werte unklar | Direktanfrage Stadt Bern Stadtplanung |
 | Schaetz-Werte werden falsch interpretiert | Klare Banner-Markierung im Output, "(geschaetzt)" in Empfehlung |
+| Gemeinde-Analyse zu langsam (500 Parzellen) | Throttling + lokales SQLite-Caching |
+| GWR-Daten luckenhaft | Klare Markierung "Ist-Wert geschaetzt" mit Fallback auf Platzhalter |
 
 ## Naechste Termine
 
 - **Anfang Mai 2026**: Mid-Iteration-Sync mit Fabienne
-- **Mitte Mai 2026**: Iteration 3 abgeschlossen, Bern komplett
+- **Mai 2026**: Iteration 4 (Streamlit-GUI mit Fabienne)
+- **Anfang Juni 2026**: Iteration 5 (Gemeinde-Analyse)
 - **Mitte Juni 2026**: Generalprobe
 - **17. Juni 2026**: Abgabe und Praesentation
