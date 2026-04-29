@@ -12,6 +12,110 @@ der Werte und finale Architektur liegen beim Projektteam.
 
 ---
 
+## 28. April 2026 (Dienstag, sehr spaeter Abend) - Stichproben-Test mit 12 Adressen
+
+**Dauer**: ca. 30 Minuten (10 Minuten Skript + Live-Test)
+
+### Was getestet wurde
+
+Robustheits-Test des gesamten Tools mit 12 Adressen verteilt ueber
+drei Gemeinden plus Edge-Cases. Skript: `tests/test_zwoelf_adressen.ps1`
+(folgt dem `demo.ps1`-Pattern: cd in Modul-Ordner, dann pro Adresse
+`python analyse_adresse.py`).
+
+Resultat: **12/12 erfolgreich** - keine Crashes, alle Adressen
+durchgelaufen, alle drei Datenqualitaets-Pfade in Aktion gesehen.
+
+### Erkenntnisse aus den Stichproben
+
+**Erkenntnis 1: Bug bei kleinen Parzellen mit BK_3 (Bern)**
+
+Murifeldweg 8 (336 m^2 Parzelle, BK_3, BKP-Werte 40 m x 12 m):
+
+```
+Drei Begrenzer:
+  1. Gebaeudemasse: 480 m^2  (40 x 12 aus BKP)
+  2. Parzelle minus Grenzabstaende: 0 m^2 <- aktiv
+  3. GFZ: nicht definiert
+  -> 0 m^2
+```
+
+Die quadratische Approximation `(sqrt(336) - 5 - 10)^2` produziert
+einen negativen Wert, der auf 0 abgeschnitten wird. Bei kleinen
+Parzellen mit grossen Grenzabstaenden ist die Naeherung unbrauchbar.
+
+**Loesungsansatz**: Statt quadratischer Naeherung ein realistischeres
+Modell - z.B. Annahme einer rechteckigen Parzelle mit Verhaeltnis 1:2
+oder Mindestbreite gA + 1 m. Oder warnen wenn der Ansatz versagt.
+
+**Erkenntnis 2: BK_5 in Bern produziert keinen Schaetzwert**
+
+Effingerstrasse 35 (BK_5, geschlossene Bauweise, Gebaeudelaenge
+unbeschraenkt):
+
+```
+Status: SCHAETZWERT
+(aber: keine Zeile "GROBSCHAETZUNG zulaessig: ca. X m^2")
+GROBSCHAETZUNG nicht moeglich: Es fehlen Vollgeschosse oder
+Geometrie-Werte (kA, gA, GL).
+```
+
+Wenn `Gebaeudelaenge unbeschraenkt` gesetzt ist, bricht die
+Begrenzer-Logik ab. **Loesungsansatz**: Bei geschlossener Bauweise mit
+unbegrenzter Laenge nur die anderen zwei Begrenzer auswerten
+(Parzellen-Grenzabstaende, GFZ).
+
+**Erkenntnis 3: thun.json fehlen Zonen**
+
+Allmendstrasse 4 (ZPP) und Seestrasse 72a (WA4) liefern beide
+"Zone im Reglement nicht erfasst". Die OEREB-Auskunft hat diese
+Zonen, aber `thun.json` kennt sie nicht.
+
+**Loesungsansatz**: WA4 (Wohnen/Arbeiten) plus ZPP-Hinweis (Spezialregime)
+als Synonyme/Zonen in `thun.json` ergaenzen.
+
+**Erkenntnis 4: Bauklassen-Erkennung bei Mehrfacheintraegen**
+
+Murifeldweg 8 (BK_E erwartet wegen Bauweise offen 40 x 12) wird als
+BK_3 eingeordnet. Die OEREB-Auskunft listet zwei Eintraege:
+- "Bauweise Offen, max. Gebaeudelaenge/-tiefe = 40 / 12"
+- "Bauklasse 3"
+
+Die Auswertung waehlt den Bauklassen-Eintrag, ignoriert die Bauweisen-
+Information bei der Klassen-Bestimmung. Das ist nicht zwingend falsch,
+aber die Logik braucht klare Doku.
+
+**Loesungsansatz**: Pruefen, ob die zwei Eintraege wirklich BK_3 oder
+BK_E meinen. Im BKP-Output steht `Bauklasse: BK_3 (BK_3 - Bauklasse 3)`
+- also stimmt BK_3. Damit ist Erkenntnis 4 keine Bug, sondern eine
+falsche Erwartung meinerseits. **Murifeld ist tatsaechlich BK_3.**
+
+### Was wirklich gut funktioniert
+
+- **Unbekannte Gemeinden** werden sauber abgefangen (Sigriswil/Gunten:
+  "Kein Baureglement fuer Sigriswil verfuegbar.")
+- **Stadtteile** werden korrekt der Mutter-Gemeinde zugeordnet
+  (Gwatt -> Thun)
+- **Schutzzonen** triggern korrekt den NICHT_MOEGLICH-Pfad mit klarer
+  UNESCO/Denkmalpflege-Empfehlung
+- **ZPP/UeO** triggert den NICHT_MOEGLICH-Pfad statt einen unsinnigen
+  Schaetzwert zu produzieren
+- **Naturgefahren-Ueberlagerungen** werden in den Bemerkungen
+  aufgefuehrt
+- **Baulinien-Warnung** erscheint zuverlaessig
+
+### Backlog fuer Iteration 4 oder spaeter
+
+- [ ] **Bug**: Begrenzer-Logik bei kleinen Parzellen + grossen
+  Grenzabstaenden (Murifeld-Pattern)
+- [ ] **Bug**: Begrenzer-Logik bei `Gebaeudelaenge unbeschraenkt`
+  (Effingerstrasse-Pattern)
+- [ ] **Daten**: WA4 und ZPP in `thun.json` ergaenzen
+- [ ] Stichproben als Regressions-Test mit erwarteten Werten ausbauen
+  (Snapshot-Tests)
+
+---
+
 ## 28. April 2026 (Dienstag, spaeter Abend) - Datenquellen-Evaluation Thun + geodienste.ch
 
 **Dauer**: ca. 30 Minuten
