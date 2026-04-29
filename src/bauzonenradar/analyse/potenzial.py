@@ -1,4 +1,4 @@
-"""
+﻿"""
 Potenzialberechnung fuer Schweizer Grundstuecke.
 
 Kombiniert eine Parzelle (mit ihren OEREB-Daten) und ein Baureglement
@@ -171,17 +171,25 @@ class PotenzialErgebnis:
             zeilen.append("EMPFEHLUNG (Grobschaetzung - nur als Orientierung)")
         zeilen.append("=" * 70)
 
-        # Werte sicherstellen (im Bereich 0-100 fuer die Anzeige)
-        ausschoepfung = max(0.0, min(100.0, self.ausschoepfungsgrad_prozent))
+        # Ehrliche Anzeige: bei Ueber-100% wird das gezeigt mit Warnung
+        ausschoepfung_echt = max(0.0, self.ausschoepfungsgrad_prozent)
+        ueberzeichnet = ausschoepfung_echt > 100.0
+        # Fuer den Balken: auf 100 deckeln, damit er nicht ueberlaeuft
+        ausschoepfung = min(100.0, ausschoepfung_echt)
         reserve = max(0.0, 100.0 - ausschoepfung)
         if self.reserve_prozent is not None:
             reserve = max(0.0, min(100.0, self.reserve_prozent))
 
-        # Balken Ausschoepfung
+        # Balken Ausschoepfung (ehrlich, mit Warnung wenn >100%)
         balken_ausschoepfung = self._zeichne_balken(ausschoepfung)
-        zeilen.append(
-            f"  Ausschoepfung:    {balken_ausschoepfung} {ausschoepfung:5.1f}%"
-        )
+        if ueberzeichnet:
+            zeilen.append(
+                f"  Ausschoepfung:    {balken_ausschoepfung} {ausschoepfung_echt:5.1f}% (!! Ist > Soll - Schaetzung versagt)"
+            )
+        else:
+            zeilen.append(
+                f"  Ausschoepfung:    {balken_ausschoepfung} {ausschoepfung:5.1f}%"
+            )
 
         # Balken Reserve
         balken_reserve = self._zeichne_balken(reserve)
@@ -522,7 +530,7 @@ class PotenzialBerechner:
         ergebnis.geschaetzt_realisiert_m2 = self._schaetze_ist_bebauung(parzelle)
         ergebnis.realisiert_ist_platzhalter = True
         ergebnis.bemerkungen.append(
-            "Ist-Bebauung ist derzeit ein Platzhalter (40% der Parzelle). "
+            "Ist-Bebauung ist derzeit ein Platzhalter (25% der Parzelle). "
             "Der echte Wert kommt in einer kuenftigen Version aus swissBUILDINGS3D."
         )
 
@@ -630,11 +638,17 @@ class PotenzialBerechner:
                 f"der kleinste gewinnt:"
             )
             geo_marker = " <- aktiv" if schaetzung["begrenzer"] == "geometrie" else ""
-            ergebnis.bemerkungen.append(
-                f"    1. Gebaeudemasse: {schaetzung['grundflaeche_geometrie_m2']:.0f} m^2 "
-                f"({parameter.max_gebaeudelaenge_m} m x {schaetzung['breite_m']:.1f} m "
-                f"aus {schaetzung['breite_quelle']}){geo_marker}"
-            )
+            if schaetzung["grundflaeche_geometrie_m2"] == float("inf"):
+                ergebnis.bemerkungen.append(
+                    f"    1. Gebaeudemasse: unbegrenzt "
+                    f"(Gebaeudelaenge unbeschraenkt){geo_marker}"
+                )
+            else:
+                ergebnis.bemerkungen.append(
+                    f"    1. Gebaeudemasse: {schaetzung['grundflaeche_geometrie_m2']:.0f} m^2 "
+                    f"({parameter.max_gebaeudelaenge_m} m x {schaetzung['breite_m']:.1f} m "
+                    f"aus {schaetzung['breite_quelle']}){geo_marker}"
+                )
             parz_marker = " <- aktiv" if schaetzung["begrenzer"] == "parzelle" else ""
             ergebnis.bemerkungen.append(
                 f"    2. Parzelle minus Grenzabstaende: "
@@ -667,7 +681,7 @@ class PotenzialBerechner:
                 f"  = GROBSCHAETZUNG zulaessig: {schaetzung['geschossflaeche_m2']:.0f} m^2"
             )
             ergebnis.bemerkungen.append(
-                f"  Vergleich Ist (Platzhalter 40% der Parzelle): {ist_schaetzung:.0f} m^2 "
+                f"  Vergleich Ist (Platzhalter 25% der Parzelle): {ist_schaetzung:.0f} m^2 "
                 f"(beide Werte sind Schaetzungen - direkter Vergleich nur grob aussagekraeftig)"
             )
 
@@ -800,28 +814,47 @@ class PotenzialBerechner:
         """Schaetzt die zulaessige Geschossflaeche im Hoehen-System."""
         if parameter.max_geschosse is None:
             return None
-        if parameter.max_gebaeudelaenge_m is None:
-            return None
+        # Bei unbeschraenkter Gebaeudelaenge (z.B. BK_5 geschlossen) ist
+        # der Geometrie-Begrenzer "kein Begrenzer". Wir ueberspringen ihn
+        # und nutzen die anderen zwei (Parzelle, GZ).
+        gebaeudelaenge_unbeschraenkt = parameter.max_gebaeudelaenge_m is None
 
         # Breite-Annahme: Wenn der BKP eine echte Gebaeudetiefe geliefert
         # hat, nutzen wir die statt des pauschalen Defaults. Sonst Default.
-        if parameter.bkp_gebaeudetiefe_m is not None:
+        if gebaeudelaenge_unbeschraenkt:
+            # Bei unbegrenzter Laenge ist die Geometrie kein Begrenzer.
+            # Setze inf, damit min() in der Begrenzer-Auswahl ihn ignoriert.
+            breite_m = (parameter.bkp_gebaeudetiefe_m
+                        if parameter.bkp_gebaeudetiefe_m is not None
+                        else DEFAULT_GEBAEUDEBREITE_M)
+            breite_quelle = "BKP" if parameter.bkp_gebaeudetiefe_m is not None else "Default"
+            grundflaeche_geometrie = float("inf")
+        elif parameter.bkp_gebaeudetiefe_m is not None:
             breite_m = min(parameter.max_gebaeudelaenge_m,
                            parameter.bkp_gebaeudetiefe_m)
             breite_quelle = "BKP"
+            grundflaeche_geometrie = parameter.max_gebaeudelaenge_m * breite_m
         else:
             breite_m = min(parameter.max_gebaeudelaenge_m,
                            DEFAULT_GEBAEUDEBREITE_M)
             breite_quelle = "Default"
-        grundflaeche_geometrie = parameter.max_gebaeudelaenge_m * breite_m
+            grundflaeche_geometrie = parameter.max_gebaeudelaenge_m * breite_m
 
         grundflaeche_parzelle = grundflaeche_geometrie
         if (parameter.grenzabstand_klein_m is not None
                 and parameter.grenzabstand_gross_m is not None):
-            seite_m = parzelle.flaeche_m2 ** 0.5
-            nutzbare_seite = max(0, seite_m - 2 * parameter.grenzabstand_klein_m)
-            nutzbare_seite_lang = max(0, seite_m - 2 * parameter.grenzabstand_gross_m)
-            grundflaeche_parzelle = nutzbare_seite * nutzbare_seite_lang
+            # Annahme: typische Parzelle ist nicht quadratisch sondern
+            # eher rechteckig im Verhaeltnis 1:1.5 (laengere Seite zur
+            # Strasse hin). Das ist realistischer als die quadratische
+            # Naeherung und verhindert Ausreisser bei kleinen Parzellen.
+            verhaeltnis = 1.5
+            kurze_seite = (parzelle.flaeche_m2 / verhaeltnis) ** 0.5
+            lange_seite = kurze_seite * verhaeltnis
+            # Kleiner Grenzabstand auf den kurzen Seiten,
+            # grosser Grenzabstand auf den langen Seiten
+            nutzbare_kurz = max(0, kurze_seite - 2 * parameter.grenzabstand_klein_m)
+            nutzbare_lang = max(0, lange_seite - 2 * parameter.grenzabstand_gross_m)
+            grundflaeche_parzelle = nutzbare_kurz * nutzbare_lang
 
         grundflaeche_gz = float("inf")
         if parameter.gruenflaechenziffer is not None:
@@ -885,8 +918,8 @@ class PotenzialBerechner:
 
     @staticmethod
     def _schaetze_ist_bebauung(parzelle: Parzelle) -> float:
-        """Platzhalter: 40% der Parzellenflaeche."""
-        return parzelle.flaeche_m2 * 0.4
+        """Platzhalter: 25% der Parzellenflaeche (realistischer als 40%)."""
+        return parzelle.flaeche_m2 * 0.25
 
     @staticmethod
     def _bestimme_status(ausschoepfung: float | None) -> PotenzialStatus:
