@@ -237,6 +237,123 @@ Volltext: alternative Quelle ueber AV-Daten der amtlichen Vermessung.
 
 **Mitigation**: Erst mit kleinem Test pruefen.
 
+## Eingabewege fuer die Detail-Analyse
+
+Bisheriger Eintrittspunkt war ausschliesslich die **Adresse** ueber das
+Geocoding (swisstopo SearchAPI). Das funktioniert gut fuer bebaute
+Parzellen mit Hausnummer.
+
+**Problem**: Im Kanton Bern haben **unbebaute Parzellen meistens keine
+Adresse**. Genau diese Parzellen sind aber fuer Architekten und
+Investoren besonders interessant (komplettes Verdichtungs-Potenzial,
+keine Eigentuemer-Verhandlung wegen Bestandsbau).
+
+Iteration 5 erweitert deshalb die Eintrittspunkte:
+
+| Eintritt | Beispiel | Use-Case |
+|---|---|---|
+| Adresse | "Hauptstrasse 30, 3653 Oberhofen" | bebaute Parzellen, Reserve-Berechnung |
+| Parzellennummer + Gemeinde | "Oberhofen 309" | unbebaute Parzellen ohne Adresse |
+| EGRID | "CH382046359635" | aus der Rangliste der Massen-Analyse |
+| Koordinate (LV95) | "2614500, 1178500" | bei Karten-Klick (Streamlit-Iter4) |
+
+Technisch funktionieren alle vier ueber das gleiche Backend - die
+swisstopo SearchAPI unterstuetzt `origins=parcel` fuer Parzellen-
+Suche, und die OEREB-Pipeline arbeitet ohnehin EGRID-basiert.
+
+## Eigentuemer-Daten: bewusster Verzicht auf Automatisierung
+
+Eine naheliegende Frage ist: kann das Tool nach Identifikation einer
+interessanten Parzelle gleich auch die Eigentuemerin oder den
+Eigentuemer rauslassen? Technisch existiert die kantonale
+Datenbank GRUDIS public, die genau diese Daten liefert (Name,
+Geburtsdatum, weitere Liegenschaften).
+
+**Entscheidung: Tool greift NICHT automatisch auf Eigentuemerdaten zu.**
+
+### Begruendung
+
+1. **Captcha-Schutz**: GRUDIS verlangt vor jeder Abfrage eine
+   fuenfstellige Captcha-Eingabe. Das ist die explizite technische
+   Barriere des Datenherrn gegen Massenabfragen. Captcha-Umgehung
+   waere als unbefugter Zugriff zu werten (Art. 143bis StGB).
+2. **AGOV-Login seit 1. September 2025**: Die Eigentuemer-Auskunft
+   erfordert seit Herbst 2025 ein authentifiziertes Login ueber
+   AGOV. Das Tool weiterzugeben mit eingebetteten Credentials ist
+   nicht moeglich.
+3. **Datenschutzgesetz (revDSG seit 1.9.2023)**: Auch wenn
+   Einzelteile oeffentlich abrufbar sind, ist das automatisierte
+   **Profilieren** (Eigentuemer + Geburtsdatum + Bauland-Reserve)
+   eine Personendatenbearbeitung mit hohem Risiko. Ohne
+   Rechtsgrundlage problematisch.
+4. **Reputationsrisiko**: Massenanschreiben an Eigentuemer auf
+   Basis automatisch erhobener Daten ist gesellschaftlich heikel
+   und wuerde dem Tool und den Nutzenden schaden.
+
+### Was das Tool stattdessen macht
+
+Im Output jeder Parzellen-Analyse erscheint ein **Direktlink** zur
+manuellen GRUDIS-Abfrage:
+
+```
+PARZELLE 309, Oberhofen am Thunersee
+====================================
+Bauland-Reserve: 480 m^2 (33% Ausschoepfung)
+
+Eigentuemer-Auskunft:
+  Manuell ueber GRUDIS public (kantonale Datenbank, BE-Login):
+  https://www.gba.dij.be.ch/de/start/dienstleistungen/online-abfragen/eigentumsauskunft.html
+```
+
+Damit ist die Funktion fuer Architekten und Investoren da - mit
+einem zusaetzlichen Klick pro Parzelle.
+
+### Die Rangliste skaliert die Funktion automatisch richtig
+
+Genau hier kommt das Zwei-Phasen-Konzept zum Tragen. Die
+Massen-Analyse liefert eine **priorisierte Rangliste**. Daraus
+selektiert der User nur die Top-Treffer fuer die manuelle
+GRUDIS-Abfrage:
+
+```
+500 Parzellen einer Gemeinde
+       |
+       | Massen-Screening (automatisch, Phase 1)
+       v
+ca. 50-100 Kandidaten mit signifikanter Reserve
+       |
+       | Filter (Top 25, Reserve > 200 m^2, Zone W2-W4)
+       v
+ca. 25 wirklich interessante Parzellen
+       |
+       | MANUELL: GRUDIS-Klick pro Parzelle (5-10 Minuten)
+       v
+25 Eigentuemer-Datensaetze
+```
+
+Ein typischer Investor-Workflow:
+1. Massen-Analyse einer Gemeinde laufen lassen (1-2 Min)
+2. Excel-Liste oeffnen, sortieren, Top 25 markieren
+3. Pro Top-Parzelle: GRUDIS-Link klicken, einloggen, Eigentuemer
+   notieren (~20 Sek pro Parzelle)
+4. Nach 5-10 Minuten: 25 Adressen bereit fuer Akquisitions-Mail
+
+Diese natuerliche Begrenzung durch Top-N ist **kein Workaround,
+sondern gutes Design**: Wer nach 25 Klicks aufhoert, hat die besten
+25 Parzellen sowieso schon. Wer 500 Eigentuemer braucht, sollte
+ohnehin zum Grundbuchamt gehen - was rechtlich korrekt ist.
+
+### Wenn jemand Eigentuemer-Massenabfragen braucht
+
+Der korrekte Weg fuehrt ueber:
+- Direktanfrage beim **kantonalen Grundbuchamt** mit nachgewiesenem
+  berechtigtem Interesse
+- **Datenkooperation** mit dem Kanton Bern (Geoinformation)
+- **Bezahltes Datenprodukt** (z.B. von Privatdienstleistern, die
+  eine Lizenz haben)
+
+Diese Wege sind nicht Teil dieses Tools.
+
 ## Aufrufschnittstelle (geplant)
 
 ### Kommandozeile
@@ -247,11 +364,17 @@ python -m bauzonenradar.gemeinde_analyse "Oberhofen am Thunersee"
 python -m bauzonenradar.gemeinde_analyse "Oberhofen am Thunersee" --top 20
 python -m bauzonenradar.gemeinde_analyse "Oberhofen am Thunersee" --export csv
 
-# Detail-Analyse einer einzelnen Parzelle (existiert schon)
+# Detail-Analyse via Adresse (existiert schon)
 python -m bauzonenradar.analyse_adresse "Hauptstrasse 30, 3653 Oberhofen"
 
-# Neu: Detail-Analyse via EGRID (z.B. aus Rangliste)
-python -m bauzonenradar.analyse_adresse --egrid CH382046359635
+# NEU: Detail-Analyse via Parzellennummer (fuer unbebaute Parzellen)
+python -m bauzonenradar.analyse_parzelle --gemeinde "Oberhofen" --nr 309
+
+# NEU: Detail-Analyse via EGRID (z.B. aus Rangliste)
+python -m bauzonenradar.analyse_parzelle --egrid CH382046359635
+
+# NEU: Detail-Analyse via LV95-Koordinate (z.B. Karten-Klick)
+python -m bauzonenradar.analyse_parzelle --lv95 2614500,1178500
 ```
 
 ### Output-Beispiel (CLI)
