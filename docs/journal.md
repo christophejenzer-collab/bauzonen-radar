@@ -12,6 +12,61 @@ der Werte und finale Architektur liegen beim Projektteam.
 
 ---
 
+## 29. April 2026 (Mittwoch, abends) - Datenluecken thun.json geschlossen
+
+**Dauer**: ca. 30 Minuten
+
+### Was gefixt wurde
+
+Aus den gestrigen Stichproben waren noch zwei "Zone im Reglement nicht
+erfasst"-Faelle offen:
+
+- **Seestrasse 72a (WA4)**: OEREB liefert "Wohnen/Arbeiten WA4" mit
+  Slash, thun.json hatte nur "Wohnen + Arbeiten WA4" mit Plus.
+  Tool fand keinen Match.
+- **Allmendstrasse 4 (ZPP)**: Zone mit Planungspflicht war ueberhaupt
+  nicht erfasst.
+
+### Loesung
+
+`thun.json` um 5 neue Eintraege erweitert:
+- `Wohnen/Arbeiten WA3` (Slash-Synonym, gleicher Inhalt wie Plus-Variante)
+- `Wohnen/Arbeiten WA4` (Slash-Synonym)
+- `Wohnen/Arbeiten WA5` (Slash-Synonym)
+- `Zone mit Planungspflicht` (NICHT_MOEGLICH mit UeO-Hinweis)
+- `ZPP` (Kurzform-Synonym)
+
+Patch-Skript: `patch_thun_json.ps1` (Backup-Datei wird automatisch
+erstellt).
+
+### Verifikation
+
+Stichproben-Test 12/12 erfolgreich. Wichtige Vorher/Nachher:
+
+| Adresse | Vorher | Nachher |
+|---|---|---|
+| Allmendstrasse 4 (ZPP) | "Zone nicht erfasst" | NICHT_MOEGLICH mit UeO-Hinweis |
+| Seestrasse 72a (WA4) | "Zone nicht erfasst" | GROBSCHAETZUNG mit Werten + Plausibilitaets-Warnung |
+
+Bei Seestrasse 72a (kleine Parzelle 282 m^2 mit 5/12m Grenzabstaenden)
+greift jetzt der heute morgen eingebaute Plausibilitaetscheck und
+warnt explizit: "Schaetzung deutlich UNTER altem Recht". Genau so
+soll es sein.
+
+### Bilanz
+
+Gesamter Bug-Backlog vom 28.04. ist nun komplett abgearbeitet:
+
+- [x] Bug: Begrenzer-Logik bei kleinen Parzellen (heute morgen)
+- [x] Bug: Begrenzer-Logik bei `Gebaeudelaenge unbeschraenkt` (heute morgen)
+- [x] Anzeige: Ehrliche >100% Anzeige (heute morgen)
+- [x] Daten: WA4 und ZPP in `thun.json` ergaenzen (jetzt)
+
+Das Tool steht stabil fuer Iteration 4 bereit. Fabienne kann mit der
+Streamlit-GUI starten.
+
+---
+
 ## 29. April 2026 (Mittwoch) - Bugs aus Stichproben-Test gefixt
 
 **Dauer**: ca. 1 Stunde

@@ -1,3 +1,32 @@
+# patch_thun_json.ps1 - Ergaenzt thun.json mit fehlenden Synonymen
+#
+# Behebt zwei Datenluecken aus den Stichproben vom 28.04.:
+#   - Seestrasse 72a (WA4) -> "Zone im Reglement nicht erfasst"
+#     Grund: OEREB liefert "Wohnen/Arbeiten WA4" mit Slash,
+#     thun.json hat "Wohnen + Arbeiten WA4" mit Plus.
+#   - Allmendstrasse 4 (ZPP) -> "Zone im Reglement nicht erfasst"
+#     Grund: ZPP-Zone (Zone mit Planungspflicht) war ueberhaupt nicht erfasst.
+#
+# Vorgehen: Ersetzt thun.json komplett mit erweiterter Version.
+# Backup wird automatisch erstellt: thun.json.bak
+#
+# Aufruf vom Projekt-Root:
+#   .\patch_thun_json.ps1
+
+$ErrorActionPreference = "Stop"
+
+$pfad = "daten\baureglemente\thun.json"
+$backup = "$pfad.bak"
+
+if (-not (Test-Path $pfad)) {
+    Write-Host "FEHLER: $pfad nicht gefunden. Bist du im Projekt-Root?" -ForegroundColor Red
+    exit 1
+}
+
+Copy-Item $pfad $backup -Force
+Write-Host "Backup erstellt: $backup" -ForegroundColor Green
+
+$neuerInhalt = @'
 {
   "gemeinde": "Thun",
   "bfs_nr": 942,
@@ -167,3 +196,27 @@
     }
   }
 }
+'@
+
+# UTF-8 ohne BOM schreiben
+[System.IO.File]::WriteAllText(
+    (Resolve-Path $pfad).Path,
+    $neuerInhalt,
+    (New-Object System.Text.UTF8Encoding $false)
+)
+
+Write-Host ""
+Write-Host "Fertig! Datei aktualisiert: $pfad" -ForegroundColor Green
+Write-Host ""
+Write-Host "Neue Eintraege:" -ForegroundColor Yellow
+Write-Host "  - 'Wohnen/Arbeiten WA3' (Slash-Synonym)" -ForegroundColor Gray
+Write-Host "  - 'Wohnen/Arbeiten WA4' (Slash-Synonym)" -ForegroundColor Gray
+Write-Host "  - 'Wohnen/Arbeiten WA5' (Slash-Synonym)" -ForegroundColor Gray
+Write-Host "  - 'Zone mit Planungspflicht' (NICHT_MOEGLICH)" -ForegroundColor Gray
+Write-Host "  - 'ZPP' (Kurzform-Synonym)" -ForegroundColor Gray
+Write-Host ""
+Write-Host "Falls etwas schiefgeht: Restore mit:" -ForegroundColor Gray
+Write-Host "  Copy-Item $backup $pfad -Force" -ForegroundColor Gray
+Write-Host ""
+Write-Host "Naechster Schritt: Stichproben-Test laufen lassen" -ForegroundColor Yellow
+Write-Host "  .\tests\test_zwoelf_adressen.ps1" -ForegroundColor Yellow
