@@ -56,3 +56,7 @@ extract_*.xml
 # Persoenliche Notizen und Arbeitsdokumente
 WORK SHEET*.txt
 persoenlich/
+# Persoenliche Arbeitsnotizen (lokal, nicht im Repo)
+docs/START JenzC.txt
+tests/test_output*.txt
+tests/test_zwoelf_adressen.py
