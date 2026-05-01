@@ -1,16 +1,30 @@
 # Konzept: Gemeinde-Analyse mit Verdichtungs-Rangliste
 
-**Status**: GENEHMIGT, EMPIRISCH VERIFIZIERT (29. April 2026)
-**Geplant fuer**: Iteration 5 (nach Streamlit-GUI in Iteration 4)
+**Status**: GENEHMIGT, EMPIRISCH VERIFIZIERT, **TEILWEISE UMGESETZT** (30. April 2026)
+**Geplant fuer**: Iteration 5 (parallel zu Streamlit-GUI in Iteration 4)
 **Primaerer Output**: CSV/Excel-Liste fuer Weiterverarbeitung
 **Zielgruppe**: Architekten und Investoren (suchen Verdichtungs-Potenzial)
 **Verfasser**: Christophe Jenzer mit Claude
+
+**Umsetzungs-Stand der vier geplanten Module**:
+
+| Modul | Status |
+|---|---|
+| `datenquellen/gwr.py` | ✅ FERTIG (30.04.2026) |
+| `datenquellen/parzellen_liste.py` | offen, Anfang Juni |
+| `gemeinde_analyse.py` | offen, Anfang Juni |
+| Excel-Export | offen, Anfang Juni |
 
 **Verifikations-Stand am 29.04.2026**:
 - 50-Adressen-Stresstest: 96% Erfolg, 1.7 Min Laufzeit
 - API-Spike: SearchServer (Parzelle/Massen/Adresse) + GWR-MapServer alle bestaetigt
 - Echtes Beispiel Frutigenstrasse 25 zeigt: garea=304 m^2, gastw=5,
   Ist-Geschossflaeche=1520 m^2 (vs. unsere Schaetzung 1080 m^2)
+
+**Live-Stand am 30.04.2026 (mit GWR integriert)**:
+- 50-Adressen-Stresstest mit GWR: 96% Erfolg, 2.2 Min Laufzeit
+- Plausibilitaets-Konflikt jetzt sichtbar bei vielen Adressen
+- Aggregation mehrerer Gebaeude pro Parzelle funktioniert
 
 ## Zusammenfassung in einem Satz
 

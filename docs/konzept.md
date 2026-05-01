@@ -1,7 +1,7 @@
 # Konzept: Bauzonen-Radar
 
 Pflichtdokument zum Python-Abschlussprojekt.
-Stand: 28. April 2026.
+Stand: 30. April 2026.
 
 ## Projektidee
 
@@ -23,6 +23,8 @@ gebaut werden darf, muss:
 - die richtige Bauklasse oder Zone zuordnen
 - die Kennzahlen (AZ, GFZo, Hoehen, Grenzabstaende) in eine
   Berechnung umsetzen
+- bei Stadt Bern: zusaetzlich den Bauklassenplan konsultieren
+- die Ist-Bebauung visuell auf der Karte abschaetzen
 
 Das ist Spezialwissen. Bauzonen-Radar buendelt diese Schritte in
 einer Adress-Abfrage und liefert eine sofort lesbare visuelle
@@ -39,9 +41,13 @@ Eine Python-Pipeline, die folgendes leistet:
    Restrictions, Bauklassen, Naturgefahren etc.
 4. **Reglement-Matching**: Passendes Gemeinde-JSON laden, Zone
    und Bauklasse zuordnen
-5. **Potenzialberechnung**: Theoretisch zulaessig vs. geschaetzt
+5. **BKP-Anreicherung (Stadt Bern)**: Parzellenscharfe Werte aus
+   dem Bauklassenplan via ArcGIS REST-API
+6. **GWR-Anreicherung (alle Gemeinden)**: Effektive Bestands-
+   Bebauung aus dem Eidg. Gebaeude- und Wohnungsregister
+7. **Potenzialberechnung**: Theoretisch zulaessig vs. geschaetzt
    realisiert. Vier Lagebeurteilungen mit ASCII-Balken
-6. **Bericht**: Strukturierter Textbericht mit klarer Markierung
+8. **Bericht**: Strukturierter Textbericht mit klarer Markierung
    der Datenqualitaet, visueller Empfehlung und allen relevanten
    Hinweisen
 
@@ -74,12 +80,17 @@ Plausibilisierung verwendet werden.
 ### GROBSCHAETZUNG
 
 Im Hoehen-System gibt es keine flaechen-bezogene Kennzahl. Das Tool
-macht eine konservative Schaetzung anhand der Gebaeudemasse:
-`Grundflaeche x Vollgeschosse + Dachgeschoss-Anteil`. Das Ergebnis
+macht eine konservative Schaetzung anhand der Drei-Begrenzer-Logik
+(Gebaeudemasse / Parzelle / GZ - der kleinste gewinnt). Das Ergebnis
 wird im Output mit einem **Banner** und der **Berechnungsbasis**
 transparent ausgewiesen. Ein Plausibilitaetscheck gegen das alte
 AZ-Recht (falls hinterlegt) zeigt, ob die Schaetzung im erwartbaren
 Bereich liegt.
+
+Seit dem 30.04.2026 zeigt zusaetzlich die GWR-Integration die
+**effektive Bestands-Bebauung** an. Wenn die Schaetzung deutlich
+unter der Realitaet liegt, ist das ein Hinweis auf eine
+konservative Begrenzer-Logik.
 
 ### NICHT_MOEGLICH
 
@@ -130,6 +141,38 @@ Drei Faelle in der Stadt Bern:
 | BK 1-6 mit Bauweise | Eigerstrasse 60 (BK_4) | ja | GROBSCHAETZUNG |
 | BK_E (Erhaltung) | Thunstrasse 40 | nein | VERBINDLICH (GFZo aus BO) |
 | Spezialregime | Altstadt OA, BK_SPEZ (UeO) | nein | NICHT_MOEGLICH |
+
+## GWR-Integration (Iteration 5, Teil 1)
+
+Eine zweite externe Datenquelle ergaenzt das Tool seit dem 30.04.2026:
+das Eidgenoessische Gebaeude- und Wohnungsregister (GWR), abgerufen
+ueber api3.geo.admin.ch.
+
+Das Modul `datenquellen/gwr.py` liefert pro Adresse die effektive
+Bestands-Bebauung: Grundflaeche, Anzahl Geschosse, Anzahl Wohnungen,
+Baujahr, Heizungs-Sanierungsdatum.
+
+```
+GWR-Daten (bestehende Bebauung):
+  Frutigenstrasse 25 - EGID 1435137: 304 m^2 x 5 Geschosse = 1520 m^2 Geschossflaeche
+    7 Wohnungen, Baujahr 8016
+    Heizung saniert: 29.06.2021
+```
+
+**Mehrwert**:
+- **Plausibilitaets-Konflikt sichtbar**: Wo unsere konservative
+  Schaetzung deutlich unter der Realitaet liegt (z.B. Frutigenstrasse 25:
+  1080 m^2 Soll vs. 1520 m^2 Ist), wird die Diskrepanz visuell.
+- **Mehrwert auch ohne Reglement**: Selbst fuer Gemeinden ohne
+  hinterlegtes Reglement (z.B. Spiez) liefert das Tool den Ist-Wert.
+- **Bonus-Daten**: Wohnungsanzahl, Sanierungsdatum, Bauperiode
+  sind nuetzliche Zusatzinformationen fuer Investoren.
+
+**Architektur**:
+- Zwei-Stufen-Workflow: SearchAPI fuer Adresse-zu-featureId,
+  MapServer fuer featureId-zu-Gebaeudedaten
+- Caching, Retry-Logic mit exponentialem Backoff, Throttling
+- Saubere Aggregation mehrerer Gebaeude pro Parzelle ueber EGRID
 
 ## Empfehlungs-Block mit visueller Lagebeurteilung
 
@@ -186,9 +229,11 @@ Bei Schaetzungen wird die Lagebeurteilung mit "(geschaetzt)" markiert.
 
 Das Projekt wird im Zweier-Team bearbeitet:
 
-### Christophe "Matis" Jenzer
+### Christophe Jenzer
 - Backend-Entwicklung (Python-Pipeline)
 - OEREB-Webservice-Anbindung
+- BKP-Integration Stadt Bern
+- GWR-Modul (Iteration 5)
 - XML-Parser
 - Reglement-Daten-Erfassung (Stadt Bern, Stadt Thun, Oberhofen)
 - Potenzialberechnung mit Drei-System-Modell und Schaetz-Logik
@@ -222,7 +267,8 @@ Fuer die Erstellung dieses Projekts wurde Claude.AI (Anthropic)
 als Programmier-Assistent eingesetzt. Konkret unterstuetzte Claude:
 
 - Architektur-Entscheidungen (Drei-Systeme-Modell, Datenqualitaets-
-  Stufen, Schaetz-Logik im Hoehen-System, Empfehlungs-Block)
+  Stufen, Schaetz-Logik im Hoehen-System, Empfehlungs-Block,
+  GWR-Integration, Iter-5-Konzept)
 - Code-Generierung fuer Datenklassen, Parser, Berechnungslogik
 - Strukturierung der Reglement-JSONs
 - Recherche und Verifikation gegen offizielle Quellen (Bauordnung
@@ -232,9 +278,7 @@ als Programmier-Assistent eingesetzt. Konkret unterstuetzte Claude:
 
 Die fachlichen Entscheidungen, die Verifikation der Werte gegen
 die echten Reglemente und die finale Architektur lagen beim
-Projektteam. Eine externe Verifikation der eingepflegten Werte
-durch einen Architekten (Schwager des Projektleiters, Fachperson
-in Thun) ist Teil der laufenden Iteration 3.
+Projektteam.
 
 ## Iterationen
 
@@ -254,8 +298,7 @@ Datenqualitaet sauber kommunizieren.
 **Ergebnis**:
 - Drei Bemessungssysteme im Datenmodell verankert
 - Drei Gemeinden vollstaendig hinterlegt: Bern, Thun, Oberhofen
-- Erste echte GFZo-Berechnung erfolgreich (Thunstrasse 40 Bern:
-  118 m^2 zulaessig, 80% Ausschoepfung, Status GERING)
+- Erste echte GFZo-Berechnung erfolgreich
 - Hoehen-System mit und ohne Gruenflaechenziffer funktional
 - Strukturgebiet- und Arealbonus-Erkennung implementiert
 - Schaetz-Berechnung im Hoehen-System mit Datenqualitaets-Stufen
@@ -264,18 +307,17 @@ Datenqualitaet sauber kommunizieren.
 - Empfehlungs-Block mit ASCII-Balken zur visuellen Lagebeurteilung
 - Vier Lagebeurteilungs-Stufen anhand Bauland-Reserve
 
-### Iteration 3: Verifikation und Vervollstaendigung (laufend)
+### Iteration 3: Verifikation (abgeschlossen 29.04.2026)
 **Ziel**: Echte Werte aus dem Bauklassenplan Bern einpflegen,
-Tool-Output durch Architekt-Schwager validieren lassen.
+Tool-Output durch Stresstest validieren.
 
-**Aufgaben**:
-- Schwager liefert GFZo-Werte fuer Stadt Bern Bauklassenplan
-- Erfassungs-Excel `docs/erfassung_baureglemente.xlsx` mit acht
-  Tabellen ist vorbereitet
-- Mit echten Werten in `bern.json` vollstaendig rechnen koennen
-- Fabienne: erste Anforderungs-Liste erstellen
+**Ergebnis**:
+- Stadt Bern parzellenscharf via BKP-API
+- 4 Bug-Fixes Begrenzer-Logik
+- Stresstest 50 Adressen: 96% Erfolg
+- Iteration-5-Konzept geschrieben und mit 4 API-Spikes verifiziert
 
-### Iteration 4: Webseite (geplant)
+### Iteration 4: Webseite (geplant - Sonntag mit Fabienne)
 **Ziel**: Streamlit-GUI fuer Endanwender.
 
 **Verantwortlich**: Fabienne.
@@ -284,9 +326,17 @@ Tool-Output durch Architekt-Schwager validieren lassen.
 - Eingabefeld fuer Adresse
 - Visualisierung der Parzelle (Kartenausschnitt)
 - Strukturierte Ergebnisanzeige mit visueller Datenqualitaets-Ampel
-  (gruen = verbindlich, orange = Schaetzung, grau = nicht moeglich)
 - Empfehlungs-Block als grafische Progress-Bar (statt ASCII)
+- GWR-Daten als visuelle Diskrepanz Soll vs. Ist
 - PDF-Export fuer Kundendossier
+
+### Iteration 5: Gemeinde-Analyse (laufend, 1 von 4 Modulen fertig)
+**Ziel**: Top-50-Liste der Verdichtungs-Kandidaten pro Gemeinde
+als Excel-Datei.
+
+**Stand 30.04.2026**:
+- ✅ `gwr.py` fertig (vorgebaut + integriert)
+- offen: `parzellen_liste.py`, `gemeinde_analyse.py`, Excel-Export
 
 ## Bewertungskriterien (laut Kursvorgabe)
 
@@ -298,29 +348,20 @@ Tool-Output durch Architekt-Schwager validieren lassen.
 | Fragen zum Code | 20 |
 | **Total** | **100** |
 
-## Zeitplan
-
-- 28.04.2026 - Aufgabenverteilung mit Fabienne abgestimmt
-- 28.04.2026 - Schaetz-Berechnung im Hoehen-System mit
-  Datenqualitaets-Markierung implementiert
-- 28.04.2026 - Empfehlungs-Block mit ASCII-Balken implementiert
-- bis Mai - Iteration 3 abgeschlossen, Bern-Bauklassenplan komplett
-- Mai-Juni - Iteration 4 (Webseite) durch Fabienne
-- Mitte Juni - Generalprobe Live-Demo
-- 17.06.2026 - Abgabe und Praesentation (5 Min Pitch + Demo +
-  Code-Fragen)
-
-## Aktueller Stand (28.04.2026)
+## Aktueller Stand (30.04.2026)
 
 - Pipeline End-to-End funktional
 - Drei Gemeinden mit drei verschiedenen Bemessungssystemen
   abgedeckt
-- Schaetz-Berechnung im Hoehen-System mit klarer Datenqualitaets-
-  Markierung implementiert
-- Plausibilitaetscheck gegen altes AZ-Recht funktional
-- Empfehlungs-Block mit visueller Lagebeurteilung in 1 Sekunde
-  erfassbar
+- Stadt Bern parzellenscharf via BKP-API integriert
+- GWR-Modul integriert (Iteration 5, 1 von 4 Modulen)
+- Stresstest 50 Adressen: 96% Erfolgsquote (2.2 Min mit GWR)
+- Plausibilitaets-Konflikt zwischen Schaetzung und Realitaet
+  jetzt sichtbar
 - Code in privates GitHub-Repo eingecheckt
-- Fuenf Dokumente im Repo gepflegt (README + 4 docs/)
-- Zehn Test-Adressen verifiziert
+- Sechs Dokumente im Repo gepflegt:
+  - README, konzept, konzept_gemeinde_analyse, projektplan,
+    journal, struktur, fachliche_grundlagen
+- 12 Test-Adressen im Regressionstest, 50 im Stresstest verifiziert
 - Mitstudentin Fabienne fest an Bord
+- Sonntag 0800 Coding-Tag fuer Iteration 4 vereinbart
