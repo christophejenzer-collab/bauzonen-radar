@@ -60,3 +60,12 @@ persoenlich/
 docs/START JenzC.txt
 tests/test_output*.txt
 tests/test_zwoelf_adressen.py
+
+# Lokales Archiv historischer Artefakte (PoC, alte Strukturbaum-Snapshots, etc.)
+docs/archiv/
+
+# Test-Fixtures: OEREB-XML-Snapshots fuer reproduzierbare Tests/Demos
+# Whitelist-Ausnahme zur Standard-XML-Sperre
+!tests/fixtures/
+!tests/fixtures/*.xml
+!tests/fixtures/*.md

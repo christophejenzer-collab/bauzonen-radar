@@ -383,6 +383,268 @@ eine konkrete Begruendung.
 
 Tool ist demonstrationsreif fuer die Verteidigung am 17.6.
 
+### Spaeter Abend: Strategische Diskussion zu Datenschutz und Parzellenabfrage
+
+Beim Nachdenken ueber Iteration 5 kamen zwei strategische Punkte
+hoch, die das Konzept noch nicht abgedeckt hat:
+
+**1. Unbebaute Parzellen ohne Adresse**: Im Kanton Bern haben sie
+meist keine Hausnummer. Wie spricht man die im Tool an? Loesung:
+drei zusaetzliche Eintrittspunkte ins Iteration-5-Konzept:
+- Parzellennummer + Gemeinde ("Oberhofen 309")
+- EGRID direkt ("CH382046359635")
+- Koordinate LV95 ("2614500, 1178500")
+Aufwand: ca. 2-3 Stunden. Technisch trivial weil swisstopo
+SearchAPI das bereits unterstuetzt.
+
+**2. Eigentuemer-Daten**: Naheliegende Frage - kann das Tool nach
+Identifikation einer interessanten Parzelle gleich auch den
+Eigentuemer rauslassen? Recherche zu GRUDIS public und Geoportal
+BEO ergab vier Probleme:
+
+- **Captcha-Schutz** (5-stellige Eingabe vor jeder Abfrage) ist die
+  explizite technische Barriere des Datenherrn. Umgehung waere
+  unbefugter Zugriff (Art. 143bis StGB).
+- **AGOV-Login seit 1.9.2025** macht Tool-Weitergabe mit
+  eingebetteten Credentials unmoeglich.
+- **revDSG seit 1.9.2023** verbietet automatisches Profilieren
+  personenbezogener Daten ohne Rechtsgrundlage.
+- **Reputationsrisiko** bei Massenanschreiben "Sehr geehrter Herr X
+  geboren 15.3.1965, Ihre Parzelle hat 480 m^2 Reserve...".
+
+**Entscheidung**: Brueckenansatz. Tool greift NICHT automatisch auf
+Eigentuemer-Daten zu. Stattdessen Direktlink zu GRUDIS public im
+Output. User loggt sich selber ein und macht die Abfrage manuell.
+Skaliert ehrlich: 50 Klicks bei interessanter Liste sind zumutbar,
+500 nicht - was korrekt ist, weil dann Direktanfrage beim
+Grundbuchamt der korrekte Weg waere.
+
+Beide Punkte ergaenzt in `docs/konzept_gemeinde_analyse.md`:
+- Neuer Abschnitt "Eingabewege fuer die Detail-Analyse"
+- Neuer Abschnitt "Eigentuemer-Daten: bewusster Verzicht auf Automatisierung"
+- CLI-Beispiele erweitert um Parzellen-Eintrittspunkte
+
+Diese Diskussion ist wertvoll fuer die Verteidigung am 17.6. -
+sie zeigt Engineering-Verantwortung: rechtliche Implikationen
+werden vor der Implementierung geklaert, nicht nachher.
+
+### Quick-API-Test: Parzellen-Suche fuer Iteration 5 verifiziert
+
+Im Anschluss noch ein Spike (insgesamt ca. 30 Min) um die zentralen
+API-Annahmen fuer Iteration 5 zu verifizieren. Vier Tests
+durchgefuehrt:
+
+**Test 1: Parzellen-Suche per Gemeinde + Nummer**
+```
+GET .../SearchServer?type=locations&origins=parcel&searchText=Oberhofen+309
+```
+-> 1 Treffer mit EGRID `ch382046359635`, BFS-Nr `934`, Koordinaten
+LV03. Funktioniert wie erwartet.
+
+**Test 2: Massen-Suche per Gemeinde**
+```
+GET .../SearchServer?type=locations&origins=parcel&searchText=Oberhofen
+```
+-> 50 Treffer, sortiert nach Parzellennummer aufsteigend (Parzelle
+1, 2, 3, 4, 6, 8, 9, ..., 61). Die SearchAPI **defaultet auf 50
+Treffer ohne Pagination-Parameter** in der offiziellen Doku. Fuer
+die Massen-Analyse einer ganzen Gemeinde brauchen wir entweder:
+- alphabetische Suchstrategie (Suche nach jeder Strasse einzeln) oder
+- bbox-basierte Suche (Geometrie der Gemeinde aufteilen) oder
+- alternative Datenquelle (z.B. AV-Daten direkt vom Kanton)
+
+Diesen Punkt **dokumentieren wir als offenen Implementierungsentscheid
+fuer Iteration 5**, bei der die ersten Schritte mit einer kleinen
+Pilot-Gemeinde wie Oberhofen sowieso funktionieren.
+
+**Test 3: Adresse -> featureId via SearchAPI**
+```
+GET .../SearchServer?type=locations&origins=address&searchText=Frutigenstrasse+25+Thun
+```
+-> 2 Treffer:
+- Frutigenstrasse 25 mit `featureId: 1435137_0`
+- Frutigenstrasse 25a mit `featureId: 502105207_0`
+
+Pro Treffer kommt im `links`-Feld direkt die URL zum GWR-Datensatz
+mit. Wir muessen die URL nicht selber basteln.
+
+**Test 4: GWR-Detail-Abfrage**
+```
+GET .../MapServer/ch.bfs.gebaeude_wohnungs_register/1435137_0
+```
+-> Reichhaltige Daten zum Gebaeude:
+
+```
+egid:     1435137
+egrid:    CH394601433582
+lparz:    324
+ggdename: Thun
+garea:    304    (Grundflaeche m^2)
+gastw:    5      (Vollgeschosse)
+ganzwhg:  7      (Wohnungen)
+gbaup:    8016   (Bauperiode-Code, ~1996-2000)
+warea:    [85, 105, 45, 75, 95, 105, 75]  (Wohnungs-Flaechen)
+gwaerzh1: 7432   (Waermepumpe, saniert 29.06.2021)
+```
+
+### Drei wichtige Erkenntnisse aus den Tests
+
+**1. GWR-Felder sind alle da wie aus Doku erwartet.**
+`garea`, `gastw`, `egrid`, `lparz`, `ggdename` - alle vorhanden und
+sauber typisiert. Keine boesen Ueberraschungen.
+
+**2. Mehrere Adressen koennen auf VERSCHIEDENEN Parzellen sein.**
+Frutigenstrasse 25 liegt auf Parzelle 324, Frutigenstrasse 25a auf
+einer eigenen Parzelle 4029 (5 m^2 Nebengebaeude). Die Aggregation
+muss also **pro EGRID** erfolgen, nicht pro Strassenadresse - das
+ist die robuste und korrekte Identifikation.
+
+**3. Plausibilitaets-Konflikt aufgedeckt.**
+Frutigenstrasse 25 zeigt im Vergleich:
+- Ist mit Platzhalter 25%:    371 m^2
+- Ist aus GWR (304 x 5):     1520 m^2 ⭐
+- Soll (unsere Schaetzung):  1080 m^2 (Hoehen-System konservativ)
+
+Die Parzelle ist **bereits zu 141% ausgeschoepft** wenn man die
+echten GWR-Werte nimmt. Unsere Schaetzung sagte 34%. Das ist KEIN
+Tool-Bug, sondern die Konsequenz daraus dass die Hoehen-System-
+Schaetzung mit 12m Default-Gebaeudebreite konservativ rechnet,
+waehrend in Realitaet breiter gebaut wurde (304 m^2 / 25 m =
+12.2 m Breite, knapp ueber Default). Plus: das Mehrfamilienhaus
+mit 7 Wohnungen aus 1999 nutzt vermutlich Dachgeschoss-Bonus voll
+aus.
+
+**Genau dieser Konflikt ist die Existenzberechtigung von Iteration 5**:
+echte Ist-Werte aus GWR statt Platzhalter zeigen die Realitaet.
+
+### Konsequenzen fuer Iteration 5
+
+Konzept ergaenzt um die empirisch verifizierten Befunde:
+- GWR-Sektion mit echtem Beispiel statt Lausanne-Hypothese
+- Drei "Empirische Befunde" als Architektur-Entscheidungs-Grundlage
+- Aggregation pro EGRID dokumentiert
+- Bonus-Daten (Wohnungen, Heizung, Sanierung) als Excel-Spalten-
+  Kandidaten
+
+Damit ist die zentrale Annahme von Iteration 5 nicht nur
+**theoretisch begruendet**, sondern **empirisch verifiziert**. Die
+Implementierung kann mit Vertrauen starten - es gibt keine
+verborgenen Showstopper.
+
+---
+
+## 30. April 2026 (Donnerstag) - Aufraeumen und Strukturierung
+
+**Dauer**: ca. 1.5 Stunden
+
+### Ausgangslage
+
+Nach dem Marathon-Tag vom 29.04. (Bug-Fixes, Konzept, Stresstest, Konzept-
+Verfeinerung, API-Spike) gab es zwei Punkte zu klaeren bevor Iteration 4
+starten kann:
+
+1. **Projektstruktur bereinigen**: Frueh entstandene Artefakte (Proof-of-
+   Concept, alte Strukturbaum-Snapshots, Test-XMLs) lagen unaufgeraeumt
+   im Repo. Das war fuer Iteration 3 OK, ist aber fuer eine Uebergabe an
+   Fabienne nicht praesentabel.
+2. **Datenbaum dokumentieren**: Bevor neue Module dazukommen, sollte der
+   aktuelle Stand strukturiert festgehalten sein.
+
+### Datenbaum dokumentiert
+
+Aktuelle Struktur per `Get-ChildItem -Recurse` exportiert und in
+`docs/struktur.md` dokumentiert. Das Dokument enthaelt:
+
+- Visualisierung des Verzeichnisbaums mit Beschreibung
+- Module im Detail mit Verantwortlichkeiten
+- Reglement-Uebersicht in Tabelle
+- Test-Suiten dokumentiert
+- Aufraeum-Kandidaten als Backlog
+- Geplante Erweiterungen fuer Iter 4 und 5
+
+Damit gibt es jetzt eine **Architektur-Karte** fuer die Verteidigung
+am 17.6. und fuer Fabienne als Onboarding-Hilfe.
+
+### Aufraeum-Skript erstellt und ausgefuehrt
+
+`aufraeumen_30_04_2026.ps1` mit 6 Schritten und Sicherheits-ZIP-Backup
+verschoben in den richtigen Ordner:
+
+| Was | Wohin |
+|---|---|
+| `proof_of_concept.py` | `docs/archiv/` (lokal, nicht im Repo) |
+| `Strukturbaum-bauzonen-radar.txt` | `docs/archiv/` |
+| `extract_beispiel.xml` | `docs/archiv/` |
+| `tests/test_zwoelf_adressen.py` (Python-Version) | `docs/archiv/` |
+| `extract_koeniz.xml`, `pruefen.xml`, `thun.xml` | `tests/fixtures/` |
+| `src/bauzonenradar/test_bern_batch.py` | `tests/test_bern_batch.py` |
+
+`docs/archiv/` wurde via `.gitignore` aus dem Repo ausgeschlossen.
+
+### Strategische Entscheidung: Test-Fixtures im Repo
+
+Diskussion fuer und gegen `tests/fixtures/*.xml`:
+
+- **Fuer**: Reproduzierbare Tests offline, Verteidigungs-Demo ohne
+  Internetzugriff, Schwager kann Tests laufen lassen ohne API-Setup
+- **Gegen**: 564 KB im Repo, OEREB-Daten aendern sich, vielleicht nur
+  einmalig verwendet
+
+Entscheidung: **Im Repo behalten**, mit Whitelist-Ausnahme in
+`.gitignore` (Standard-Sperre `**/*.xml` ausser fuer
+`tests/fixtures/`). Plus `README.md` der erklaert was die XMLs sind
+und wie sie genutzt werden koennen.
+
+Begruendung: Lieber jetzt 564 KB im Repo behalten als spaeter
+feststellen "Mist, haetten wir gebraucht". Das Aufraeumen kann
+spaeter immer noch erfolgen.
+
+### Klaerung Iteration 5 - noch nicht starten
+
+Frage aufgeworfen ob Iteration-5-Code (gwr.py, parzellen_liste.py)
+schon geschrieben werden kann. Antwort:
+
+- **Technisch ja** (Architektur und Datenmodell sind verifiziert)
+- **Strategisch nein** (Iteration 4 mit Fabienne kommt zuerst,
+  parallele Aenderungen am Backend wuerden Konflikte produzieren)
+
+Stattdessen: Iteration 4 abwarten, dann Iteration 5 sauber starten.
+Das Konzept liegt fertig vor, Iteration 5 ist startklar wenn die
+Streamlit-GUI steht.
+
+### Strukturelle Zustand am Ende des Tages
+
+```
+bauzonen-radar/
++-- docs/
+|   +-- archiv/        (LOKAL: PoC, alte Strukturbaeume, Aufraeum-Skript)
+|   +-- konzept.md, projektplan.md, journal.md, fachliche_grundlagen.md
+|   +-- konzept_gemeinde_analyse.md (708 Zeilen, Iteration 5 bereit)
+|   `-- struktur.md (NEU)
++-- src/bauzonenradar/
+|   +-- (Hauptmodule wie bisher)
+|   +-- analyse/, ausgabe/, datenquellen/, gui/  (gui+datenquellen leer fuer Iter 4+5)
++-- tests/
+|   +-- fixtures/      (3 XMLs + README, getrackt via Whitelist)
+|   +-- test_bern_batch.py (verschoben aus src)
+|   +-- test_zwoelf_adressen.ps1, test_fuenfzig_adressen.ps1
+|   `-- __init__.py
++-- daten/baureglemente/  (3 JSONs)
++-- README.md, requirements.txt, start.ps1, demo.ps1
+```
+
+### Bilanz
+
+- Projekt-Struktur ist sauber und dokumentiert
+- 8 Dateien an die richtige Stelle verschoben
+- `tests/fixtures/` als getrackter Snapshot-Ordner mit README
+- `docs/struktur.md` als Architektur-Karte
+- `docs/archiv/` als lokale Geschichts-Sammlung
+- Tool ist demonstrationsreif **und** uebergabereif
+
+Damit kann Fabienne sauber starten und die Verteidigung kann
+strukturiert vorbereitet werden.
+
 ---
 
 ## Verschiedene Beobachtungen waehrend der Entwicklung
