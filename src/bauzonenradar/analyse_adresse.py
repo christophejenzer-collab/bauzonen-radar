@@ -45,6 +45,15 @@ except ImportError:
     BernBkpQuelle = None  # type: ignore
     BKP_VERFUEGBAR = False
 
+# GWR-Modul ist optional - wenn es fehlt, laeuft alles ohne GWR-Ist-Werte
+try:
+    from datenquellen.gwr import GwrQuelle, GwrFehler
+    GWR_VERFUEGBAR = True
+except ImportError:
+    GwrQuelle = None  # type: ignore
+    GwrFehler = Exception  # type: ignore
+    GWR_VERFUEGBAR = False
+
 
 def _hole_lv95_koordinaten(adresse: str) -> tuple[float, float] | None:
     """Holt LV95-Koordinaten fuer eine Adresse via api3.geo.admin.ch.
@@ -175,6 +184,55 @@ def analysiere(adresse: str) -> None:
                   "verfuegbar fuer diese Adresse.")
 
     print()
+
+    # Schritt 4b: GWR-Lookup fuer Ist-Werte (zusaetzliche Information)
+    if GWR_VERFUEGBAR:
+        try:
+            gwr = GwrQuelle()
+            gebaeude = gwr.gebaeude_zu_adresse(adresse)
+            if gebaeude:
+                # Filter auf das/die Gebaeude der gefundenen Parzelle
+                gebaeude_parzelle = [g for g in gebaeude if g.egrid == parzelle.egrid]
+                if gebaeude_parzelle:
+                    print("GWR-Daten (bestehende Bebauung):")
+                    summe_geschossflaeche = 0
+                    hat_summe = False
+                    for g in gebaeude_parzelle:
+                        if g.grundflaeche_m2 is not None and g.geschosse is not None:
+                            gf = g.geschossflaeche_m2
+                            print(f"  {g.label}: "
+                                  f"{g.grundflaeche_m2} m^2 x {g.geschosse} Geschosse "
+                                  f"= {gf} m^2 Geschossflaeche")
+                            if gf is not None:
+                                summe_geschossflaeche += gf
+                                hat_summe = True
+                            if g.anzahl_wohnungen:
+                                print(f"    {g.anzahl_wohnungen} Wohnungen, "
+                                      f"Baujahr {g.baujahr or g.bauperiode_code or ''}")
+                            if g.heizung_saniert_datum and g.heizung_saniert_datum != "-":
+                                print(f"    Heizung saniert: {g.heizung_saniert_datum}")
+                        else:
+                            fehlende = []
+                            if g.grundflaeche_m2 is None:
+                                fehlende.append("Grundflaeche")
+                            if g.geschosse is None:
+                                fehlende.append("Geschosszahl")
+                            details = ", ".join(fehlende) if fehlende else "?"
+                            print(f"  {g.label}: GWR-Daten unvollstaendig "
+                                  f"(fehlt: {details})")
+                    if hat_summe and len(gebaeude_parzelle) > 1:
+                        print(f"  SUMME (alle Gebaeude): {summe_geschossflaeche} m^2")
+                    print()
+                else:
+                    print("GWR: Keine Gebaeudedaten fuer diese Parzelle (evtl. unbebaut).")
+                    print()
+        except GwrFehler as fehler:
+            print(f"GWR-Anfrage fehlgeschlagen: {fehler}")
+            print()
+        except Exception as fehler:
+            # Robuster Fallback: GWR-Probleme stoppen die Pipeline nicht
+            print(f"GWR-Anfrage uebersprungen ({fehler.__class__.__name__})")
+            print()
 
     # Schritt 5: Potenzialberechnung (optional mit BKP-Anreicherung)
     berechner = PotenzialBerechner()

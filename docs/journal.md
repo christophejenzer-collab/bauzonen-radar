@@ -645,6 +645,117 @@ bauzonen-radar/
 Damit kann Fabienne sauber starten und die Verteidigung kann
 strukturiert vorbereitet werden.
 
+### Spaeter Abend: GWR-Modul fuer Iteration 5 vorgebaut
+
+Da Sonntag ein gemeinsamer Coding-Tag mit Fabienne ansteht, wurde
+das **GWR-Modul als isoliertes Stueck Iteration 5** vorgebaut. Die
+Streamlit-GUI (Iter 4) bleibt unberuehrt.
+
+**Neues Modul** `src/bauzonenradar/datenquellen/gwr.py` (~330 Zeilen):
+
+- `GwrGebaeude`-Datenklasse mit allen Feldern aus der GWR-API
+- `GwrQuelle`-Hauptklasse mit:
+  - Zwei-Stufen-Workflow (SearchAPI -> MapServer)
+  - Caching fuer Adressen UND featureIds (in-memory)
+  - Cache-Limit MAX_CACHE_SIZE 5000 zur Verhinderung von Speicherproblemen
+  - Retry-Logic mit exponentialem Backoff (2 Versuche default)
+  - Throttling-Parameter fuer Massenabfragen (Iter 5 vorbereitet)
+  - 3 Exception-Klassen (GwrFehler, GwrApiFehler, GwrParseFehler)
+- Aggregation `geschossflaeche_pro_parzelle()` fuer mehrere Gebaeude
+- Robuster Parser fuer unvollstaendige Antworten
+
+**Integration in `analyse_adresse.py`** mit minimalen, additiven
+Aenderungen (Pattern wie BKP-Modul - try/except-Import, keine Aenderung
+an bestehenden Schritten).
+
+**Test-Verifikation mit 4 verschiedenen Szenarien**:
+
+| Adresse | Szenario | Resultat |
+|---|---|---|
+| Frutigenstrasse 25, Thun | bebautes MFH | 304 m^2 x 5 = 1520 m^2 angezeigt |
+| Allmendstrasse 4, Thun | grosse ZPP, keine Hauptbau-Adresse | "evtl. unbebaut" Hinweis |
+| Effingerstrasse 35, Bern | BKP + GWR parallel | beide Module ergaenzen sich |
+| Seestrasse 2, Spiez | fremde Gemeinde ohne Reglement | GWR liefert Wert auch ohne Soll |
+
+Wichtigste empirische Befunde:
+
+1. **Plausibilitaets-Konflikt sichtbar**: Frutigenstrasse 25 zeigt im
+   GWR 1520 m^2 echte Bebauung, das Tool schaetzt 1080 m^2 als Soll.
+   Die Schaetzung ist konservativ (12m Default-Breite), Realitaet ist
+   breiter gebaut. **Genau das ist die Existenzberechtigung des
+   Moduls** - Architekten sehen jetzt beide Werte.
+
+2. **Adressen-basierte Suche limitiert**: Die Allmendstrasse 4
+   (220'151 m^2 ZPP-Parzelle) hat 9 Bauinventar-Eintraege, aber GWR
+   findet ueber die Adresse nichts. Fuer Iteration 5 Massen-Analyse
+   braucht es Bbox- oder EGRID-basierte Suche.
+
+3. **Mehrwert auch ohne Reglement**: Selbst wenn das Tool fuer eine
+   Gemeinde kein Soll berechnen kann (z.B. Spiez), liefert GWR den
+   Ist-Wert. Damit hat das Tool fuer **alle** BE-Gemeinden mindestens
+   eine nuetzliche Information.
+
+4. **GWR-Daten manchmal unvollstaendig**: Effingerstrasse 35 hat einen
+   EGID, aber `garea` und/oder `gastw` fehlen. Das Modul faengt das
+   sauber ab mit "GWR-Daten unvollstaendig" statt zu crashen.
+
+### Stresstest mit 50 Adressen mit GWR
+
+Nach den 4 manuellen Tests wurde der bestehende 50-Adressen-Stresstest
+mit dem integrierten GWR-Modul wiederholt:
+
+| Metric | Vor GWR (29.04.) | Mit GWR (30.04.) |
+|---|---|---|
+| Erfolgsquote | 96% (48/50) | **96% (48/50)** identisch |
+| Laufzeit | 1.7 Min | **2.2 Min** (+30 Sek) |
+| Datenqualitaet | 6 V / 21 G / 21 N | gleiche Verteilung |
+| Funktionalitaet | Soll-Berechnung | **Soll + Ist + Plausibilitaet** |
+
+**Ergebnis: GWR-Integration kostet nur 30 Sekunden mehr Laufzeit**
+fuer massiven Mehrwert. Sehr effizient.
+
+**Wichtige Beobachtungen aus dem Stresstest**:
+
+1. **Plausibilitaets-Konflikt jetzt sichtbar bei vielen Adressen**:
+   - Murifeldweg 8, Bern: Soll 37 m^2 vs. Ist 435 m^2 (Faktor 12x)
+   - Tellstrasse 4, Bern: Soll 23 m^2 vs. Ist 644 m^2 (Faktor 28x)
+   - Hofstettenstrasse 8, Thun: Soll 879 m^2 vs. Ist 732 m^2 (Faktor 0.83x)
+
+   Das sind die kleinen Stadt-Parzellen mit dicht ueberbauter Realitaet,
+   die unsere Schaetzung am Begrenzer "Parzelle minus Grenzabstaende"
+   konservativ unterschaetzt. GWR macht das endlich sichtbar.
+
+2. **Aggregation mehrerer Gebaeude funktioniert sauber**:
+   - Untere Sadelstrasse 1, Oberhofen: 2 Gebaeude (1 vollstaendig +
+     1 unvollstaendig) -> SUMME: 339 m^2 mit klarer Anzeige.
+   - Bahnhofstrasse 5, Heimberg: 3 Gebaeude -> SUMME: 863 m^2.
+
+3. **"Unvollstaendig (fehlt: Feld)"-Anzeige nuetzlich**: Bei BK_E
+   und Altstadt-Adressen fehlt typischerweise `gastw`. Die explizite
+   Anzeige hilft zu unterscheiden zwischen "kein Gebaeude" und
+   "Gebaeude da, Daten luckenhaft".
+
+4. **2 Fehler sind die gleichen wie ohne GWR**: Schoenburgstrasse 5
+   und Effingerstrasse 35 schlagen mit UnicodeEncodeError fuer das
+   `\u221e` (Unendlich-Zeichen) fehl. Das ist ein bekannter Bug bei
+   Bauklasse 5 ohne Laengenbegrenzung auf Windows-Konsole - **NICHT
+   durch GWR verursacht**.
+
+### Bilanz
+
+- Projekt-Struktur sauber und dokumentiert
+- 8 Dateien an die richtige Stelle verschoben
+- `tests/fixtures/` als getrackter Snapshot-Ordner mit README
+- `docs/struktur.md` als Architektur-Karte
+- `docs/archiv/` als lokale Geschichts-Sammlung
+- **GWR-Modul als erstes Iteration-5-Stueck fertig**
+- **Stresstest 96% bei 2.2 Min Laufzeit mit GWR**
+- Tool ist demonstrationsreif **und** uebergabereif
+
+Damit kann Fabienne am Sonntag-Coding-Tag sauber starten und
+parallel an Streamlit arbeiten, waehrend das Backend bereits
+Iter-5-Funktionen liefert.
+
 ---
 
 ## Verschiedene Beobachtungen waehrend der Entwicklung
