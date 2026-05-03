@@ -8,22 +8,24 @@ Fuehrt die gesamte Pipeline in einem einzigen Aufruf durch:
 Aufruf:
     python analyse_adresse.py "Kramgasse 49, 3011 Bern"
 
-Dies ist die Hauptschnittstelle fuer Demos und den spaeteren
-Einsatz als Kommandozeilen-Tool.
+Architektur-Hinweis:
+--------------------
+Die Logik ist in zwei Funktionen getrennt:
+
+  - analysiere(adresse) -> AnalyseErgebnis
+       Macht die ganze Berechnung, gibt ein Datenobjekt zurueck. Kein Print.
+       Wird von der Streamlit-GUI direkt aufgerufen.
+
+  - drucke_bericht(ergebnis) -> None
+       Macht die CLI-Ausgabe (print). Nutzt das Datenobjekt von analysiere().
+
+Diese Trennung folgt dem Prinzip "Separation of Concerns": Berechnung ist
+getrennt vom Output-Format. So kann die GUI dieselbe Berechnung nutzen.
 
 BKP-Erweiterung (Stadt Bern):
 -----------------------------
 Fuer Adressen in der Stadt Bern wird zusaetzlich der Bauklassenplan (BKP)
-ueber die ArcGIS REST-API von map.bern.ch abgefragt. Daraus kommen
-parzellenscharf:
-  - Bauklasse (BK_2 bis BK_6, BK_E, OA, UA)
-  - Nutzungszone (W, WG, K, D, IG)
-  - Bauweise (offen/geschlossen)
-  - Gebaeudelaenge und Gebaeudetiefe in m
-
-Diese Werte werden den Bauparametern hinzugefuegt, sodass die
-Potenzialschaetzung mit echten Geometrie-Werten arbeitet statt mit
-pauschalen Defaults.
+ueber die ArcGIS REST-API von map.bern.ch abgefragt.
 """
 
 from __future__ import annotations
@@ -32,6 +34,8 @@ import sys
 import json
 import urllib.parse
 import urllib.request
+from dataclasses import dataclass, field
+from typing import Optional, Any
 
 from bern import BernOerebQuelle
 from baureglement import Baureglement
@@ -54,6 +58,96 @@ except ImportError:
     GwrFehler = Exception  # type: ignore
     GWR_VERFUEGBAR = False
 
+
+# ---------------------------------------------------------------------------
+# Ergebnis-Datenklasse (fuer GUI und CLI gleichermassen)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class AnalyseErgebnis:
+    """Strukturiertes Ergebnis einer Bauland-Analyse.
+
+    Enthaelt alles was die GUI oder CLI braucht um einen Bericht
+    darzustellen. Sammelt Daten aus allen Pipeline-Schritten.
+
+    Felder die optional sind, koennen None sein, wenn der entsprechende
+    Schritt nicht erfolgreich war (z.B. kein Reglement hinterlegt,
+    BKP-API nicht erreichbar, etc).
+    """
+    # Eingabe
+    adresse_eingabe: str
+
+    # Status
+    erfolgreich: bool = False
+    fehler: Optional[str] = None
+    warnungen: list[str] = field(default_factory=list)
+
+    # Parzelle (aus OEREB)
+    parzelle: Optional[Any] = None
+    parzelle_kurzbericht: Optional[str] = None
+    gemeinde: Optional[str] = None
+    parzellen_nummer: Optional[str] = None
+    parzellen_flaeche_m2: Optional[float] = None
+    egrid: Optional[str] = None
+    koordinate_lv95: Optional[tuple[float, float]] = None
+    koordinate_wgs84: Optional[tuple[float, float]] = None  # (lat, lon) fuer st.map
+
+    # Reglement
+    reglement: Optional[Any] = None
+    reglement_geladen: bool = False
+    reglement_stand: Optional[str] = None
+    reglement_struktur: Optional[str] = None
+    reglement_meldung: Optional[str] = None  # z.B. "Kein Baureglement fuer X verfuegbar"
+
+    # BKP (Stadt Bern)
+    bkp_abgefragt: bool = False
+    bkp_gefunden: bool = False
+    bkp_meldung: Optional[str] = None
+    bkp_nutzungszone: Optional[str] = None
+    bkp_bauklasse: Optional[str] = None
+    bkp_bauweise: Optional[str] = None
+    bkp_gebaeudelaenge_m: Optional[float] = None
+    bkp_gebaeudetiefe_m: Optional[float] = None
+    bkp_gebaeudelaenge_unbeschraenkt: bool = False
+    bkp_gebaeudetiefe_unbeschraenkt: bool = False
+
+    # GWR (effektive Bestands-Bebauung)
+    gwr_abgefragt: bool = False
+    gwr_gefunden: bool = False
+    gwr_meldung: Optional[str] = None
+    gwr_gebaeude: list = field(default_factory=list)
+    gwr_summe_geschossflaeche_m2: Optional[float] = None
+
+    # Potenzialberechnung (das eigentliche Resultat)
+    potenzial_ergebnis: Optional[Any] = None
+    datenqualitaet: Optional[str] = None  # "VERBINDLICH" | "GROBSCHAETZUNG" | "NICHT_MOEGLICH"
+    bemessungs_system: Optional[str] = None
+    zulaessig_m2: Optional[float] = None
+    realisiert_m2: Optional[float] = None
+    reserve_m2: Optional[float] = None
+    ausschoepfung_prozent: Optional[float] = None
+    lagebeurteilung: Optional[str] = None  # "HOCH" | "MITTEL" | "GERING" | "AUSGESCHOEPFT"
+
+    # Original-Textbericht (fuer CLI-Ausgabe und Debug)
+    textbericht: Optional[str] = None
+
+    @property
+    def hat_potenzial(self) -> bool:
+        """True wenn die Potenzialberechnung erfolgreich war."""
+        return self.potenzial_ergebnis is not None
+
+    @property
+    def koordinaten_fuer_karte(self) -> Optional[tuple[float, float]]:
+        """Fuer st.map(): (lat, lon) in WGS84.
+
+        Faellt zurueck auf None wenn keine Koordinaten verfuegbar.
+        """
+        return self.koordinate_wgs84
+
+
+# ---------------------------------------------------------------------------
+# Hilfsfunktionen
+# ---------------------------------------------------------------------------
 
 def _hole_lv95_koordinaten(adresse: str) -> tuple[float, float] | None:
     """Holt LV95-Koordinaten fuer eine Adresse via api3.geo.admin.ch.
@@ -91,156 +185,337 @@ def _hole_lv95_koordinaten(adresse: str) -> tuple[float, float] | None:
         return None
 
 
-def analysiere(adresse: str) -> None:
-    """Fuehrt die vollstaendige Analyse durch und gibt den Bericht aus."""
-    print("=" * 70)
-    print(f"Bauzonen-Radar - Analyse fuer: {adresse}")
-    print("=" * 70)
+def _lv95_zu_wgs84(ost: float, nord: float) -> Optional[tuple[float, float]]:
+    """Konvertiert LV95-Koordinaten zu WGS84 (lat, lon) via api3.geo.admin.ch.
 
-    # Schritt 1: Parzelle laden via OEREB
-    quelle = BernOerebQuelle()
-    parzelle = quelle.adresse_zu_parzelle(adresse)
+    Returns:
+        (lat, lon) als WGS84 oder None bei Fehler.
+    """
+    try:
+        url = (
+            "https://geodesy.geo.admin.ch/reframe/lv95towgs84?"
+            f"easting={ost}&northing={nord}&format=json"
+        )
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            daten = json.loads(resp.read().decode("utf-8"))
+        # api liefert "easting"=lon, "northing"=lat in WGS84
+        lon = float(daten.get("easting"))
+        lat = float(daten.get("northing"))
+        return (lat, lon)
+    except Exception:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Hauptfunktion: Analyse (kein Print, gibt Datenobjekt zurueck)
+# ---------------------------------------------------------------------------
+
+def analysiere(adresse: str) -> AnalyseErgebnis:
+    """Fuehrt die vollstaendige Analyse durch und gibt ein Ergebnis-Objekt zurueck.
+
+    Diese Funktion macht KEINE print()-Aufrufe. Sie sammelt alle Daten in
+    einem AnalyseErgebnis-Objekt, das von der CLI (drucke_bericht) oder
+    der GUI (Streamlit) gerendert wird.
+
+    Args:
+        adresse: Schweizer Adresse, z.B. "Kramgasse 49, 3011 Bern"
+
+    Returns:
+        AnalyseErgebnis-Objekt mit allen gesammelten Daten und Status.
+    """
+    ergebnis = AnalyseErgebnis(adresse_eingabe=adresse)
+
+    # --- Schritt 1: Parzelle laden via OEREB ---
+    try:
+        quelle = BernOerebQuelle()
+        parzelle = quelle.adresse_zu_parzelle(adresse)
+    except Exception as fehler:
+        ergebnis.fehler = f"OEREB-Abfrage fehlgeschlagen: {fehler}"
+        return ergebnis
+
     if not parzelle:
-        print("Keine Parzelle gefunden fuer diese Adresse.")
-        return
+        ergebnis.fehler = "Keine Parzelle gefunden fuer diese Adresse."
+        return ergebnis
 
-    # Schritt 2: OEREB-Kurzbericht anzeigen
-    print()
-    print(parzelle.kurzbericht())
-    print()
-    print("=" * 70)
+    ergebnis.parzelle = parzelle
+    ergebnis.parzelle_kurzbericht = parzelle.kurzbericht()
+    ergebnis.gemeinde = getattr(parzelle, "gemeinde", None)
+    ergebnis.parzellen_nummer = getattr(parzelle, "parzellennummer", None) \
+        or getattr(parzelle, "nummer", None)
+    ergebnis.parzellen_flaeche_m2 = getattr(parzelle, "flaeche_m2", None) \
+        or getattr(parzelle, "flaeche", None)
+    ergebnis.egrid = getattr(parzelle, "egrid", None)
 
-    # Schritt 3: Baureglement laden (falls vorhanden)
+    # Koordinate aus Parzelle holen oder via Geocoding nachreichen
+    koordinate_lv95 = None
+    for feldname in ("koordinate_lv95", "koordinaten", "lv95"):
+        if hasattr(parzelle, feldname):
+            wert = getattr(parzelle, feldname)
+            if wert and len(wert) == 2:
+                koordinate_lv95 = (float(wert[0]), float(wert[1]))
+                break
+    if koordinate_lv95 is None:
+        koordinate_lv95 = _hole_lv95_koordinaten(adresse)
+
+    if koordinate_lv95 is not None:
+        ergebnis.koordinate_lv95 = koordinate_lv95
+        # Auch auf Parzelle setzen damit BKP-Anreicherung sie findet
+        try:
+            parzelle.koordinate_lv95 = koordinate_lv95
+        except AttributeError:
+            pass
+        # Konvertierung zu WGS84 fuer st.map()
+        wgs84 = _lv95_zu_wgs84(*koordinate_lv95)
+        if wgs84 is not None:
+            ergebnis.koordinate_wgs84 = wgs84
+
+    # --- Schritt 2: Baureglement laden ---
     reglement: Baureglement | None = None
     try:
         reglement = Baureglement.laden(parzelle.gemeinde)
-        print(f"Baureglement geladen: {reglement.gemeinde} "
-              f"(Stand: {reglement.stand}, Struktur: {reglement.struktur})")
+        ergebnis.reglement = reglement
+        ergebnis.reglement_geladen = True
+        ergebnis.reglement_stand = reglement.stand
+        ergebnis.reglement_struktur = reglement.struktur
     except FileNotFoundError:
-        print(f"Kein Baureglement fuer '{parzelle.gemeinde}' verfuegbar.")
-        print("Potenzialberechnung wird nicht moeglich sein.")
+        ergebnis.reglement_meldung = (
+            f"Kein Baureglement fuer '{parzelle.gemeinde}' verfuegbar. "
+            f"Potenzialberechnung wird nicht moeglich sein."
+        )
+        ergebnis.warnungen.append(ergebnis.reglement_meldung)
 
-    # Schritt 4: Bei Stadt Bern - BKP-Daten holen
+    # --- Schritt 3: BKP-Daten holen (Stadt Bern) ---
     bkp_quelle = None
     if (reglement is not None
             and parzelle.gemeinde == "Bern"
-            and BKP_VERFUEGBAR):
-        # Versuche zuerst, Koordinaten aus der Parzelle zu holen,
-        # falls die Klasse so ein Feld hat. Sonst Fallback auf Geocoding.
-        koordinate = None
-        for feldname in ("koordinate_lv95", "koordinaten", "lv95"):
-            if hasattr(parzelle, feldname):
-                wert = getattr(parzelle, feldname)
-                if wert and len(wert) == 2:
-                    koordinate = (float(wert[0]), float(wert[1]))
-                    break
-
-        if koordinate is None:
-            koordinate = _hole_lv95_koordinaten(adresse)
-
-        # WICHTIG: Koordinate auch aufs parzelle-Objekt setzen, damit der
-        # Berechner sie spaeter fuer die BKP-Anreicherung wiederfindet.
-        if koordinate is not None:
-            try:
-                parzelle.koordinate_lv95 = koordinate
-            except AttributeError:
-                # Falls Parzelle ein __slots__-dataclass ist, geht das nicht.
-                # Dann muss der Berechner mit dem Geocoding-Fallback klarkommen.
-                pass
-
-        if koordinate is not None:
-            ost, nord = koordinate
-            print()
-            print(f"BKP-Anfrage Stadt Bern fuer LV95 {ost:.0f}/{nord:.0f}...")
-            try:
-                bkp_quelle = BernBkpQuelle()
-                auskunft = bkp_quelle.hole_auskunft(ost, nord)
-                if auskunft.gefunden:
-                    if auskunft.grundzone:
-                        g = auskunft.grundzone
-                        print(f"  Nutzungszone: {g.nutzungszone_kuerzel} "
-                              f"({g.nutzungszone_beschrieb})")
-                        print(f"  Bauklasse:    {g.bauklasse_kuerzel} "
-                              f"({g.bauklasse_beschrieb})")
-                    if auskunft.bauweise:
-                        b = auskunft.bauweise
-                        laenge = ("unbeschr." if b.gebaeudelaenge_unbeschraenkt
-                                  else f"{b.gebaeudelaenge} m")
-                        tiefe = ("unbeschr." if b.gebaeudetiefe_unbeschraenkt
-                                 else f"{b.gebaeudetiefe} m")
-                        print(f"  Bauweise:     {b.bauweise_beschrieb} "
-                              f"(L: {laenge}, T: {tiefe})")
-                    else:
-                        print("  Bauweise:     (keine Daten - "
-                              "z.B. BK_E oder Altstadt)")
+            and BKP_VERFUEGBAR
+            and koordinate_lv95 is not None):
+        ergebnis.bkp_abgefragt = True
+        try:
+            bkp_quelle = BernBkpQuelle()
+            auskunft = bkp_quelle.hole_auskunft(*koordinate_lv95)
+            if auskunft.gefunden:
+                ergebnis.bkp_gefunden = True
+                if auskunft.grundzone:
+                    g = auskunft.grundzone
+                    ergebnis.bkp_nutzungszone = (
+                        f"{g.nutzungszone_kuerzel} ({g.nutzungszone_beschrieb})"
+                    )
+                    ergebnis.bkp_bauklasse = (
+                        f"{g.bauklasse_kuerzel} ({g.bauklasse_beschrieb})"
+                    )
+                if auskunft.bauweise:
+                    b = auskunft.bauweise
+                    ergebnis.bkp_bauweise = b.bauweise_beschrieb
+                    ergebnis.bkp_gebaeudelaenge_m = b.gebaeudelaenge
+                    ergebnis.bkp_gebaeudetiefe_m = b.gebaeudetiefe
+                    ergebnis.bkp_gebaeudelaenge_unbeschraenkt = b.gebaeudelaenge_unbeschraenkt
+                    ergebnis.bkp_gebaeudetiefe_unbeschraenkt = b.gebaeudetiefe_unbeschraenkt
                 else:
-                    print("  Keine BKP-Daten gefunden fuer diese Koordinate.")
-            except Exception as fehler:
-                print(f"  BKP-Anfrage fehlgeschlagen: {fehler}")
-                bkp_quelle = None
-        else:
-            print()
-            print("BKP-Anfrage uebersprungen: keine LV95-Koordinaten "
-                  "verfuegbar fuer diese Adresse.")
+                    ergebnis.bkp_meldung = (
+                        "Bauweise: keine Daten (z.B. BK_E oder Altstadt)"
+                    )
+            else:
+                ergebnis.bkp_meldung = "Keine BKP-Daten gefunden fuer diese Koordinate."
+        except Exception as fehler:
+            ergebnis.bkp_meldung = f"BKP-Anfrage fehlgeschlagen: {fehler}"
+            ergebnis.warnungen.append(ergebnis.bkp_meldung)
+            bkp_quelle = None
+    elif (reglement is not None
+            and parzelle.gemeinde == "Bern"
+            and BKP_VERFUEGBAR
+            and koordinate_lv95 is None):
+        ergebnis.bkp_meldung = (
+            "BKP-Anfrage uebersprungen: keine LV95-Koordinaten verfuegbar."
+        )
 
-    print()
-
-    # Schritt 4b: GWR-Lookup fuer Ist-Werte (zusaetzliche Information)
+    # --- Schritt 4: GWR-Lookup fuer Ist-Werte ---
     if GWR_VERFUEGBAR:
+        ergebnis.gwr_abgefragt = True
         try:
             gwr = GwrQuelle()
             gebaeude = gwr.gebaeude_zu_adresse(adresse)
             if gebaeude:
-                # Filter auf das/die Gebaeude der gefundenen Parzelle
+                # Filter auf Gebaeude der gefundenen Parzelle
                 gebaeude_parzelle = [g for g in gebaeude if g.egrid == parzelle.egrid]
                 if gebaeude_parzelle:
-                    print("GWR-Daten (bestehende Bebauung):")
-                    summe_geschossflaeche = 0
+                    ergebnis.gwr_gefunden = True
+                    ergebnis.gwr_gebaeude = gebaeude_parzelle
+                    summe_geschossflaeche = 0.0
                     hat_summe = False
                     for g in gebaeude_parzelle:
                         if g.grundflaeche_m2 is not None and g.geschosse is not None:
                             gf = g.geschossflaeche_m2
-                            print(f"  {g.label}: "
-                                  f"{g.grundflaeche_m2} m^2 x {g.geschosse} Geschosse "
-                                  f"= {gf} m^2 Geschossflaeche")
                             if gf is not None:
                                 summe_geschossflaeche += gf
                                 hat_summe = True
-                            if g.anzahl_wohnungen:
-                                print(f"    {g.anzahl_wohnungen} Wohnungen, "
-                                      f"Baujahr {g.baujahr or g.bauperiode_code or ''}")
-                            if g.heizung_saniert_datum and g.heizung_saniert_datum != "-":
-                                print(f"    Heizung saniert: {g.heizung_saniert_datum}")
-                        else:
-                            fehlende = []
-                            if g.grundflaeche_m2 is None:
-                                fehlende.append("Grundflaeche")
-                            if g.geschosse is None:
-                                fehlende.append("Geschosszahl")
-                            details = ", ".join(fehlende) if fehlende else "?"
-                            print(f"  {g.label}: GWR-Daten unvollstaendig "
-                                  f"(fehlt: {details})")
-                    if hat_summe and len(gebaeude_parzelle) > 1:
-                        print(f"  SUMME (alle Gebaeude): {summe_geschossflaeche} m^2")
-                    print()
+                    if hat_summe:
+                        ergebnis.gwr_summe_geschossflaeche_m2 = summe_geschossflaeche
                 else:
-                    print("GWR: Keine Gebaeudedaten fuer diese Parzelle (evtl. unbebaut).")
-                    print()
+                    ergebnis.gwr_meldung = (
+                        "Keine GWR-Gebaeudedaten fuer diese Parzelle (evtl. unbebaut)."
+                    )
         except GwrFehler as fehler:
-            print(f"GWR-Anfrage fehlgeschlagen: {fehler}")
-            print()
+            ergebnis.gwr_meldung = f"GWR-Anfrage fehlgeschlagen: {fehler}"
         except Exception as fehler:
-            # Robuster Fallback: GWR-Probleme stoppen die Pipeline nicht
-            print(f"GWR-Anfrage uebersprungen ({fehler.__class__.__name__})")
-            print()
+            ergebnis.gwr_meldung = (
+                f"GWR-Anfrage uebersprungen ({fehler.__class__.__name__})"
+            )
 
-    # Schritt 5: Potenzialberechnung (optional mit BKP-Anreicherung)
-    berechner = PotenzialBerechner()
-    ergebnis = berechner.berechne(parzelle, reglement, bkp_quelle=bkp_quelle)
+    # --- Schritt 5: Potenzialberechnung ---
+    try:
+        berechner = PotenzialBerechner()
+        potenzial = berechner.berechne(parzelle, reglement, bkp_quelle=bkp_quelle)
+        ergebnis.potenzial_ergebnis = potenzial
+        ergebnis.textbericht = potenzial.textbericht()
 
-    print(ergebnis.textbericht())
+        # Schluesselwerte rauspicken (falls die Felder im PotenzialErgebnis existieren)
+        ergebnis.datenqualitaet = _attr_zu_string(potenzial, "datenqualitaet")
+        ergebnis.bemessungs_system = _attr_zu_string(potenzial, "bemessungs_system") \
+            or _attr_zu_string(potenzial, "system")
+        ergebnis.zulaessig_m2 = _zahlenfeld(potenzial,
+            "zulaessig_m2", "geschossflaeche_zulaessig", "zulaessig")
+        ergebnis.realisiert_m2 = _zahlenfeld(potenzial,
+            "realisiert_m2", "geschossflaeche_realisiert", "realisiert")
+        ergebnis.reserve_m2 = _zahlenfeld(potenzial,
+            "reserve_m2", "reserve")
+        ergebnis.ausschoepfung_prozent = _zahlenfeld(potenzial,
+            "ausschoepfung_prozent", "ausschoepfung")
+        ergebnis.lagebeurteilung = _attr_zu_string(potenzial,
+            "lagebeurteilung", "status")
+    except Exception as fehler:
+        ergebnis.warnungen.append(f"Potenzialberechnung fehlgeschlagen: {fehler}")
+
+    ergebnis.erfolgreich = True
+    return ergebnis
+
+
+def _attr_zu_string(obj: Any, *namen: str) -> Optional[str]:
+    """Holt das erste vorhandene Attribut als String (fuer Enum-Werte etc)."""
+    for name in namen:
+        if hasattr(obj, name):
+            wert = getattr(obj, name)
+            if wert is None:
+                continue
+            # Enum? -> .name oder .value
+            if hasattr(wert, "name"):
+                return str(wert.name)
+            if hasattr(wert, "value"):
+                return str(wert.value)
+            return str(wert)
+    return None
+
+
+def _zahlenfeld(obj: Any, *namen: str) -> Optional[float]:
+    """Holt das erste vorhandene Zahlen-Feld."""
+    for name in namen:
+        if hasattr(obj, name):
+            wert = getattr(obj, name)
+            if wert is None:
+                continue
+            try:
+                return float(wert)
+            except (TypeError, ValueError):
+                continue
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Bericht-Ausgabe (CLI)
+# ---------------------------------------------------------------------------
+
+def drucke_bericht(ergebnis: AnalyseErgebnis) -> None:
+    """Druckt den Bericht zur CLI. Nutzt das AnalyseErgebnis von analysiere()."""
+    print("=" * 70)
+    print(f"Bauzonen-Radar - Analyse fuer: {ergebnis.adresse_eingabe}")
+    print("=" * 70)
+
+    # Fehler frueh anzeigen
+    if ergebnis.fehler:
+        print(ergebnis.fehler)
+        return
+
+    # OEREB-Kurzbericht
+    if ergebnis.parzelle_kurzbericht:
+        print()
+        print(ergebnis.parzelle_kurzbericht)
+        print()
+        print("=" * 70)
+
+    # Reglement-Status
+    if ergebnis.reglement_geladen and ergebnis.reglement is not None:
+        print(f"Baureglement geladen: {ergebnis.reglement.gemeinde} "
+              f"(Stand: {ergebnis.reglement_stand}, "
+              f"Struktur: {ergebnis.reglement_struktur})")
+    elif ergebnis.reglement_meldung:
+        print(ergebnis.reglement_meldung)
+
+    # BKP-Block
+    if ergebnis.bkp_abgefragt and ergebnis.koordinate_lv95:
+        ost, nord = ergebnis.koordinate_lv95
+        print()
+        print(f"BKP-Anfrage Stadt Bern fuer LV95 {ost:.0f}/{nord:.0f}...")
+        if ergebnis.bkp_gefunden:
+            if ergebnis.bkp_nutzungszone:
+                print(f"  Nutzungszone: {ergebnis.bkp_nutzungszone}")
+            if ergebnis.bkp_bauklasse:
+                print(f"  Bauklasse:    {ergebnis.bkp_bauklasse}")
+            if ergebnis.bkp_bauweise:
+                laenge = "unbeschr." if ergebnis.bkp_gebaeudelaenge_unbeschraenkt \
+                    else f"{ergebnis.bkp_gebaeudelaenge_m} m"
+                tiefe = "unbeschr." if ergebnis.bkp_gebaeudetiefe_unbeschraenkt \
+                    else f"{ergebnis.bkp_gebaeudetiefe_m} m"
+                print(f"  Bauweise:     {ergebnis.bkp_bauweise} "
+                      f"(L: {laenge}, T: {tiefe})")
+            elif ergebnis.bkp_meldung:
+                print(f"  {ergebnis.bkp_meldung}")
+        elif ergebnis.bkp_meldung:
+            print(f"  {ergebnis.bkp_meldung}")
+    elif ergebnis.bkp_meldung:
+        print()
+        print(ergebnis.bkp_meldung)
+
     print()
 
+    # GWR-Block
+    if ergebnis.gwr_gefunden and ergebnis.gwr_gebaeude:
+        print("GWR-Daten (bestehende Bebauung):")
+        for g in ergebnis.gwr_gebaeude:
+            if g.grundflaeche_m2 is not None and g.geschosse is not None:
+                gf = g.geschossflaeche_m2
+                print(f"  {g.label}: "
+                      f"{g.grundflaeche_m2} m^2 x {g.geschosse} Geschosse "
+                      f"= {gf} m^2 Geschossflaeche")
+                if g.anzahl_wohnungen:
+                    print(f"    {g.anzahl_wohnungen} Wohnungen, "
+                          f"Baujahr {g.baujahr or g.bauperiode_code or ''}")
+                if g.heizung_saniert_datum and g.heizung_saniert_datum != "-":
+                    print(f"    Heizung saniert: {g.heizung_saniert_datum}")
+            else:
+                fehlende = []
+                if g.grundflaeche_m2 is None:
+                    fehlende.append("Grundflaeche")
+                if g.geschosse is None:
+                    fehlende.append("Geschosszahl")
+                details = ", ".join(fehlende) if fehlende else "?"
+                print(f"  {g.label}: GWR-Daten unvollstaendig (fehlt: {details})")
+        if (ergebnis.gwr_summe_geschossflaeche_m2 is not None
+                and len(ergebnis.gwr_gebaeude) > 1):
+            print(f"  SUMME (alle Gebaeude): {ergebnis.gwr_summe_geschossflaeche_m2} m^2")
+        print()
+    elif ergebnis.gwr_meldung:
+        print(ergebnis.gwr_meldung)
+        print()
+
+    # Potenzialbericht (nutzt Original-textbericht() der Berechnungslogik)
+    if ergebnis.textbericht:
+        print(ergebnis.textbericht)
+        print()
+
+
+# ---------------------------------------------------------------------------
+# CLI-Eintrittspunkt
+# ---------------------------------------------------------------------------
 
 def main() -> int:
     if len(sys.argv) < 2:
@@ -252,8 +527,9 @@ def main() -> int:
         print('  python analyse_adresse.py "Thunstrasse 40, 3005 Bern"')
         return 1
 
-    analysiere(sys.argv[1])
-    return 0
+    ergebnis = analysiere(sys.argv[1])
+    drucke_bericht(ergebnis)
+    return 0 if ergebnis.erfolgreich and not ergebnis.fehler else 1
 
 
 if __name__ == "__main__":
