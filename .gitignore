@@ -69,3 +69,4 @@ docs/archiv/
 !tests/fixtures/
 !tests/fixtures/*.xml
 !tests/fixtures/*.md
+src/bauzonenradar/gui/app_christophe_test.py
