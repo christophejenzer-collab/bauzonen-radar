@@ -502,7 +502,7 @@ ist die robuste und korrekte Identifikation.
 **3. Plausibilitaets-Konflikt aufgedeckt.**
 Frutigenstrasse 25 zeigt im Vergleich:
 - Ist mit Platzhalter 25%:    371 m^2
-- Ist aus GWR (304 x 5):     1520 m^2 ⭐
+- Ist aus GWR (304 x 5):     1520 m^2
 - Soll (unsere Schaetzung):  1080 m^2 (Hoehen-System konservativ)
 
 Die Parzelle ist **bereits zu 141% ausgeschoepft** wenn man die
@@ -758,6 +758,209 @@ Iter-5-Funktionen liefert.
 
 ---
 
+## 03. Mai 2026 (Sonntag) - Coding-Tag mit Fabienne und Iter-4-Start
+
+**Dauer**: 0800-1100 (Vormittag mit Fabienne digital), Nachmittag Familienfest
+
+### Fabiennes Sonntag-Vorarbeit (in den Pausen am Vortag)
+
+Fabienne hat schon am Samstag Abend eigenstaendig die Doku-Architektur
+restrukturiert:
+
+- `Anforderungen.md` -> `docs/anforderungen_backend.md` (umbenannt + Endung)
+- `Glossar` -> `docs/glossar.md` (Markdown-Endung, wird nun gerendert)
+- Neu: `docs/anforderungen_frontend.md` (54 Zeilen)
+- Neu: `docs/releasenotes_backend.md` (25 Zeilen)
+- Neu: `docs/releasenotes_frontend.md` (27 Zeilen)
+
+Saubere Trennung Backend/Frontend, getrennte Releasenotes pro Bereich.
+Das ist eigenstaendige RE-Pruefungsleistung. Ihre Releasenotes sind
+endkunden-orientiert (Capabilities, nicht Code-Aenderungen).
+
+### Vormittag (0800-1100): Backend-Refactoring
+
+Iter 4 braucht eine GUI, die GUI braucht ein **Datenobjekt** statt
+print-Output. Bisher hat `analyse_adresse.py` direkt geprintet.
+Refactoring noetig: Trennung Berechnung von Ausgabe.
+
+#### Neue Datenklasse `AnalyseErgebnis`
+
+In `analyse_adresse.py` ergaenzt: Datenklasse mit ~30 Feldern.
+Sammelt **alles** was GUI oder CLI brauchen:
+
+- Adresse, Status, Fehler, Warnungen
+- Parzelle (gemeinde, parzellen_nummer, parzellen_flaeche_m2, egrid)
+- Koordinaten (LV95 und WGS84)
+- Reglement-Status
+- BKP-Daten (Stadt Bern)
+- GWR-Daten (Liste der Gebaeude, Summe Geschossflaeche)
+- Potenzial (datenqualitaet, zulaessig_m2, ausschoepfung_prozent, ...)
+- Original-Textbericht fuer Debug
+
+#### Neue Funktions-Architektur
+
+```
+analysiere(adresse) -> AnalyseErgebnis    # reine Logik, kein Print
+drucke_bericht(ergebnis) -> None           # CLI-Output
+main()                                     # ruft beide nacheinander
+```
+
+**Separation of Concerns**: GUI und CLI nutzen dieselbe `analysiere()`-
+Funktion. Beim Refactoring auch defensive Helper-Funktionen
+`_attr_zu_string()` und `_zahlenfeld()` eingefuehrt fuer robusten
+Field-Zugriff.
+
+Bonus: `koordinate_wgs84` (lat, lon) wird automatisch berechnet -
+direkt nutzbar fuer `st.map()` in der GUI.
+
+#### Verifikation
+
+- Smoke-Test "Thunstrasse 40, 3005 Bern": EMPFEHLUNG-Block korrekt
+- Stresstest 12 Adressen: **12/12 erfolgreich** (100%)
+- Output rueckwaertskompatibel zum bisherigen CLI-Verhalten
+
+### Fabiennes Frontend (parallel)
+
+Sie hat **eigenstaendig** angefangen mit Streamlit-GUI:
+- `src/bauzonenradar/gui/app.py` ~370 Zeilen
+- Eigenes CSS (Inter-Schrift, Schwarz/Rot-Akzent, ruhige Typografie)
+- Drei Sektionen: Lage (Karte) / Parzelle / Bebauungspotenzial / GWR
+- Plausibilitaets-Konflikt-Box bei GWR-Diskrepanz
+- Defensive Programmierung mit Variant-Detection (A/B fuer Backend-API)
+
+Sie hat es per Mail geschickt, noch nicht gepushed (wartet auf
+Backend-Stabilitaet).
+
+### Nachmittag: Familienfest mit Schwager
+
+Geplant war ein Verifikations-Smalltalk. Realitaet: kein konzentrierter
+Slot moeglich am Fest. Schwager hat aber Interesse signalisiert,
+besonders an der **Iter-5-Idee** (Massen-Analyse einer Gemeinde,
+oder bei interessanter Parzelle aehnliche Parzellen finden).
+
+Termin fuer naechste Woche vereinbart fuer richtige Reglement-
+Verifikation und Annahmen-Plausibilisierung.
+
+### Releasenote ergaenzt
+
+Backend-Releasenote zum Refactoring eingetragen in
+`docs/releasenotes_backend.md` (im Format von Fabiennes etabliertem
+Stil, endkunden-orientiert):
+
+- Strukturiertes Analyse-Ergebnis als Objekt
+- WGS84-Koordinaten fuer Karten
+- Trennung Berechnung/Ausgabe
+- Verifikation auf 12 Test-Adressen
+
+### Commits am Sonntag
+
+- a971720: docs: Backend-Releasenote zum analysiere()-Refactoring
+- (Refactoring war schon im vorigen Commit drin)
+
+### Bilanz
+
+- Backend-API stabil und GUI-tauglich
+- Iter 3 + 5/Modul-1 (GWR) abgeschlossen, Iter 4 (Frontend) angefangen
+- Doku-Architektur durch Fabienne verbessert (Backend/Frontend-Trennung)
+- Schwager-Termin auf naechste Woche verschoben
+- Mit Stand 03.05. ist das Tool weiter **demonstrationsreif**
+
+---
+
+## 05. Mai 2026 (Dienstag) - Frontend-Test und Crash-Diagnose
+
+**Dauer**: ca. 1 Stunde
+
+### Ausgangslage
+
+Fabienne hat ihre `app.py` per Mail geschickt aber noch nicht ins
+Repo gepushed (wartet auf Backend-API). Damit sie Layout-Feedback
+schon bekommen kann, lokale Test-Datei eingefuehrt.
+
+### Lokaler Frontend-Test
+
+Vorgehen:
+- Streamlit installiert (`pip install streamlit pandas`)
+- Fabiennes Code als `src/bauzonenradar/gui/app_christophe_test.py`
+  lokal abgelegt (NICHT committed, ueber `.gitignore` ausgeschlossen)
+- App gestartet: `streamlit run src/bauzonenradar/gui/app_christophe_test.py`
+
+### Layout-Bewertung
+
+Sehr starkes Design:
+- Header "Bauzonen-Radar" mit Untertitel
+- 2px schwarze Trennlinie
+- Eingabefeld + "Analysieren"-Button
+- Sektion-Titel "PARZELLE", "GEMEINDE" als Smallcaps
+- Schwarze Grundtypografie, rotes Akzent bei Hover
+- Inter-Schrift, ruhige Anmutung
+- Sehr eigenstaendig - nicht Streamlit-Default
+
+### Crash-Diagnose
+
+Wie erwartet crasht es beim ersten Backend-Feldzugriff:
+
+```
+AttributeError: 'AnalyseErgebnis' object has no attribute 'parzellenflaeche_m2'.
+Did you mean: 'parzellen_flaeche_m2'?
+```
+
+Python schlaegt den korrekten Namen selbst vor - sehr nuetzlich.
+
+Ursache: Fabienne hat ihren Code gegen ein **vermutetes**
+Backend-Interface geschrieben, weil ich ihr am Sonntag nur den
+Mini-Snippet `from analyse_adresse import analysiere` geschickt hatte
+ohne die komplette Feldliste. Mein Fehler.
+
+#### Beobachtete Mismatches
+
+| Frontend nutzt | Backend hat | Anmerkung |
+|---|---|---|
+| `parzellenflaeche_m2` | `parzellen_flaeche_m2` | Underscore-Konvention |
+| `theoretisch_zulaessig_m2` | `zulaessig_m2` | |
+| `ausschoepfungsgrad_prozent` | `ausschoepfung_prozent` | |
+| `reserve_prozent` | aus `100 - ausschoepfung_prozent` zu berechnen | |
+| `zonen_betrachtet` | `[ergebnis.zone]` | Wrap als Liste |
+| `status` (Enum) | `lagebeurteilung` (String) | Type anders |
+| `bemerkungen` | `warnungen` | |
+| `arealbonus_anwendbar` | nicht im Backend | Default `False` |
+| `parzelle.X` | `ergebnis.X` direkt | Kein separates Parzelle-Objekt |
+
+### Strategie-Entscheidung
+
+Mit Fabienne abgesprochen: **Frontend wird angepasst**, nicht das
+Backend. Argumente:
+- Backend-Datenmodell bleibt sauber und stabil
+- Aliase im Backend wuerden Tech-Debt erzeugen
+- Sie lernt das Backend-Interface kennen (gut fuers Pruefungs-
+  Verstaendnis im Team)
+- Software-Engineering-Disziplin: GUI passt sich an Backend an
+
+Komplette Mapping-Tabelle und Feldliste an Fabienne geschickt.
+Sie kann mit Search & Replace alle Aenderungen in 15-20 Min machen.
+
+### Aufraeum-Aktivitaet
+
+- Lokale Backup-Datei `analyse_adresse.py.bak_potenzial_ergebnis`
+  geloescht (Git ist eh Backup)
+- `.gitignore` ergaenzt um `app_christophe_test.py`, sodass die
+  Test-Datei nicht versehentlich committet werden kann
+- Commit 0aeb5b3: "chore: app_christophe_test.py lokal ignorieren"
+
+### Bilanz Dienstag
+
+- Layout-Test erfolgreich (auch mit Crash informativ)
+- Crash sauber diagnostiziert mit Python-Auto-Vorschlag
+- Klare Mapping-Vorlage fuer Fabienne
+- Repo aufgeraeumt
+- Standby fuer Fabiennes Fix
+
+### Commits am Dienstag
+
+- 0aeb5b3: chore: app_christophe_test.py lokal ignorieren
+
+---
+
 ## Verschiedene Beobachtungen waehrend der Entwicklung
 
 - **Windows-PowerShell** mit `start.ps1` automatisiert venv-Aktivierung
@@ -791,28 +994,46 @@ Iter-5-Funktionen liefert.
 - **Stadt Bern ist der Sonderfall.** Andere BE-Gemeinden brauchen
   weiterhin JSON-Erfassung pro Gemeinde. Koeniz hat ein Bauklassen-
   System wie Bern und ist als naechster Kandidat im Backlog.
+- **Separation of Concerns durch analysiere() / drucke_bericht():**
+  Die Backend-Trennung war eine zentrale Architektur-Voraussetzung
+  fuer die Streamlit-GUI. Ohne sie haetten wir Berechnung in der
+  GUI dupliziert. Mit ihr kann jede beliebige Oberflaeche dieselbe
+  Logik nutzen.
 
 ---
 
-## Backlog fuer Iteration 4 und 5
+## Backlog (Stand 05.05.2026)
 
-### Iteration 4 (Streamlit-GUI mit Fabienne, Mai 2026)
+### Iteration 4 (Streamlit-GUI - LAUFEND seit 03.05.2026)
 
-- [ ] Fabienne: GitHub-Username fuer Collaborator-Einladung
-- [ ] Fabienne: erste Anforderungs-Liste in `docs/anforderungen.md`
-- [ ] Streamlit-GUI mit visueller Datenqualitaets-Ampel
-      (gruen / orange / grau)
-- [ ] Empfehlungs-Block als grafische Progress-Bar statt ASCII
-- [ ] PDF-Export fuer Kundendossier
-- [ ] Variable gGA aus Art. 46 BO Bern in Code umsetzen
-- [ ] Subtypen FA-FD der ZoeN aus OEREB klaeren
+**Bereits umgesetzt**:
+- [x] Fabienne: GitHub-Account aktiv, gepushed mehrfach
+- [x] Fabienne: Anforderungs-Liste in `docs/anforderungen_frontend.md`
+- [x] Doku-Architektur Backend/Frontend getrennt (Fabienne)
+- [x] Backend-API mit `AnalyseErgebnis` stabilisiert
+- [x] Streamlit-GUI mit eigenem CSS-Design (Fabienne)
+- [x] Layout-Test durchgefuehrt
+- [x] Mapping-Tabelle Backend/Frontend an Fabienne uebergeben
+
+**Noch zu tun**:
+- [ ] Frontend-Felder an Backend-API anpassen (Fabienne)
+- [ ] Live-Test mit echten Daten
+- [ ] Visuelle Datenqualitaets-Ampel finalisieren
+- [ ] Empfehlungs-Block als grafische Progress-Bar
+- [ ] PDF-Export (Could have, nicht Pflicht)
+- [ ] Variable gGA aus Art. 46 BO Bern (verschoben)
+- [ ] Subtypen FA-FD der ZoeN (verschoben)
 - [ ] Schwager: stichprobenartige Verifikation BKP-Werte
+      (Termin naechste Woche)
 
 ### Iteration 5 (Gemeinde-Analyse, Anfang Juni 2026)
 
 Detail siehe `docs/konzept_gemeinde_analyse.md`.
 
-- [ ] Modul `gwr.py` (GWR-API fuer bestehende Gebaeude)
+**Bereits umgesetzt am 30.04.2026**:
+- [x] Modul `gwr.py` (GWR-API fuer bestehende Gebaeude) (1 von 4 Modulen)
+
+**Noch zu tun**:
 - [ ] Modul `parzellen_liste.py` (alle Parzellen einer Gemeinde)
 - [ ] Modul `gemeinde_analyse.py` (Massen-Pipeline mit Throttling)
 - [ ] Excel/CSV-Export-Funktionen

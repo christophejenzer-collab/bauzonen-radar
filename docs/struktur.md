@@ -1,6 +1,6 @@
 # Projekt-Struktur
 
-**Stand**: 30. April 2026 (abends)
+**Stand**: 05. Mai 2026
 **Erstellt mit**: `Get-ChildItem -Recurse -File` aus PowerShell
 
 ## Visualisierung
@@ -14,16 +14,17 @@ bauzonen-radar/
 +-- start.ps1                   PowerShell-Helper: venv + cd ins Modul
 +-- demo.ps1                    Demo-Aufrufe fuer Test-Adressen
 |
-+-- patch_potenzial.ps1         Patch-Skript: Bug-Fixes Vormittag 29.04.
-+-- patch_begrenzer_bugs.ps1    Patch-Skript: Bug-Fixes Mittag 29.04.
-+-- patch_thun_json.ps1         Patch-Skript: thun.json-Erweiterung 29.04.
-+-- patch_gwr_integration.ps1   Patch-Skript: GWR-Integration 30.04.
-+-- patch_gwr_unvollstaendig.ps1 Patch-Skript: GWR-Anzeige verbessern 30.04.
++-- patch_potenzial.ps1                Patch: Bug-Fixes Vormittag 29.04.
++-- patch_begrenzer_bugs.ps1           Patch: Bug-Fixes Mittag 29.04.
++-- patch_thun_json.ps1                Patch: thun.json-Erweiterung 29.04.
++-- patch_gwr_integration.ps1          Patch: GWR-Integration 30.04.
++-- patch_gwr_unvollstaendig.ps1       Patch: GWR-Anzeige verbessern 30.04.
++-- patch_potenzial_ergebnis.ps1       Patch: AnalyseErgebnis-Refactoring 03.05.
 |
 +-- src/
 |   `-- bauzonenradar/          Hauptpaket
 |       +-- __init__.py
-|       +-- analyse_adresse.py  Hauptprogramm: Adresse -> Bericht
+|       +-- analyse_adresse.py  Hauptprogramm mit AnalyseErgebnis-Datenklasse
 |       +-- baureglement.py     Reglement-Loader (JSON pro Gemeinde)
 |       +-- bern.py             OEREB-Adapter (auch fuer andere Gemeinden)
 |       +-- bern_bkp.py         BKP-API Stadt Bern (parzellenscharfe Werte)
@@ -39,10 +40,11 @@ bauzonen-radar/
 |       |
 |       +-- datenquellen/       Externe Datenquellen
 |       |   +-- __init__.py     Exports: GwrQuelle, GwrGebaeude, Exception-Klassen
-|       |   `-- gwr.py          GWR-API (Eidg. Geb.- u. Wohnungsregister) - NEU 30.04.
+|       |   `-- gwr.py          GWR-API (Eidg. Geb.- u. Wohnungsregister)
 |       |
-|       `-- gui/                (leer, Platzhalter fuer Iteration 4 Streamlit)
-|           `-- __init__.py
+|       `-- gui/                Streamlit-GUI (Iteration 4 - LAUFEND)
+|           +-- __init__.py
+|           `-- app.py          Streamlit-App von Fabienne (LAUFEND, in Arbeit)
 |
 +-- daten/
 |   `-- baureglemente/
@@ -57,6 +59,11 @@ bauzonen-radar/
 |   +-- fachliche_grundlagen.md          IVHB, Berner Systemwechsel
 |   +-- journal.md                       Chronologisches Arbeitsjournal
 |   +-- struktur.md                      Diese Datei
+|   +-- anforderungen_backend.md         RE-Doku Backend (Fabienne)
+|   +-- anforderungen_frontend.md        RE-Doku Frontend (Fabienne)
+|   +-- glossar.md                       Fachbegriffe (Fabienne)
+|   +-- releasenotes_backend.md          Releasenotes Backend
+|   +-- releasenotes_frontend.md         Releasenotes Frontend (Fabienne)
 |   `-- archiv/                          LOKAL: PoC, alte Snapshots, Aufraeum-Skript
 |
 `-- tests/
@@ -72,14 +79,47 @@ bauzonen-radar/
         `-- extract_thun.xml
 ```
 
+## Lokale, nicht-getrackte Dateien
+
+Folgende Dateien sind via `.gitignore` aus dem Repo ausgeschlossen,
+aber lokal vorhanden zur Arbeitserleichterung:
+
+- `src/bauzonenradar/gui/app_christophe_test.py` - lokale Test-Kopie
+  von Fabiennes Frontend, fuer Layout-Tests durch Christophe.
+  Wird geloescht sobald Fabienne ihre eigene Version pushed.
+
 ## Module im Detail
 
-### `analyse_adresse.py`
-Hauptprogramm. Eintrittspunkt fuer Einzelabfragen:
+### `analyse_adresse.py` (refactored 03.05.2026)
+
+Hauptprogramm und Eintrittspunkt fuer die ganze Pipeline. Seit
+03.05. gilt eine klare **Trennung Berechnung/Ausgabe**:
+
+```
+analysiere(adresse) -> AnalyseErgebnis    # reine Logik, kein Print
+drucke_bericht(ergebnis) -> None           # CLI-Output
+main()                                     # ruft beide nacheinander
+```
+
+`AnalyseErgebnis` ist eine Datenklasse mit ~30 Feldern, die alle
+Pipeline-Daten sammelt:
+- Adresse, Status, Fehler, Warnungen
+- Parzelle (gemeinde, parzellen_nummer, parzellen_flaeche_m2, egrid)
+- Koordinaten (LV95 und WGS84)
+- Reglement-Status
+- BKP-Daten (Stadt Bern)
+- GWR-Daten (Liste der Gebaeude, Summe Geschossflaeche)
+- Potenzial (datenqualitaet, zulaessig_m2, ausschoepfung_prozent, ...)
+- Original-Textbericht fuer Debug
+
+So koennen GUI (Streamlit) und CLI dieselbe `analysiere()`-Funktion
+nutzen, ohne Berechnungslogik zu duplizieren. **Separation of
+Concerns**.
+
+Pipeline-Aufruf:
 ```bash
 python src\bauzonenradar\analyse_adresse.py "Frutigenstrasse 25, 3604 Thun"
 ```
-Pipeline: OEREB -> Reglement -> [BKP fuer Bern] -> [GWR] -> Potenzialberechnung -> Bericht
 
 ### `bern.py`
 Trotz des Namens ist dies der **generische OEREB-Adapter**. Holt
@@ -110,6 +150,27 @@ Empfehlungs-Block mit ASCII-Balken. Drei-Begrenzer-Logik
 ### `baureglement.py`
 Laedt Reglement-JSON pro Gemeinde, erkennt Synonyme automatisch,
 liefert Parameter fuer die Potenzialberechnung.
+
+### `gui/app.py` (NEU 03.05.2026 - LAUFEND, von Fabienne)
+
+Streamlit-GUI fuer Endanwender. Importiert `analysiere()` direkt
+aus `analyse_adresse.py` und rendert das `AnalyseErgebnis` grafisch:
+
+- Adress-Eingabefeld + "Analysieren"-Button
+- Sektion **Lage**: Karte mit `st.map()` und WGS84-Koordinaten
+- Sektion **Parzelle**: Gemeinde, Flaeche, Zone(n), Datenqualitaets-Badge
+- Sektion **Bebauungspotenzial**: Zulaessig / Ausschoepfung / Reserve
+  als Kennzahlen plus Progress-Bars und Lagebeurteilung
+- Sektion **GWR**: Tabelle der Bestandsgebaeude plus
+  Plausibilitaets-Konflikt-Box bei GWR-Diskrepanz
+
+Eigenes CSS mit Inter-Schrift, Schwarz/Rot-Akzent, ruhiger
+professioneller Anmutung. Keine Streamlit-Default-Optik.
+
+Aufruf:
+```powershell
+streamlit run src\bauzonenradar\gui\app.py
+```
 
 ## Reglement-Daten
 
@@ -143,16 +204,24 @@ aber lokal vorhanden:
 
 ## Geplante Erweiterungen
 
-### Iteration 4 (Streamlit-GUI mit Fabienne, Sonntag-Coding-Tag)
+### Iteration 4 (Streamlit-GUI - LAUFEND seit 03.05.2026)
 
-Neu in `src/bauzonenradar/gui/`:
-- `streamlit_app.py` - Hauptseite
-- `komponenten.py` - wiederverwendbare Widgets
+**Bereits umgesetzt**:
+- `gui/app.py` - Streamlit-Hauptseite mit eigenem CSS-Design (Fabienne)
+- `analysiere() -> AnalyseErgebnis` als Backend-API (Christophe)
+- Layout: Adress-Eingabe, Karte, Parzelle, Bebauungspotenzial, GWR-Tabelle
+- Plausibilitaets-Konflikt-Box bei GWR-Diskrepanz
+
+**Noch zu tun**:
+- Frontend-Felder an Backend-API anpassen (Fabienne, in Arbeit)
+- Live-Test mit echten Daten
+- Visuelle Datenqualitaets-Ampel finalisieren
+- PDF-Export (Could have, nicht Pflicht)
 
 ### Iteration 5 (Gemeinde-Analyse, Anfang Juni 2026)
 
 **Bereits umgesetzt am 30.04.2026**:
-- ✅ `datenquellen/gwr.py` - GWR-API integriert
+- `datenquellen/gwr.py` - GWR-API integriert (1 von 4 Modulen)
 
 **Noch zu tun**:
 - `datenquellen/parzellen_liste.py` - alle Parzellen einer Gemeinde
