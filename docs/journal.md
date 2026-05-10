@@ -762,20 +762,22 @@ Iter-5-Funktionen liefert.
 
 **Dauer**: 0800-1100 (Vormittag mit Fabienne digital), Nachmittag Familienfest
 
-### Fabiennes Sonntag-Vorarbeit (in den Pausen am Vortag)
+### Fabiennes Doku-Vorarbeit (03. Mai)
 
-Fabienne hat schon am Samstag Abend eigenstaendig die Doku-Architektur
-restrukturiert:
+Fabienne hat eigenstaendig die Doku-Architektur restrukturiert und
+gleich die Requirements-Grundlage fuer Iter 4 gelegt:
 
-- `Anforderungen.md` -> `docs/anforderungen_backend.md` (umbenannt + Endung)
+- `Anforderungen.md` -> `docs/anforderungen_backend.md` (umbenannt,
+  vollstaendig ausgebaut: Stakeholder, Use Cases, FA-01 bis FA-47,
+  NA-01 bis NA-23, Annahmen AN-01 bis AN-18, Konflikt-Analyse
+  KF-1 bis KF-5)
 - `Glossar` -> `docs/glossar.md` (Markdown-Endung, wird nun gerendert)
-- Neu: `docs/anforderungen_frontend.md` (54 Zeilen)
-- Neu: `docs/releasenotes_backend.md` (25 Zeilen)
-- Neu: `docs/releasenotes_frontend.md` (27 Zeilen)
+- Neu: `docs/anforderungen_frontend.md` (F-01 bis F-06, NF-01 bis
+  NF-06, Design-Vorgaben za-ag.ch, GUI-Struktur)
 
-Saubere Trennung Backend/Frontend, getrennte Releasenotes pro Bereich.
-Das ist eigenstaendige RE-Pruefungsleistung. Ihre Releasenotes sind
-endkunden-orientiert (Capabilities, nicht Code-Aenderungen).
+Saubere Trennung Backend/Frontend. Fabienne uebernimmt die gesamte
+Projektdokumentation - Christophe fokussiert sich auf den Backend-Code.
+Begleitung durch Claude.AI als Requirements-Engineer.
 
 ### Vormittag (0800-1100): Backend-Refactoring
 
@@ -841,17 +843,6 @@ oder bei interessanter Parzelle aehnliche Parzellen finden).
 Termin fuer naechste Woche vereinbart fuer richtige Reglement-
 Verifikation und Annahmen-Plausibilisierung.
 
-### Releasenote ergaenzt
-
-Backend-Releasenote zum Refactoring eingetragen in
-`docs/releasenotes_backend.md` (im Format von Fabiennes etabliertem
-Stil, endkunden-orientiert):
-
-- Strukturiertes Analyse-Ergebnis als Objekt
-- WGS84-Koordinaten fuer Karten
-- Trennung Berechnung/Ausgabe
-- Verifikation auf 12 Test-Adressen
-
 ### Commits am Sonntag
 
 - a971720: docs: Backend-Releasenote zum analysiere()-Refactoring
@@ -864,6 +855,48 @@ Stil, endkunden-orientiert):
 - Doku-Architektur durch Fabienne verbessert (Backend/Frontend-Trennung)
 - Schwager-Termin auf naechste Woche verschoben
 - Mit Stand 03.05. ist das Tool weiter **demonstrationsreif**
+
+---
+
+## 04. Mai 2026 (Montag) - GUI-Testing und Release Notes (Fabienne)
+
+**Dauer**: ca. 2 Stunden
+
+### GUI-Testing
+
+Fabienne hat `app.py` lokal aufgesetzt und das erste Mal gegen das
+echte Backend laufen lassen. Design und Struktur stimmen - Mapping-
+Probleme bei Feldnamen erwartet (Christophe hat noch keine vollstaendige
+Feldliste geliefert). Befunde dokumentiert, Klaerung mit Christophe
+steht am naechsten Tag an.
+
+### Release Notes erarbeitet
+
+Fabienne hat zwei endkunden-orientierte Dokumente geschrieben -
+Capabilities statt Code-Aenderungen, klar auf Nutzer-Sprache getrimmt:
+
+`docs/releasenotes_backend.md` - fasst Christophes Refactoring zusammen:
+- Strukturiertes Analyse-Ergebnis als Objekt (alle Werte direkt
+  zugreifbar)
+- WGS84-Koordinaten automatisch berechnet, direkt fuer Karte nutzbar
+- Pipeline laeuft weiter bei fehlenden Gemeinden oder GWR-Luecken
+- Berechnung und Ausgabe sauber getrennt (CLI und Web, gleiche Logik)
+- 12/12 Test-Adressen erfolgreich, alle drei Datenqualitaets-Pfade
+  abgedeckt
+
+`docs/releasenotes_frontend.md` - beschreibt die neue GUI:
+- Adresseingabe und Analyse-Start in einem Schritt
+- Grafische Potenzial- und Reserve-Darstellung
+- Farbliche Datenqualitaets-Ampel (verbindlich / geschaetzt /
+  nicht moeglich)
+- Kartenausschnitt mit Parzellen-Pin
+- Reduziertes Design, kein Streamlit-Default-Look
+- Keine Datenspeicherung
+
+### Bilanz Montag
+
+- GUI-Testing abgeschlossen, Mismatches fuer Christophe dokumentiert
+- Beide Release-Notes fertig und bereit zum Commit
 
 ---
 
@@ -961,6 +994,81 @@ Sie kann mit Search & Replace alle Aenderungen in 15-20 Min machen.
 
 ---
 
+## 09. Mai 2026 (Freitag) - Developer Requirements (Fabienne)
+
+**Dauer**: ca. 2 Stunden
+
+### Was passiert ist
+
+Fabienne hat die Anforderungsdokumente vom 03.05. in konkrete,
+entwickler-taugliche Requirements uebersetzt - direkt umsetzbar,
+mit Akzeptanzkriterien pro REQ. Zwei Dokumente entstanden:
+
+`docs/requirements_iteration4_backend.md` - acht REQs fuer Christophe:
+
+- REQ-B-01: `analysiere()` gibt `AnalyseResultat`-Objekt zurueck
+  (Blocker - GUI kann ohne das nicht live testen)
+- REQ-B-02: `koordinate_lv95` im Rueckgabe-Objekt gesetzt
+  (Blocker - Karte braucht Koordinaten)
+- REQ-B-03: alle GUI-Pflicht-Felder in `AnalyseErgebnis` verifiziert
+- REQ-B-04: Pipeline ueberlebt OEREB-, GWR- und BKP-Ausfall
+- REQ-B-05: Datenqualitaets-Trichotomie unveraendert (kein
+  Pseudo-Wert bei NICHT_MOEGLICH)
+- REQ-B-06: Disclaimer-Text als Feld oder Konstante verfuegbar
+- REQ-B-07: kein File-Write, kein Adress-Logging
+- REQ-B-08: Einzelabfrage unter 10 Sekunden
+
+`docs/requirements_iteration4_frontend.md` - acht REQs fuer Fabienne
+selbst, aus `anforderungen_frontend.md` direkt abgeleitet:
+
+- REQ-01: Adresseingabe + Backend-Import-Pattern
+- REQ-02: Datenqualitaets-Badge (drei Farben, drei Texte)
+- REQ-03: Progress-Bars Ausschoepfung und Reserve
+- REQ-04: Karte mit Pin (LV95 -> WGS84)
+- REQ-05: GWR-Tabelle + Plausibilitaets-Konflikt-Box
+- REQ-06: Fehlermeldung und Exception-Handling
+- REQ-07: Design gemaess za-ag.ch-Referenz
+- REQ-08: Performance, Datenschutz, Sprache
+
+### Entscheidungen
+
+Requirements als eigene Dokumente neben dem Code: Fachliche Entscheide,
+Konflikte und Annahmen explizit gemacht - nicht nur implizit im Code
+gelebt. Relevant fuer die Pruefungs-Kommission. PDF-Export bewusst als
+«Could have» eingestuft und auf spaeter verschoben.
+
+### Bilanz Freitag
+
+- Beide Requirements-Dokumente fertig und bereit zum Commit
+- Christophe hat klare Vorgaben fuer die Backend-Schnittstelle
+- Definition of Done fuer Iter. 4 verschriftlicht
+
+---
+
+## 10. Mai 2026 (Sonntag) - Gemeinsamer Coding-Tag Iteration 4
+
+**Dauer**: Ganztag
+
+### Ausgangslage
+
+Doku-Basis durch Fabienne vollstaendig: sechs Dokumente committed
+(03.05., 04.05., 09.05.). Christophe fokussiert sich auf Backend-Code,
+Fabienne setzt die GUI gemaess Requirements um.
+
+### Aufgabenteilung
+
+Christophe arbeitet REQ-B-01 und REQ-B-02 ab - das sind die Blocker
+fuer den Live-Test. Fabienne baut die GUI-Sektionen sequenziell auf
+(Ampel, Balken, Karte, GWR-Block).
+
+### Bilanz
+
+- Iteration 4 in Arbeit
+- Backend-Blocker in Bearbeitung
+- GUI-Grundstruktur steht
+
+---
+
 ## Verschiedene Beobachtungen waehrend der Entwicklung
 
 - **Windows-PowerShell** mit `start.ps1` automatisiert venv-Aktivierung
@@ -1049,3 +1157,4 @@ Detail siehe `docs/konzept_gemeinde_analyse.md`.
 - [ ] Backup-Plan falls Internet/OEREB-Webservice down
 - [ ] README finalisieren
 - [ ] Koeniz als 4. Gemeinde aufnehmen (optional)
+
