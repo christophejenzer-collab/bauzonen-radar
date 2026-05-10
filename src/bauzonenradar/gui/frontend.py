@@ -1,6 +1,6 @@
 """
 Bauzonen-Radar – Streamlit GUI
-Iteration 4 | Stand: 03. Mai 2026
+Iteration 4 | Stand: 10. Mai 2026
 
 Aufruf (aus Projekt-Root):
     streamlit run src/bauzonenradar/gui/app.py
@@ -11,7 +11,6 @@ Voraussetzungen:
 """
 
 import sys
-import math
 import pandas as pd
 import streamlit as st
 
@@ -22,7 +21,6 @@ sys.path.insert(0, "src/bauzonenradar")
 
 try:
     from analyse_adresse import analysiere
-    from analyse.potenzial import Datenqualitaet, PotenzialStatus
     BACKEND_OK = True
 except ImportError as e:
     BACKEND_OK = False
@@ -93,7 +91,7 @@ st.markdown("""
         letter-spacing: 0.08em;
         text-transform: uppercase;
     }
-    .badge-verbindlich   { background: #E8F5E9; color: #2E7D32; border: 1px solid #2E7D32; }
+    .badge-verbindlich    { background: #E8F5E9; color: #2E7D32; border: 1px solid #2E7D32; }
     .badge-grobschaetzung { background: #FFF3E0; color: #E65100; border: 1px solid #E65100; }
     .badge-nicht-moeglich { background: #F5F5F5; color: #757575; border: 1px solid #757575; }
 
@@ -116,11 +114,11 @@ st.markdown("""
     }
 
     /* Lagebeurteilung */
-    .lage-hoch        { color: #2E7D32; font-weight: 600; font-size: 1.05rem; }
-    .lage-mittel      { color: #1565C0; font-weight: 600; font-size: 1.05rem; }
-    .lage-gering      { color: #E65100; font-weight: 600; font-size: 1.05rem; }
+    .lage-hoch          { color: #2E7D32; font-weight: 600; font-size: 1.05rem; }
+    .lage-mittel        { color: #1565C0; font-weight: 600; font-size: 1.05rem; }
+    .lage-gering        { color: #E65100; font-weight: 600; font-size: 1.05rem; }
     .lage-ausgeschoepft { color: #757575; font-weight: 600; font-size: 1.05rem; }
-    .lage-unbekannt   { color: #1A1A1A; font-weight: 600; font-size: 1.05rem; }
+    .lage-unbekannt     { color: #1A1A1A; font-weight: 600; font-size: 1.05rem; }
 
     /* Kennzahlen-Grid */
     .kennzahl-label {
@@ -176,51 +174,28 @@ st.markdown("""
 # Hilfsfunktionen
 # ---------------------------------------------------------------------------
 
-def lv95_zu_wgs84(ost: float, nord: float) -> tuple[float, float]:
-    """
-    Näherungskonvertierung LV95 → WGS84.
-    Quelle: swisstopo Näherungsformeln (±1m Genauigkeit, ausreichend für st.map)
-    """
-    x = (ost  - 2_600_000) / 1_000_000
-    y = (nord - 1_200_000) / 1_000_000
-
-    lon = (2.6779094
-           + 4.728982 * x
-           + 0.791484 * x * y
-           + 0.1306   * x * y * y
-           - 0.0436   * x * x * x)
-    lat = (16.9023892
-           + 3.238272 * y
-           - 0.270978 * x * x
-           - 0.002528 * y * y
-           - 0.0447   * x * x * y
-           - 0.0140   * y * y * y)
-
-    lon = lon * 100 / 36
-    lat = lat * 100 / 36
-    return lat, lon
-
-
-def badge_html(datenqualitaet: "Datenqualitaet") -> str:
-    if datenqualitaet == Datenqualitaet.VERBINDLICH:
+def badge_html(datenqualitaet: str) -> str:
+    """datenqualitaet ist ein String: 'VERBINDLICH' / 'GROBSCHAETZUNG' / 'NICHT_MOEGLICH'"""
+    if datenqualitaet == "VERBINDLICH":
         return '<span class="badge badge-verbindlich">✓ Verbindlich</span>'
-    elif datenqualitaet == Datenqualitaet.GROBSCHAETZUNG:
+    elif datenqualitaet == "GROBSCHAETZUNG":
         return '<span class="badge badge-grobschaetzung">~ Grobschätzung</span>'
     else:
         return '<span class="badge badge-nicht-moeglich">– Nicht möglich</span>'
 
 
-def lage_html(status: "PotenzialStatus", reserve: float | None) -> str:
-    if reserve is None:
+def lage_html(lagebeurteilung: str | None, reserve: float | None) -> str:
+    """Lagebeurteilung ist ein String aus dem Backend."""
+    if reserve is None or lagebeurteilung is None:
         return '<span class="lage-unbekannt">Keine Berechnung möglich</span>'
     if reserve >= 60:
-        return f'<span class="lage-hoch">▲ Hohes Verdichtungs-Potenzial</span>'
+        return '<span class="lage-hoch">▲ Hohes Verdichtungs-Potenzial</span>'
     elif reserve >= 30:
-        return f'<span class="lage-mittel">◆ Mittleres Verdichtungs-Potenzial</span>'
+        return '<span class="lage-mittel">◆ Mittleres Verdichtungs-Potenzial</span>'
     elif reserve >= 10:
-        return f'<span class="lage-gering">▼ Geringes Verdichtungs-Potenzial</span>'
+        return '<span class="lage-gering">▼ Geringes Verdichtungs-Potenzial</span>'
     else:
-        return f'<span class="lage-ausgeschoepft">● Praktisch ausgeschöpft</span>'
+        return '<span class="lage-ausgeschoepft">● Praktisch ausgeschöpft</span>'
 
 
 def zeige_progress_bar(label: str, prozent: float | None, farbe: str = "#1A1A1A") -> None:
@@ -282,47 +257,28 @@ if abschicken:
 
     with st.spinner("Analyse läuft – OEREB, BKP und GWR werden abgefragt…"):
         try:
-            resultat = analysiere(adresse.strip())
+            ergebnis = analysiere(adresse.strip())
         except Exception as e:
             st.error(f"Fehler bei der Analyse: {e}")
             st.stop()
 
-    if resultat is None:
-        st.error("Adresse nicht gefunden. Bitte Schreibweise prüfen "
-                 "(z.B. «Frutigenstrasse 25, 3604 Thun»).")
+    if ergebnis is None or not ergebnis.erfolgreich:
+        fehler = getattr(ergebnis, "fehler", None) if ergebnis else None
+        st.error(
+            fehler or
+            "Adresse nicht gefunden. Bitte Schreibweise prüfen "
+            "(z.B. «Frutigenstrasse 25, 3604 Thun»)."
+        )
         st.stop()
-
-    # Ergebnis-Objekt entpacken
-    # Erwartetes Interface nach Backend-Vorbereitung Christophe:
-    # resultat.parzelle        → Parzelle-Objekt
-    # resultat.ergebnis        → PotenzialErgebnis-Objekt
-    # resultat.gwr_gebaeude    → list[GwrGebaeude] | None
-    # Falls analysiere() direkt PotenzialErgebnis zurückgibt (Variante B):
-    if hasattr(resultat, "datenqualitaet"):
-        # Variante B: analysiere() gibt PotenzialErgebnis direkt zurück
-        ergebnis = resultat
-        parzelle = None
-        gwr_gebaeude = None
-    else:
-        # Variante A: analysiere() gibt ein zusammengesetztes Objekt zurück
-        ergebnis   = getattr(resultat, "ergebnis", None)
-        parzelle   = getattr(resultat, "parzelle", None)
-        gwr_gebaeude = getattr(resultat, "gwr_gebaeude", None)
 
     # -----------------------------------------------------------------------
     # Sektion: Karte
+    # Backend liefert koordinaten_fuer_karte als (lat, lon) – keine eigene
+    # LV95->WGS84-Konvertierung noetig.
     # -----------------------------------------------------------------------
-    koordinate = None
-    if parzelle is not None:
-        for feldname in ("koordinate_lv95", "koordinaten", "lv95"):
-            if hasattr(parzelle, feldname):
-                wert = getattr(parzelle, feldname)
-                if wert and len(wert) == 2:
-                    koordinate = (float(wert[0]), float(wert[1]))
-                    break
-
-    if koordinate:
-        lat, lon = lv95_zu_wgs84(koordinate[0], koordinate[1])
+    koordinaten = getattr(ergebnis, "koordinaten_fuer_karte", None)
+    if koordinaten and len(koordinaten) == 2:
+        lat, lon = float(koordinaten[0]), float(koordinaten[1])
         st.markdown('<div class="sektion"><p class="sektion-titel">Lage</p></div>',
                     unsafe_allow_html=True)
         df_karte = pd.DataFrame({"lat": [lat], "lon": [lon]})
@@ -337,98 +293,86 @@ if abschicken:
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        gemeinde = (parzelle.gemeinde if parzelle and hasattr(parzelle, "gemeinde")
-                    else "–")
+        gemeinde = getattr(ergebnis, "gemeinde", None) or "–"
         st.markdown(f'<p class="kennzahl-label">Gemeinde</p>'
-                    f'<p class="kennzahl-wert">{gemeinde}</p>', unsafe_allow_html=True)
+                    f'<p class="kennzahl-wert">{gemeinde}</p>',
+                    unsafe_allow_html=True)
 
     with col2:
-        flaeche = (f"{parzelle.flaeche_m2:.0f}"
-                   if parzelle and hasattr(parzelle, "flaeche_m2")
-                   else (f"{ergebnis.parzellenflaeche_m2:.0f}"
-                         if ergebnis else "–"))
+        flaeche = getattr(ergebnis, "parzellen_flaeche_m2", None)
+        flaeche_txt = f"{flaeche:.0f}" if flaeche is not None else "–"
         st.markdown(f'<p class="kennzahl-label">Fläche</p>'
-                    f'<p class="kennzahl-wert">{flaeche} '
+                    f'<p class="kennzahl-wert">{flaeche_txt} '
                     f'<span class="kennzahl-einheit">m²</span></p>',
                     unsafe_allow_html=True)
 
     with col3:
-        zonen_text = (", ".join(ergebnis.zonen_betrachtet)
-                      if ergebnis and ergebnis.zonen_betrachtet else "–")
-        # Kürzen falls zu lang
+        zone = getattr(ergebnis, "zone", None)
+        zonen_text = zone if zone else "–"
         if len(zonen_text) > 40:
             zonen_text = zonen_text[:40] + "…"
         st.markdown(f'<p class="kennzahl-label">Zone(n)</p>'
                     f'<p class="kennzahl-wert" style="font-size:0.95rem;">'
-                    f'{zonen_text}</p>', unsafe_allow_html=True)
+                    f'{zonen_text}</p>',
+                    unsafe_allow_html=True)
 
     # Datenqualitäts-Badge
     st.markdown("<br>", unsafe_allow_html=True)
-    if ergebnis:
-        st.markdown(badge_html(ergebnis.datenqualitaet), unsafe_allow_html=True)
-        if ergebnis.datenqualitaet == Datenqualitaet.GROBSCHAETZUNG:
-            st.markdown(
-                '<div class="warnung-box">⚠ Werte sind konservativ geschätzt – '
-                'keine Investitionsentscheidung darauf basieren.</div>',
-                unsafe_allow_html=True
-            )
+    datenqualitaet = getattr(ergebnis, "datenqualitaet", None) or "NICHT_MOEGLICH"
+    st.markdown(badge_html(datenqualitaet), unsafe_allow_html=True)
+    if datenqualitaet == "GROBSCHAETZUNG":
+        st.markdown(
+            '<div class="warnung-box">⚠ Werte sind konservativ geschätzt – '
+            'keine Investitionsentscheidung darauf basieren.</div>',
+            unsafe_allow_html=True
+        )
 
     # -----------------------------------------------------------------------
     # Sektion: Potenzial
+    # reserve_prozent wird aus dem Backend-Feld berechnet: 100 - ausschoepfung_prozent
     # -----------------------------------------------------------------------
     st.markdown('<div class="sektion"><p class="sektion-titel">Bebauungspotenzial</p></div>',
                 unsafe_allow_html=True)
 
-    if ergebnis and ergebnis.datenqualitaet != Datenqualitaet.NICHT_MOEGLICH:
+    ausschoepfung   = getattr(ergebnis, "ausschoepfung_prozent", None)
+    reserve         = (100 - ausschoepfung) if ausschoepfung is not None else None
+    zulaessig       = getattr(ergebnis, "zulaessig_m2", None)
+    lagebeurteilung = getattr(ergebnis, "lagebeurteilung", None)
+
+    if datenqualitaet != "NICHT_MOEGLICH":
 
         # Kennzahlen-Row
         col_a, col_b, col_c = st.columns(3)
         with col_a:
-            soll = (f"{ergebnis.theoretisch_zulaessig_m2:.0f}"
-                    if ergebnis.theoretisch_zulaessig_m2 is not None else "–")
+            soll_txt = f"{zulaessig:.0f}" if zulaessig is not None else "–"
             st.markdown(f'<p class="kennzahl-label">Theoretisch zulässig</p>'
-                        f'<p class="kennzahl-wert">{soll} '
+                        f'<p class="kennzahl-wert">{soll_txt} '
                         f'<span class="kennzahl-einheit">m²</span></p>',
                         unsafe_allow_html=True)
         with col_b:
-            aussch = (f"{ergebnis.ausschoepfungsgrad_prozent:.1f}"
-                      if ergebnis.ausschoepfungsgrad_prozent is not None else "–")
+            aussch_txt = f"{ausschoepfung:.1f}" if ausschoepfung is not None else "–"
             st.markdown(f'<p class="kennzahl-label">Ausschöpfung</p>'
-                        f'<p class="kennzahl-wert">{aussch} '
+                        f'<p class="kennzahl-wert">{aussch_txt} '
                         f'<span class="kennzahl-einheit">%</span></p>',
                         unsafe_allow_html=True)
         with col_c:
-            res = (f"{ergebnis.reserve_prozent:.1f}"
-                   if ergebnis.reserve_prozent is not None else "–")
+            res_txt = f"{reserve:.1f}" if reserve is not None else "–"
             st.markdown(f'<p class="kennzahl-label">Bauland-Reserve</p>'
-                        f'<p class="kennzahl-wert">{res} '
+                        f'<p class="kennzahl-wert">{res_txt} '
                         f'<span class="kennzahl-einheit">%</span></p>',
                         unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
         # Progress-Bars
-        zeige_progress_bar(
-            "Ausschöpfung",
-            ergebnis.ausschoepfungsgrad_prozent,
-            farbe="#8B1A1A"
-        )
-        zeige_progress_bar(
-            "Bauland-Reserve",
-            ergebnis.reserve_prozent,
-            farbe="#2E7D32"
-        )
+        zeige_progress_bar("Ausschöpfung",    ausschoepfung, farbe="#8B1A1A")
+        zeige_progress_bar("Bauland-Reserve", reserve,       farbe="#2E7D32")
 
         # Lagebeurteilung
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown(lage_html(ergebnis.status, ergebnis.reserve_prozent),
-                    unsafe_allow_html=True)
+        st.markdown(lage_html(lagebeurteilung, reserve), unsafe_allow_html=True)
 
-        # Arealbonus
-        if ergebnis.arealbonus_anwendbar:
-            st.info("🏗 Arealbonus möglich: Zusätzliches Geschoss bewilligungsfähig.")
-
-    elif ergebnis:
+    else:
         st.markdown(
             '<div class="warnung-box">Quantitative Potenzialberechnung nicht möglich. '
             'Diese Zone unterliegt einem Spezialregime (z.B. Altstadt, Schutzzone). '
@@ -439,6 +383,9 @@ if abschicken:
     # -----------------------------------------------------------------------
     # Sektion: GWR – Soll vs. Ist
     # -----------------------------------------------------------------------
+    gwr_gebaeude = getattr(ergebnis, "gwr_gebaeude", None)
+    gwr_summe    = getattr(ergebnis, "gwr_summe_geschossflaeche_m2", None)
+
     if gwr_gebaeude:
         st.markdown(
             '<div class="sektion"><p class="sektion-titel">GWR – Bestehende Bebauung (Ist)</p></div>',
@@ -446,12 +393,11 @@ if abschicken:
         )
 
         summe_ist = 0.0
-        hat_konflikt = False
         gwr_zeilen = []
 
         for g in gwr_gebaeude:
-            gf  = getattr(g, "grundflaeche_m2", None)
-            ges = getattr(g, "geschosse", None)
+            gf        = getattr(g, "grundflaeche_m2", None)
+            ges       = getattr(g, "geschosse", None)
             wohnungen = getattr(g, "anzahl_wohnungen", None)
             baujahr   = getattr(g, "baujahr", None) or getattr(g, "bauperiode_code", "–")
             label     = getattr(g, "label", "Gebäude")
@@ -460,21 +406,21 @@ if abschicken:
             if gf is not None and ges is not None and gf_total is not None:
                 summe_ist += gf_total
                 gwr_zeilen.append({
-                    "Gebäude":         label,
-                    "Grundfläche m²":  f"{gf:.0f}",
-                    "Geschosse":       str(ges),
+                    "Gebäude":           label,
+                    "Grundfläche m²":    f"{gf:.0f}",
+                    "Geschosse":         str(ges),
                     "Geschossfläche m²": f"{gf_total:.0f}",
-                    "Wohnungen":       str(wohnungen or "–"),
-                    "Baujahr":         str(baujahr),
+                    "Wohnungen":         str(wohnungen or "–"),
+                    "Baujahr":           str(baujahr),
                 })
             else:
                 gwr_zeilen.append({
-                    "Gebäude":         label,
-                    "Grundfläche m²":  "–",
-                    "Geschosse":       "–",
+                    "Gebäude":           label,
+                    "Grundfläche m²":    "–",
+                    "Geschosse":         "–",
                     "Geschossfläche m²": "Daten unvollständig",
-                    "Wohnungen":       "–",
-                    "Baujahr":         str(baujahr),
+                    "Wohnungen":         "–",
+                    "Baujahr":           str(baujahr),
                 })
 
         if gwr_zeilen:
@@ -484,40 +430,48 @@ if abschicken:
                 hide_index=True
             )
 
-        # Plausibilitäts-Konflikt
-        if (ergebnis
-                and ergebnis.theoretisch_zulaessig_m2 is not None
-                and summe_ist > ergebnis.theoretisch_zulaessig_m2 * 1.05):
-            hat_konflikt = True
+        # Plausibilitäts-Konflikt: bevorzuge Backend-Summe, fallback auf eigene
+        summe_fuer_konflikt = gwr_summe if gwr_summe is not None else summe_ist
+        if zulaessig is not None and summe_fuer_konflikt > zulaessig * 1.05:
             st.markdown(
                 f'<div class="konflikt-box">'
                 f'⚡ <strong>Plausibilitäts-Konflikt:</strong> '
-                f'GWR-Ist ({summe_ist:.0f} m²) übersteigt den berechneten Soll-Wert '
-                f'({ergebnis.theoretisch_zulaessig_m2:.0f} m²). '
+                f'GWR-Ist ({summe_fuer_konflikt:.0f} m²) übersteigt den berechneten Soll-Wert '
+                f'({zulaessig:.0f} m²). '
                 f'Die Schätzung unterschätzt die reale Bebauung – '
                 f'manuelle Prüfung empfohlen.'
                 f'</div>',
                 unsafe_allow_html=True
             )
 
+    elif getattr(ergebnis, "gwr_gefunden", True) is False:
+        st.markdown(
+            '<div class="sektion"><p class="sektion-titel">GWR – Bestehende Bebauung (Ist)</p></div>',
+            unsafe_allow_html=True
+        )
+        st.markdown(
+            '<div class="warnung-box">Keine GWR-Daten gefunden – '
+            'Parzelle möglicherweise unbebaut.</div>',
+            unsafe_allow_html=True
+        )
+
     # -----------------------------------------------------------------------
-    # Sektion: Bemerkungen & Spezialfälle
+    # Sektion: Hinweise & Spezialfälle
     # -----------------------------------------------------------------------
-    if ergebnis and ergebnis.bemerkungen:
-        # Nur wirklich relevante Bemerkungen anzeigen (Warnhinweise, Spezialfälle)
-        wichtige = [b for b in ergebnis.bemerkungen
-                    if any(kw in b.upper() for kw in [
-                        "NATURGE", "BAULINI", "STRUKTURGEBIET", "ÜBERLAGER",
-                        "LAUFEND", "AREALBONUS", "SPEZIAL", "ALTSTADT",
-                        "UNESCO", "DUALIT", "NICHT MÖGLICH", "EMPFEHLUNG"
-                    ])]
-        if wichtige:
-            st.markdown(
-                '<div class="sektion"><p class="sektion-titel">Hinweise & Spezialfälle</p></div>',
-                unsafe_allow_html=True
-            )
-            for b in wichtige:
-                st.markdown(f"- {b}")
+    warnungen = getattr(ergebnis, "warnungen", None) or []
+    wichtige = [w for w in warnungen
+                if any(kw in w.upper() for kw in [
+                    "NATURGE", "BAULINI", "STRUKTURGEBIET", "ÜBERLAGER",
+                    "LAUFEND", "AREALBONUS", "SPEZIAL", "ALTSTADT",
+                    "UNESCO", "DUALIT", "NICHT MÖGLICH", "EMPFEHLUNG"
+                ])]
+    if wichtige:
+        st.markdown(
+            '<div class="sektion"><p class="sektion-titel">Hinweise & Spezialfälle</p></div>',
+            unsafe_allow_html=True
+        )
+        for w in wichtige:
+            st.markdown(f"- {w}")
 
     # -----------------------------------------------------------------------
     # Haftungsausschluss
