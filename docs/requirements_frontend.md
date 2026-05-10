@@ -109,15 +109,6 @@
 - Keine Speicherung von Adress- oder GWR-Daten (kein File-Write, kein Session-Persist)
 - Sprache der UI: Hochdeutsch / Schweizerdeutsch
 - Lauffähig im Desktop-Browser via `streamlit run` (kein Deployment nötig)
-
----
-
-## Ablageort & Startbefehl
-
-```
-Datei:        src/bauzonenradar/gui/app.py
-Startbefehl:  streamlit run src/bauzonenradar/gui/app.py
-Abhängigkeit: streamlit (in requirements.txt eintragen)
 ```
 
 ---
@@ -134,6 +125,3 @@ Abhängigkeit: streamlit (in requirements.txt eintragen)
 - [ ] REQ-08: Ladezeit < 10 Sek., kein Datenpersistenz, Sprache korrekt
 - [ ] Getestet mit mind. je einer Adresse aus Bern, Thun und Oberhofen
 
----
-
-*Requirements Engineering – Iteration 4, Bauzonen-Radar*
