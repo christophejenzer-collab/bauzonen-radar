@@ -1,6 +1,6 @@
 # Projekt-Struktur
 
-**Stand**: 05. Mai 2026
+**Stand**: 11. Mai 2026 (vor Iter-4-Abschluss)
 **Erstellt mit**: `Get-ChildItem -Recurse -File` aus PowerShell
 
 ## Visualisierung
@@ -35,16 +35,16 @@ bauzonen-radar/
 |       |   +-- __init__.py
 |       |   `-- potenzial.py    Potenzialberechnung mit drei Bemessungssystemen
 |       |
-|       +-- ausgabe/            (leer, Platzhalter fuer Output-Module)
+|       +-- ausgabe/            (leer, Platzhalter fuer Output-Module Iter 5)
 |       |   `-- __init__.py
 |       |
 |       +-- datenquellen/       Externe Datenquellen
 |       |   +-- __init__.py     Exports: GwrQuelle, GwrGebaeude, Exception-Klassen
 |       |   `-- gwr.py          GWR-API (Eidg. Geb.- u. Wohnungsregister)
 |       |
-|       `-- gui/                Streamlit-GUI (Iteration 4 - LAUFEND)
+|       `-- gui/                Streamlit-GUI (Iteration 4)
 |           +-- __init__.py
-|           `-- app.py          Streamlit-App von Fabienne (LAUFEND, in Arbeit)
+|           `-- frontend.py     Streamlit-App von Fabienne
 |
 +-- daten/
 |   `-- baureglemente/
@@ -61,10 +61,13 @@ bauzonen-radar/
 |   +-- struktur.md                      Diese Datei
 |   +-- anforderungen_backend.md         RE-Doku Backend (Fabienne)
 |   +-- anforderungen_frontend.md        RE-Doku Frontend (Fabienne)
+|   +-- requirements_backend.md          Requirements Backend (Fabienne)
+|   +-- requirements_frontend.md         Requirements Frontend (Fabienne)
 |   +-- glossar.md                       Fachbegriffe (Fabienne)
 |   +-- releasenotes_backend.md          Releasenotes Backend
 |   +-- releasenotes_frontend.md         Releasenotes Frontend (Fabienne)
-|   `-- archiv/                          LOKAL: PoC, alte Snapshots, Aufraeum-Skript
+|   +-- start_cheatsheet.md              Persoenliche Quick-Start-Befehle (lokal)
+|   `-- archiv/                          LOKAL: PoC, alte Snapshots, Backups
 |
 `-- tests/
     +-- __init__.py
@@ -84,13 +87,17 @@ bauzonen-radar/
 Folgende Dateien sind via `.gitignore` aus dem Repo ausgeschlossen,
 aber lokal vorhanden zur Arbeitserleichterung:
 
-- `src/bauzonenradar/gui/app_christophe_test.py` - lokale Test-Kopie
-  von Fabiennes Frontend, fuer Layout-Tests durch Christophe.
-  Wird geloescht sobald Fabienne ihre eigene Version pushed.
+- `src/bauzonenradar/gui/app_christophe_test.py` - Test-Kopie fuer
+  parallele Frontend-Tests (vor Fabiennes Push). Kann geloescht werden,
+  ist nicht mehr noetig seit das Repo gepushed wurde.
+- `docs/archiv/output_baumgarten_thun.md` - Output-Snapshot interessanter
+  Adressen mit Naturgefahren und Ortsbildschutz, historisches Material.
+- `docs/archiv/backup_vor_aufraeumen_*.zip` - Sicherheits-Backups
+  beim Aufraeumen.
 
 ## Module im Detail
 
-### `analyse_adresse.py` (refactored 03.05.2026)
+### `analyse_adresse.py` (refactored 03.05., gefixt 11.05.)
 
 Hauptprogramm und Eintrittspunkt fuer die ganze Pipeline. Seit
 03.05. gilt eine klare **Trennung Berechnung/Ausgabe**:
@@ -101,7 +108,7 @@ drucke_bericht(ergebnis) -> None           # CLI-Output
 main()                                     # ruft beide nacheinander
 ```
 
-`AnalyseErgebnis` ist eine Datenklasse mit ~30 Feldern, die alle
+`AnalyseErgebnis` ist eine Datenklasse mit ~40 Feldern, die alle
 Pipeline-Daten sammelt:
 - Adresse, Status, Fehler, Warnungen
 - Parzelle (gemeinde, parzellen_nummer, parzellen_flaeche_m2, egrid)
@@ -110,13 +117,16 @@ Pipeline-Daten sammelt:
 - BKP-Daten (Stadt Bern)
 - GWR-Daten (Liste der Gebaeude, Summe Geschossflaeche)
 - Potenzial (datenqualitaet, zulaessig_m2, ausschoepfung_prozent, ...)
+- GUI-Aliase (theoretisch_zulaessig_m2, ausschoepfungsgrad_prozent,
+  reserve_prozent, zonen_betrachtet, zone, arealbonus_anwendbar,
+  bemerkungen) - direkt aus PotenzialErgebnis befuellt
 - Original-Textbericht fuer Debug
 
 So koennen GUI (Streamlit) und CLI dieselbe `analysiere()`-Funktion
 nutzen, ohne Berechnungslogik zu duplizieren. **Separation of
 Concerns**.
 
-Pipeline-Aufruf:
+Pipeline-Aufruf (CLI):
 ```bash
 python src\bauzonenradar\analyse_adresse.py "Frutigenstrasse 25, 3604 Thun"
 ```
@@ -151,7 +161,7 @@ Empfehlungs-Block mit ASCII-Balken. Drei-Begrenzer-Logik
 Laedt Reglement-JSON pro Gemeinde, erkennt Synonyme automatisch,
 liefert Parameter fuer die Potenzialberechnung.
 
-### `gui/app.py` (NEU 03.05.2026 - LAUFEND, von Fabienne)
+### `gui/frontend.py` (NEU 03.05.2026 - Fabienne)
 
 Streamlit-GUI fuer Endanwender. Importiert `analysiere()` direkt
 aus `analyse_adresse.py` und rendert das `AnalyseErgebnis` grafisch:
@@ -167,9 +177,9 @@ aus `analyse_adresse.py` und rendert das `AnalyseErgebnis` grafisch:
 Eigenes CSS mit Inter-Schrift, Schwarz/Rot-Akzent, ruhiger
 professioneller Anmutung. Keine Streamlit-Default-Optik.
 
-Aufruf:
+Aufruf (aus Projekt-Root):
 ```powershell
-streamlit run src\bauzonenradar\gui\app.py
+streamlit run src\bauzonenradar\gui\frontend.py
 ```
 
 ## Reglement-Daten
@@ -190,6 +200,24 @@ streamlit run src\bauzonenradar\gui\app.py
 | `test_output_nach_fix.txt` | Snapshot-Verifikation Bug-Fix-Welle | Verifikations-Snapshot |
 | `fixtures/extract_*.xml` | OEREB-XML-Snapshots fuer Offline-Demos | erhalten via Whitelist |
 
+## Patch-Skripte (im Repo, dokumentarisch)
+
+Patch-Skripte sind im Repo erhalten als **Beleg fuer iterative Entwicklung**:
+
+| Skript | Zweck | Datum |
+|---|---|---|
+| `patch_potenzial.ps1` | Bug-Fixes Begrenzer-Logik | 29.04. |
+| `patch_begrenzer_bugs.ps1` | Bug-Fixes max_gebaeudelaenge=None | 29.04. |
+| `patch_thun_json.ps1` | thun.json-Erweiterung WA-Slash + ZPP | 29.04. |
+| `patch_gwr_integration.ps1` | GWR-Modul-Anbindung | 30.04. |
+| `patch_gwr_unvollstaendig.ps1` | GWR-Anzeige bei unvollstaendigen Daten | 30.04. |
+| `patch_potenzial_ergebnis.ps1` | AnalyseErgebnis-Refactoring | 03.05. |
+
+Jedes Skript hat eingebauten Backup-Mechanismus, Syntax-Check und
+Smoke-Test. Sie sind nicht reproduzierbar wiederholt ausfuehrbar (da
+sie auf bestimmten Vorgaenger-Code bauen), zeigen aber den
+nachvollziehbaren Entwicklungsweg.
+
 ## Lokales Archiv (`docs/archiv/`)
 
 Dieser Ordner ist via `.gitignore` aus dem Repo ausgeschlossen,
@@ -200,30 +228,34 @@ aber lokal vorhanden:
 - `extract_beispiel.xml` (Test-XML aus fruehen Tagen)
 - `test_zwoelf_adressen.py` (alte Python-Version)
 - `aufraeumen_30_04_2026.ps1` (Aufraeum-Skript)
-- `backup_vor_aufraeumen_*.zip` (ZIP-Sicherung des Aufraeumens)
+- `output_baumgarten_thun.md` (interessante Outputs)
+- `backup_vor_aufraeumen_*.zip` (ZIP-Sicherungen des Aufraeumens)
 
-## Geplante Erweiterungen
+## Status Iteration 4 (Stand 11.05.2026)
 
-### Iteration 4 (Streamlit-GUI - LAUFEND seit 03.05.2026)
+**Iteration 4 ist im Wesentlichen ABGESCHLOSSEN:**
 
-**Bereits umgesetzt**:
-- `gui/app.py` - Streamlit-Hauptseite mit eigenem CSS-Design (Fabienne)
-- `analysiere() -> AnalyseErgebnis` als Backend-API (Christophe)
-- Layout: Adress-Eingabe, Karte, Parzelle, Bebauungspotenzial, GWR-Tabelle
-- Plausibilitaets-Konflikt-Box bei GWR-Diskrepanz
+- [x] Streamlit-GUI mit eigenem CSS-Design (Fabienne)
+- [x] AnalyseErgebnis-Datenklasse fuer GUI/CLI-Trennung
+- [x] Alle drei Datenqualitaets-Pfade in GUI sichtbar
+- [x] Plausibilitaets-Konflikt-Box bei GWR-Diskrepanz
+- [x] WGS84-Karte mit Marker (Karten-Sektion)
+- [x] Tabellarische GWR-Anzeige mit Aggregation
+- [x] Live-Test mit 4 Adressen erfolgreich (11.05.)
 
-**Noch zu tun**:
-- Frontend-Felder an Backend-API anpassen (Fabienne, in Arbeit)
-- Live-Test mit echten Daten
-- Visuelle Datenqualitaets-Ampel finalisieren
-- PDF-Export (Could have, nicht Pflicht)
+**Verbleibende kleinere Punkte (optional / Phase 3 Generalprobe)**:
+- Negative Reserve bei >100% Ausschoepfung visuell sauberer
+- Zonen-Suffix `[hoehen_und_gz]` ausblenden
+- Karten-Marker eventuell kleiner
 
-### Iteration 5 (Gemeinde-Analyse, Anfang Juni 2026)
+## Status Iteration 5 (Konzept fertig, 1 Modul umgesetzt)
+
+Detail siehe `docs/konzept_gemeinde_analyse.md`.
 
 **Bereits umgesetzt am 30.04.2026**:
 - `datenquellen/gwr.py` - GWR-API integriert (1 von 4 Modulen)
 
-**Noch zu tun**:
+**Noch zu tun (Anfang Juni 2026)**:
 - `datenquellen/parzellen_liste.py` - alle Parzellen einer Gemeinde
 - `analyse_parzelle.py` - Eintrittspunkt fuer Parzellennummer/EGRID
 - `gemeinde_analyse.py` - Massen-Pipeline mit Throttling
