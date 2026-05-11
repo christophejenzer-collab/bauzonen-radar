@@ -762,22 +762,20 @@ Iter-5-Funktionen liefert.
 
 **Dauer**: 0800-1100 (Vormittag mit Fabienne digital), Nachmittag Familienfest
 
-### Fabiennes Doku-Vorarbeit (03. Mai)
+### Fabiennes Sonntag-Vorarbeit (in den Pausen am Vortag)
 
-Fabienne hat eigenstaendig die Doku-Architektur restrukturiert und
-gleich die Requirements-Grundlage fuer Iter 4 gelegt:
+Fabienne hat schon am Samstag Abend eigenstaendig die Doku-Architektur
+restrukturiert:
 
-- `Anforderungen.md` -> `docs/anforderungen_backend.md` (umbenannt,
-  vollstaendig ausgebaut: Stakeholder, Use Cases, FA-01 bis FA-47,
-  NA-01 bis NA-23, Annahmen AN-01 bis AN-18, Konflikt-Analyse
-  KF-1 bis KF-5)
+- `Anforderungen.md` -> `docs/anforderungen_backend.md` (umbenannt + Endung)
 - `Glossar` -> `docs/glossar.md` (Markdown-Endung, wird nun gerendert)
-- Neu: `docs/anforderungen_frontend.md` (F-01 bis F-06, NF-01 bis
-  NF-06, Design-Vorgaben za-ag.ch, GUI-Struktur)
+- Neu: `docs/anforderungen_frontend.md` (54 Zeilen)
+- Neu: `docs/releasenotes_backend.md` (25 Zeilen)
+- Neu: `docs/releasenotes_frontend.md` (27 Zeilen)
 
-Saubere Trennung Backend/Frontend. Fabienne uebernimmt die gesamte
-Projektdokumentation - Christophe fokussiert sich auf den Backend-Code.
-Begleitung durch Claude.AI als Requirements-Engineer.
+Saubere Trennung Backend/Frontend, getrennte Releasenotes pro Bereich.
+Das ist eigenstaendige RE-Pruefungsleistung. Ihre Releasenotes sind
+endkunden-orientiert (Capabilities, nicht Code-Aenderungen).
 
 ### Vormittag (0800-1100): Backend-Refactoring
 
@@ -843,6 +841,17 @@ oder bei interessanter Parzelle aehnliche Parzellen finden).
 Termin fuer naechste Woche vereinbart fuer richtige Reglement-
 Verifikation und Annahmen-Plausibilisierung.
 
+### Releasenote ergaenzt
+
+Backend-Releasenote zum Refactoring eingetragen in
+`docs/releasenotes_backend.md` (im Format von Fabiennes etabliertem
+Stil, endkunden-orientiert):
+
+- Strukturiertes Analyse-Ergebnis als Objekt
+- WGS84-Koordinaten fuer Karten
+- Trennung Berechnung/Ausgabe
+- Verifikation auf 12 Test-Adressen
+
 ### Commits am Sonntag
 
 - a971720: docs: Backend-Releasenote zum analysiere()-Refactoring
@@ -855,48 +864,6 @@ Verifikation und Annahmen-Plausibilisierung.
 - Doku-Architektur durch Fabienne verbessert (Backend/Frontend-Trennung)
 - Schwager-Termin auf naechste Woche verschoben
 - Mit Stand 03.05. ist das Tool weiter **demonstrationsreif**
-
----
-
-## 04. Mai 2026 (Montag) - GUI-Testing und Release Notes (Fabienne)
-
-**Dauer**: ca. 2 Stunden
-
-### GUI-Testing
-
-Fabienne hat `app.py` lokal aufgesetzt und das erste Mal gegen das
-echte Backend laufen lassen. Design und Struktur stimmen - Mapping-
-Probleme bei Feldnamen erwartet (Christophe hat noch keine vollstaendige
-Feldliste geliefert). Befunde dokumentiert, Klaerung mit Christophe
-steht am naechsten Tag an.
-
-### Release Notes erarbeitet
-
-Fabienne hat zwei endkunden-orientierte Dokumente geschrieben -
-Capabilities statt Code-Aenderungen, klar auf Nutzer-Sprache getrimmt:
-
-`docs/releasenotes_backend.md` - fasst Christophes Refactoring zusammen:
-- Strukturiertes Analyse-Ergebnis als Objekt (alle Werte direkt
-  zugreifbar)
-- WGS84-Koordinaten automatisch berechnet, direkt fuer Karte nutzbar
-- Pipeline laeuft weiter bei fehlenden Gemeinden oder GWR-Luecken
-- Berechnung und Ausgabe sauber getrennt (CLI und Web, gleiche Logik)
-- 12/12 Test-Adressen erfolgreich, alle drei Datenqualitaets-Pfade
-  abgedeckt
-
-`docs/releasenotes_frontend.md` - beschreibt die neue GUI:
-- Adresseingabe und Analyse-Start in einem Schritt
-- Grafische Potenzial- und Reserve-Darstellung
-- Farbliche Datenqualitaets-Ampel (verbindlich / geschaetzt /
-  nicht moeglich)
-- Kartenausschnitt mit Parzellen-Pin
-- Reduziertes Design, kein Streamlit-Default-Look
-- Keine Datenspeicherung
-
-### Bilanz Montag
-
-- GUI-Testing abgeschlossen, Mismatches fuer Christophe dokumentiert
-- Beide Release-Notes fertig und bereit zum Commit
 
 ---
 
@@ -994,78 +961,197 @@ Sie kann mit Search & Replace alle Aenderungen in 15-20 Min machen.
 
 ---
 
-## 09. Mai 2026 (Freitag) - Developer Requirements (Fabienne)
+## 11. Mai 2026 (Montag) - Iter-4-Abschluss: Frontend live, Backend-Fix, Repo aufgeraeumt
 
-**Dauer**: ca. 2 Stunden
-
-### Was passiert ist
-
-Fabienne hat die Anforderungsdokumente vom 03.05. in konkrete,
-entwickler-taugliche Requirements uebersetzt - direkt umsetzbar,
-mit Akzeptanzkriterien pro REQ. Zwei Dokumente entstanden:
-
-`docs/requirements_iteration4_backend.md` - acht REQs fuer Christophe:
-
-- REQ-B-01: `analysiere()` gibt `AnalyseResultat`-Objekt zurueck
-  (Blocker - GUI kann ohne das nicht live testen)
-- REQ-B-02: `koordinate_lv95` im Rueckgabe-Objekt gesetzt
-  (Blocker - Karte braucht Koordinaten)
-- REQ-B-03: alle GUI-Pflicht-Felder in `AnalyseErgebnis` verifiziert
-- REQ-B-04: Pipeline ueberlebt OEREB-, GWR- und BKP-Ausfall
-- REQ-B-05: Datenqualitaets-Trichotomie unveraendert (kein
-  Pseudo-Wert bei NICHT_MOEGLICH)
-- REQ-B-06: Disclaimer-Text als Feld oder Konstante verfuegbar
-- REQ-B-07: kein File-Write, kein Adress-Logging
-- REQ-B-08: Einzelabfrage unter 10 Sekunden
-
-`docs/requirements_iteration4_frontend.md` - acht REQs fuer Fabienne
-selbst, aus `anforderungen_frontend.md` direkt abgeleitet:
-
-- REQ-01: Adresseingabe + Backend-Import-Pattern
-- REQ-02: Datenqualitaets-Badge (drei Farben, drei Texte)
-- REQ-03: Progress-Bars Ausschoepfung und Reserve
-- REQ-04: Karte mit Pin (LV95 -> WGS84)
-- REQ-05: GWR-Tabelle + Plausibilitaets-Konflikt-Box
-- REQ-06: Fehlermeldung und Exception-Handling
-- REQ-07: Design gemaess za-ag.ch-Referenz
-- REQ-08: Performance, Datenschutz, Sprache
-
-### Entscheidungen
-
-Requirements als eigene Dokumente neben dem Code: Fachliche Entscheide,
-Konflikte und Annahmen explizit gemacht - nicht nur implizit im Code
-gelebt. Relevant fuer die Pruefungs-Kommission. PDF-Export bewusst als
-«Could have» eingestuft und auf spaeter verschoben.
-
-### Bilanz Freitag
-
-- Beide Requirements-Dokumente fertig und bereit zum Commit
-- Christophe hat klare Vorgaben fuer die Backend-Schnittstelle
-- Definition of Done fuer Iter. 4 verschriftlicht
-
----
-
-## 10. Mai 2026 (Sonntag) - Gemeinsamer Coding-Tag Iteration 4
-
-**Dauer**: Ganztag
+**Dauer**: ca. 3 Stunden ueber den Vormittag verteilt
 
 ### Ausgangslage
 
-Doku-Basis durch Fabienne vollstaendig: sechs Dokumente committed
-(03.05., 04.05., 09.05.). Christophe fokussiert sich auf Backend-Code,
-Fabienne setzt die GUI gemaess Requirements um.
+Fabienne hat ihr Frontend gepushed mit Anpassungen nach unserem
+Sonntags-Stand. Letzter Stand vom Dienstag (05.05.) war: Frontend
+crasht beim ersten Backend-Feldzugriff (`parzellenflaeche_m2` statt
+`parzellen_flaeche_m2`), Mapping-Tabelle an Fabienne uebergeben.
 
-### Aufgabenteilung
+Heute startet sie mit dem aktualisierten Frontend, und wir testen
+gemeinsam ob alles laeuft.
 
-Christophe arbeitet REQ-B-01 und REQ-B-02 ab - das sind die Blocker
-fuer den Live-Test. Fabienne baut die GUI-Sektionen sequenziell auf
-(Ampel, Balken, Karte, GWR-Block).
+### Erste Tests: GUI laeuft, aber Daten fehlen
 
-### Bilanz
+Streamlit startet sauber, Layout sieht super aus. Bei den 4 Test-
+Adressen (Thunstrasse 40, Frutigenstrasse 25, Kramgasse 49,
+Murifeldweg 8):
 
-- Iteration 4 in Arbeit
-- Backend-Blocker in Bearbeitung
-- GUI-Grundstruktur steht
+- ✅ Karten rendern mit roten Markern
+- ✅ Datenqualitaets-Badges in allen drei Pfaden korrekt
+- ✅ GWR-Tabelle wird sauber gerendert
+- ❌ Aber: Bebauungspotenzial zeigt nur Striche statt Zahlen
+- ❌ Zone(n) ist leer
+- ❌ "Keine Berechnung moeglich" auch bei VERBINDLICH-Pfad
+
+### Diagnose: Backend-Bug entdeckt
+
+Verdacht war zunaechst Frontend-Code. CLI-Test hat aber gezeigt:
+
+```
+datenqualitaet: 'VERBINDLICH'
+zulaessig_m2: None              <- Bug!
+ausschoepfung_prozent: None     <- Bug!
+zone: NICHT VORHANDEN           <- Feld existiert gar nicht
+```
+
+Das `PotenzialErgebnis`-Objekt hat aber die Daten:
+```
+potenzial_ergebnis.theoretisch_zulaessig_m2 = 118.5
+potenzial_ergebnis.ausschoepfungsgrad_prozent = 50.0
+potenzial_ergebnis.zonen_betrachtet = ['Bauklasse E ...']
+```
+
+**Ursache**: Beim Sonntag-Refactoring (`AnalyseErgebnis`) hatte ich
+einen `_zahlenfeld()`-Helper geschrieben der nach **falschen** Feldnamen
+suchte (`zulaessig_m2`, `geschossflaeche_zulaessig`). Die echten
+Namen im `PotenzialErgebnis` sind `theoretisch_zulaessig_m2` und
+`ausschoepfungsgrad_prozent`. Daher kam immer `None` zurueck.
+
+### Strategie-Entscheidung: Backend fixen, nicht Frontend
+
+Mit Fabienne abgesprochen: **Backend wird angepasst**. Argumente:
+- Backend-API war von Anfang an als flache Aliase gedacht
+- Aliase im Backend waeren keine Tech-Debt, sondern explizit so geplant
+- Fabiennes Code aendert sich nicht
+- Frontend-Code bleibt sauber, Backend stellt korrekt zur Verfuegung
+
+### Backend-Fix: AnalyseErgebnis-Aliase
+
+In `analyse_adresse.py`:
+
+**Aenderung 1**: AnalyseErgebnis-Klasse um 7 neue Felder erweitert:
+```python
+theoretisch_zulaessig_m2: Optional[float] = None
+ausschoepfungsgrad_prozent: Optional[float] = None
+reserve_prozent: Optional[float] = None
+zonen_betrachtet: list = field(default_factory=list)
+zone: Optional[str] = None
+arealbonus_anwendbar: bool = False
+bemerkungen: list = field(default_factory=list)
+```
+
+**Aenderung 2**: Befuellung mit direkten `getattr()`-Aufrufen statt
+defensiver `_zahlenfeld()`-Helper. Direkte Zugriffe auf die echten
+Feldnamen aus `PotenzialErgebnis`.
+
+### Verifikation: Drei CLI-Smoke-Tests
+
+```
+Test 1 (VERBINDLICH):    Thunstrasse 40, 3005 Bern
+   theoretisch_zulaessig_m2 = 118.5 m^2
+   ausschoepfungsgrad = 50.0%
+   zone = "Bauklasse E, Erhaltung..."
+
+Test 2 (GROBSCHAETZUNG): Frutigenstrasse 25, 3604 Thun
+   theoretisch_zulaessig_m2 = 1080 m^2
+   reserve_prozent = 65.67%
+   gwr_summe = 1520 m^2 (Plausibilitaets-Konflikt!)
+
+Test 3 (NICHT_MOEGLICH): Kramgasse 49, 3011 Bern
+   datenqualitaet = "NICHT_MOEGLICH"
+   zulaessig = None (korrekt)
+```
+
+Alle drei gruen.
+
+### Live-Test in der GUI
+
+Streamlit neu gestartet. **Vier Test-Adressen durchgespielt**:
+
+**Thunstrasse 40, 3005 Bern** (VERBINDLICH):
+- Bebauungspotenzial: 118 m^2 zulaessig, 50.0% Ausschoepfung, 50.0% Reserve
+- Progress-Bars rendern (rot fuer Ausschoepfung, gruen fuer Reserve)
+- Lagebeurteilung "Mittleres Verdichtungs-Potenzial"
+- ZONE(N) zeigt "Bauklasse E, Erhaltung..."
+- GWR-Tabelle mit 1 Gebaeude, 224 m^2 Geschossflaeche
+- **Plausibilitaets-Konflikt-Box** ausgeloest (GWR 224 m^2 > Soll 118 m^2)
+
+**Frutigenstrasse 25, 3604 Thun** (GROBSCHAETZUNG - das Highlight!):
+- GROBSCHAETZUNG-Badge mit Warnung
+- Theoretisch zulaessig: 1080 m^2, Ausschoepfung: 34.3%, Reserve: 65.7%
+- "Hohes Verdichtungs-Potenzial"
+- GWR-Tabelle: 304 m^2 x 5 Geschosse = 1520 m^2 (7 Wohnungen)
+- **Plausibilitaets-Konflikt-Box**: "GWR-Ist (1520 m^2) uebersteigt den
+  berechneten Soll-Wert (1080 m^2)"
+
+Das ist das Pruefungs-Highlight: Tool zeigt den 1.4-fachen Unterschied
+zwischen rechtlichem Soll und gebauter Realitaet. Klassischer Bestandsschutz-
+Fall, jetzt sichtbar.
+
+**Kramgasse 49, 3011 Bern** (NICHT_MOEGLICH):
+- NICHT MOEGLICH-Badge, "Quantitative Potenzialberechnung nicht moeglich"
+- Verweis auf Bauverwaltung
+- Keine Pseudo-Werte
+- "Keine GWR-Daten gefunden - Parzelle moeglicherweise unbebaut"
+
+**Murifeldweg 8, 3006 Bern** (Edge-Case):
+- GROBSCHAETZUNG mit 230.1% Ausschoepfung
+- Bauland-Reserve -130.1% (negativ wegen >100%)
+- "Praktisch ausgeschoepft"
+- GWR: 145 m^2 x 3 Geschosse = 435 m^2 (Tool schaetzte 37 m^2)
+- Konflikt-Box: "GWR-Ist (435 m^2) uebersteigt den berechneten Soll-Wert (37 m^2)"
+
+### Beobachtungen fuer Fabienne (optional UX)
+
+- Negative Reserve (-130.1%) visuell etwas seltsam.
+  Vorschlag: bei >100% Ausschoepfung "Reserve: 0%" anzeigen
+- Zone "Wohnen W3 [hoehen_und_gz]" — Klammer-Suffix ist intern-technisch,
+  fuer Endanwender koennte das ausgeblendet werden
+- Karten-Marker (roter Kreis) sehr gross, ueberdeckt die Parzelle
+
+Diese Punkte sind **optional fuer Phase 3 (Generalprobe Mitte Juni)**.
+Iter 4 ist substantiell fertig.
+
+### Repo-Aufraeumen vor Iter-4-Abschluss
+
+**Aufraeum-Aktion**:
+- Temp-Dateien geloescht: `analyse_adresse_aktuell.txt`, `patch_aliase.ps1`
+- `docs/START JenzC.txt` -> `docs/start_cheatsheet.md` (Markdown, klarer
+  Name, persoenliche Quick-Reference)
+- `tests/## interessante Objekte.txt` -> `docs/archiv/output_baumgarten_thun.md`
+  (lokal, nicht im Repo - interessante Output-Snapshots)
+- Patch-Skripte (5 im Repo, plus `patch_potenzial_ergebnis.ps1` vom 03.05.)
+  bleiben im Repo als **Beleg fuer iterative Entwicklung** mit Backup-
+  Mechanismus, Syntax-Check und Smoke-Tests
+- Backup-ZIP des Aufraeum-Stands unter `docs/archiv/`
+
+### struktur.md aktualisiert
+
+Stand 11.05. mit:
+- `gui/frontend.py` statt `gui/app.py`
+- `AnalyseErgebnis` mit ~40 Feldern (inkl. 7 neue GUI-Aliase)
+- Neue Doku-Dateien aufgenommen
+- Patch-Skripte-Sektion als Dokumentation
+- Iter-4-Status-Sektion mit Bilanz
+
+### Commits am 11.05.
+
+- b0fc2cd: fix: AnalyseErgebnis-Aliase korrekt aus PotenzialErgebnis befuellen
+- 40d3f0d: chore: Repo aufgeraeumt vor Iter-4-Abschluss
+- 440a26f: docs: struktur.md auf Stand 11.05.
+- (Plus weitere Doku-Updates folgen heute: projektplan, journal, releasenotes)
+
+### Bilanz Iter-4-Abschluss
+
+- Streamlit-GUI funktioniert vollstaendig mit echten Daten
+- Alle drei Datenqualitaets-Pfade sichtbar in der GUI
+- Plausibilitaets-Konflikt-Box als Pruefungs-Highlight
+- Backend-API stabil und sauber dokumentiert
+- Repo aufgeraeumt und konsistent
+- Fabiennes Design ist eine eigenstaendige Leistung mit Wow-Effekt
+
+**Iter 4 ist substantiell abgeschlossen**. Verbleibende UX-Polish kann
+in Iter 6 (Generalprobe) eingebaut werden.
+
+**Naechste Schritte**:
+- Schwager-Termin naechste Woche fuer Reglement-Verifikation
+- Iter 5 ab Anfang Juni: parzellen_liste.py, gemeinde_analyse.py, Excel-Export
+- Iter 6 Mitte Juni: Generalprobe + UX-Polish
 
 ---
 
@@ -1107,41 +1193,46 @@ fuer den Live-Test. Fabienne baut die GUI-Sektionen sequenziell auf
   fuer die Streamlit-GUI. Ohne sie haetten wir Berechnung in der
   GUI dupliziert. Mit ihr kann jede beliebige Oberflaeche dieselbe
   Logik nutzen.
+- **Defensive `_zahlenfeld()`-Helper waren ein Bug:** Beim Sonntag-
+  Refactoring habe ich `getattr()` mit mehreren moeglichen Feldnamen
+  versucht. Aber wenn keiner der Namen matcht, bekommt man `None`.
+  Lesson learned: bei stabilen Datenklassen direkt `getattr(obj, "name", None)`
+  mit dem korrekten Namen ist klarer als "Schema-Drift-Defensive".
 
 ---
 
-## Backlog (Stand 05.05.2026)
+## Backlog (Stand 11.05.2026)
 
-### Iteration 4 (Streamlit-GUI - LAUFEND seit 03.05.2026)
+### Iteration 4 (Streamlit-GUI - ABGESCHLOSSEN)
 
-**Bereits umgesetzt**:
+**Erledigt**:
 - [x] Fabienne: GitHub-Account aktiv, gepushed mehrfach
 - [x] Fabienne: Anforderungs-Liste in `docs/anforderungen_frontend.md`
 - [x] Doku-Architektur Backend/Frontend getrennt (Fabienne)
 - [x] Backend-API mit `AnalyseErgebnis` stabilisiert
 - [x] Streamlit-GUI mit eigenem CSS-Design (Fabienne)
-- [x] Layout-Test durchgefuehrt
-- [x] Mapping-Tabelle Backend/Frontend an Fabienne uebergeben
+- [x] AnalyseErgebnis-Aliase fuer GUI ergaenzt (7 Felder)
+- [x] Live-Test mit 4 Test-Adressen erfolgreich (alle 3 Pfade gruen)
+- [x] Plausibilitaets-Konflikt-Box bei GWR-Diskrepanz funktioniert
 
-**Noch zu tun**:
-- [ ] Frontend-Felder an Backend-API anpassen (Fabienne)
-- [ ] Live-Test mit echten Daten
-- [ ] Visuelle Datenqualitaets-Ampel finalisieren
-- [ ] Empfehlungs-Block als grafische Progress-Bar
+**Optional Phase 3 (Generalprobe Mitte Juni)**:
+- [ ] Negative Reserve bei >100% Ausschoepfung visuell sauberer
+- [ ] Zonen-Suffix `[hoehen_und_gz]` ausblenden fuer Endanwender
+- [ ] Karten-Marker eventuell kleiner
 - [ ] PDF-Export (Could have, nicht Pflicht)
 - [ ] Variable gGA aus Art. 46 BO Bern (verschoben)
 - [ ] Subtypen FA-FD der ZoeN (verschoben)
 - [ ] Schwager: stichprobenartige Verifikation BKP-Werte
       (Termin naechste Woche)
 
-### Iteration 5 (Gemeinde-Analyse, Anfang Juni 2026)
+### Iteration 5 (Gemeinde-Analyse - 1 von 4 Modulen erledigt)
 
 Detail siehe `docs/konzept_gemeinde_analyse.md`.
 
 **Bereits umgesetzt am 30.04.2026**:
-- [x] Modul `gwr.py` (GWR-API fuer bestehende Gebaeude) (1 von 4 Modulen)
+- [x] Modul `gwr.py` (GWR-API fuer bestehende Gebaeude)
 
-**Noch zu tun**:
+**Noch zu tun (Anfang Juni 2026)**:
 - [ ] Modul `parzellen_liste.py` (alle Parzellen einer Gemeinde)
 - [ ] Modul `gemeinde_analyse.py` (Massen-Pipeline mit Throttling)
 - [ ] Excel/CSV-Export-Funktionen
@@ -1155,6 +1246,5 @@ Detail siehe `docs/konzept_gemeinde_analyse.md`.
 - [ ] Live-Demo-Adressen auswaehlen
 - [ ] Drei moegliche Code-Fragen vorbereiten
 - [ ] Backup-Plan falls Internet/OEREB-Webservice down
-- [ ] README finalisieren
+- [ ] README finalisieren mit GUI-Screenshots
 - [ ] Koeniz als 4. Gemeinde aufnehmen (optional)
-
