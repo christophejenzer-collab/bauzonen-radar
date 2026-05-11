@@ -128,6 +128,15 @@ class AnalyseErgebnis:
     ausschoepfung_prozent: Optional[float] = None
     lagebeurteilung: Optional[str] = None  # "HOCH" | "MITTEL" | "GERING" | "AUSGESCHOEPFT"
 
+    # GUI-Aliase aus PotenzialErgebnis (fuer Streamlit-Frontend)
+    theoretisch_zulaessig_m2: Optional[float] = None
+    ausschoepfungsgrad_prozent: Optional[float] = None
+    reserve_prozent: Optional[float] = None
+    zonen_betrachtet: list = field(default_factory=list)
+    zone: Optional[str] = None
+    arealbonus_anwendbar: bool = False
+    bemerkungen: list = field(default_factory=list)
+
     # Original-Textbericht (fuer CLI-Ausgabe und Debug)
     textbericht: Optional[str] = None
 
@@ -369,20 +378,27 @@ def analysiere(adresse: str) -> AnalyseErgebnis:
         ergebnis.potenzial_ergebnis = potenzial
         ergebnis.textbericht = potenzial.textbericht()
 
-        # Schluesselwerte rauspicken (falls die Felder im PotenzialErgebnis existieren)
+        # Direkt vom PotenzialErgebnis lesen (echte Feldnamen)
         ergebnis.datenqualitaet = _attr_zu_string(potenzial, "datenqualitaet")
         ergebnis.bemessungs_system = _attr_zu_string(potenzial, "bemessungs_system") \
+            or _attr_zu_string(potenzial, "verwendetes_system") \
             or _attr_zu_string(potenzial, "system")
-        ergebnis.zulaessig_m2 = _zahlenfeld(potenzial,
-            "zulaessig_m2", "geschossflaeche_zulaessig", "zulaessig")
-        ergebnis.realisiert_m2 = _zahlenfeld(potenzial,
-            "realisiert_m2", "geschossflaeche_realisiert", "realisiert")
-        ergebnis.reserve_m2 = _zahlenfeld(potenzial,
-            "reserve_m2", "reserve")
-        ergebnis.ausschoepfung_prozent = _zahlenfeld(potenzial,
-            "ausschoepfung_prozent", "ausschoepfung")
+        ergebnis.zulaessig_m2 = getattr(potenzial, "theoretisch_zulaessig_m2", None)
+        ergebnis.realisiert_m2 = getattr(potenzial, "geschaetzt_realisiert_m2", None)
+        ergebnis.reserve_m2 = getattr(potenzial, "reserve_m2", None)
+        ergebnis.ausschoepfung_prozent = getattr(potenzial, "ausschoepfungsgrad_prozent", None)
         ergebnis.lagebeurteilung = _attr_zu_string(potenzial,
             "lagebeurteilung", "status")
+
+        # GUI-Aliase fuer Fabiennes Frontend
+        ergebnis.theoretisch_zulaessig_m2 = getattr(potenzial, "theoretisch_zulaessig_m2", None)
+        ergebnis.ausschoepfungsgrad_prozent = getattr(potenzial, "ausschoepfungsgrad_prozent", None)
+        ergebnis.reserve_prozent = getattr(potenzial, "reserve_prozent", None)
+        ergebnis.zonen_betrachtet = list(getattr(potenzial, "zonen_betrachtet", []) or [])
+        ergebnis.zone = (ergebnis.zonen_betrachtet[0]
+                         if ergebnis.zonen_betrachtet else None)
+        ergebnis.arealbonus_anwendbar = bool(getattr(potenzial, "arealbonus_anwendbar", False))
+        ergebnis.bemerkungen = list(getattr(potenzial, "bemerkungen", []) or [])
     except Exception as fehler:
         ergebnis.warnungen.append(f"Potenzialberechnung fehlgeschlagen: {fehler}")
 
