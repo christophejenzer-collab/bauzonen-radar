@@ -54,6 +54,14 @@ KAT_UNAUFFAELLIG = "UNAUFFAELLIG"
 KAT_AUSSCHLUSS_REGLEMENT = "AUSSCHLUSS_REGLEMENT"
 KAT_AUSSCHLUSS_ZU_KLEIN = "AUSSCHLUSS_ZU_KLEIN"
 KAT_AUSSCHLUSS_FEHLER = "AUSSCHLUSS_FEHLER"
+KAT_AUSSCHLUSS_VERKEHR = "AUSSCHLUSS_VERKEHR"
+KAT_AUSSCHLUSS_WALD_VERDACHT = "AUSSCHLUSS_WALD_VERDACHT"
+
+# Bodenbedeckungs-Schwellen (Iter 5)
+MIN_FLAECHE_VERKEHR_AUSSCHLUSS = 1500.0  # m^2 - kleinere koennten Garten + Gehweg sein
+MIN_FLAECHE_WALD_VERDACHT = 2000.0
+NOLC_WALD = {41, 42, 43, 44, 45, 46, 47}  # Geschlossene/offene Baumbestaende + Hecken
+NOLC_BEFESTIGT = {11, 12, 13, 14, 15, 16, 17}  # Befestigte Flaechen
 
 
 # ---------------------------------------------------------------------------
@@ -196,6 +204,23 @@ def klassifiziere(ergebnis) -> str:
     zulaessig = ergebnis.theoretisch_zulaessig_m2
     if zulaessig is None:
         return KAT_AUSSCHLUSS_REGLEMENT
+
+    # 4b. Bodenbedeckungs-Filter (Iter 5)
+    # Nur fuer LEERE Parzellen (Geb=0) anwenden - bebaute behalten ihre Logik!
+    flaeche_m2 = ergebnis.parzellen_flaeche_m2 or 0.0
+    anz_geb = len(ergebnis.gwr_gebaeude or [])
+    if anz_geb == 0:
+        # Strasse: TLM-Treffer + Arealstat=Befestigt + grosse Flaeche
+        tlm_t = getattr(ergebnis, "tlm_strasse_treffer", 0)
+        areal_c = getattr(ergebnis, "arealstat_code", None)
+        if (tlm_t > 0
+                and areal_c in NOLC_BEFESTIGT
+                and flaeche_m2 >= MIN_FLAECHE_VERKEHR_AUSSCHLUSS):
+            return KAT_AUSSCHLUSS_VERKEHR
+        # Wald: Arealstat=Wald + grosse Flaeche (auch mit Forstweg/TLM ok)
+        if (areal_c in NOLC_WALD
+                and flaeche_m2 >= MIN_FLAECHE_WALD_VERDACHT):
+            return KAT_AUSSCHLUSS_WALD_VERDACHT
 
     # 5. Leere Parzelle (kein GWR-Gebaeude)
     gebaeude = ergebnis.gwr_gebaeude or []

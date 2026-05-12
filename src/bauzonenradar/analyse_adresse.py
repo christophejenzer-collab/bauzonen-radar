@@ -137,6 +137,11 @@ class AnalyseErgebnis:
     arealbonus_anwendbar: bool = False
     bemerkungen: list = field(default_factory=list)
 
+    # Bodenbedeckung (Iter 5 NEUGESCHAEFT-False-Positive-Filter)
+    tlm_strasse_treffer: int = 0
+    tlm_strassen_namen: list = field(default_factory=list)
+    arealstat_code: Optional[int] = None
+    arealstat_beschreibung: Optional[str] = None
     # Original-Textbericht (fuer CLI-Ausgabe und Debug)
     textbericht: Optional[str] = None
 
@@ -669,6 +674,27 @@ def analysiere_per_egrid(egrid, koordinate_lv95=None, adresse_label=None):
         ergebnis.gwr_meldung = (
             "GWR uebersprungen (keine Koordinate verfuegbar)"
         )
+
+    # --- Schritt 4b: Bodenbedeckung (TLM3D + Arealstatistik) ---
+    # Iter 5: Filter fuer Strassen/Wald-False-Positives in NEUGESCHAEFT
+    if koordinate_lv95:
+        try:
+            from datenquellen.tlm3d import TlmStrassenQuelle, ArealstatistikQuelle
+            tlm = TlmStrassenQuelle()
+            strassen = tlm.strassen_an_koord(koordinate_lv95, tolerance=15)
+            ergebnis.tlm_strasse_treffer = len(strassen)
+            ergebnis.tlm_strassen_namen = [
+                s.strassenname for s in strassen if s.strassenname
+            ]
+            areal = ArealstatistikQuelle()
+            neueste = areal.neueste_klassifikation(koordinate_lv95)
+            if neueste:
+                ergebnis.arealstat_code = neueste.code
+                ergebnis.arealstat_beschreibung = neueste.beschreibung
+        except ImportError:
+            pass
+        except Exception as fehler:
+            ergebnis.warnungen.append(f"Bodenbedeckung uebersprungen ({fehler.__class__.__name__})")
 
     # --- Schritt 5: Potenzialberechnung ---
     try:
