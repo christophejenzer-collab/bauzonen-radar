@@ -70,3 +70,7 @@ docs/archiv/
 !tests/fixtures/*.xml
 !tests/fixtures/*.md
 src/bauzonenradar/gui/app_christophe_test.py
+
+# Excel-Exports
+ausgaben/
+
