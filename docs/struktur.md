@@ -14,12 +14,10 @@ bauzonen-radar/
 +-- start.ps1                   PowerShell-Helper: venv + cd ins Modul
 +-- demo.ps1                    Demo-Aufrufe fuer Test-Adressen
 |
-+-- patch_potenzial.ps1                Patch: Bug-Fixes Vormittag 29.04.
-+-- patch_begrenzer_bugs.ps1           Patch: Bug-Fixes Mittag 29.04.
-+-- patch_thun_json.ps1                Patch: thun.json-Erweiterung 29.04.
-+-- patch_gwr_integration.ps1          Patch: GWR-Integration 30.04.
-+-- patch_gwr_unvollstaendig.ps1       Patch: GWR-Anzeige verbessern 30.04.
-+-- patch_potenzial_ergebnis.ps1       Patch: AnalyseErgebnis-Refactoring 03.05.
++-- historie/
+|   +-- patches/                      6 alte Patch-Skripte aus Iter 2-4
+|       +-- README.md                 Erklaerung der Patches
+|       +-- patch_*.ps1               6 Skripte (siehe Tabelle unten)
 |
 +-- src/
 |   `-- bauzonenradar/          Hauptpaket
@@ -202,16 +200,19 @@ streamlit run src\bauzonenradar\gui\frontend.py
 
 ## Patch-Skripte (im Repo, dokumentarisch)
 
-Patch-Skripte sind im Repo erhalten als **Beleg fuer iterative Entwicklung**:
+Patch-Skripte aus Iter 2-4 sind in `historie/patches/` erhalten als
+**Beleg fuer iterative Entwicklung**:
 
 | Skript | Zweck | Datum |
 |---|---|---|
-| `patch_potenzial.ps1` | Bug-Fixes Begrenzer-Logik | 29.04. |
-| `patch_begrenzer_bugs.ps1` | Bug-Fixes max_gebaeudelaenge=None | 29.04. |
-| `patch_thun_json.ps1` | thun.json-Erweiterung WA-Slash + ZPP | 29.04. |
-| `patch_gwr_integration.ps1` | GWR-Modul-Anbindung | 30.04. |
-| `patch_gwr_unvollstaendig.ps1` | GWR-Anzeige bei unvollstaendigen Daten | 30.04. |
-| `patch_potenzial_ergebnis.ps1` | AnalyseErgebnis-Refactoring | 03.05. |
+| `historie/patches/patch_potenzial.ps1` | Bug-Fixes Begrenzer-Logik | 29.04. |
+| `historie/patches/patch_begrenzer_bugs.ps1` | Bug-Fixes max_gebaeudelaenge=None | 29.04. |
+| `historie/patches/patch_thun_json.ps1` | thun.json-Erweiterung WA-Slash + ZPP | 29.04. |
+| `historie/patches/patch_gwr_integration.ps1` | GWR-Modul-Anbindung | 01.05. |
+| `historie/patches/patch_gwr_unvollstaendig.ps1` | GWR-Anzeige bei unvollstaendigen Daten | 01.05. |
+| `historie/patches/patch_potenzial_ergebnis.ps1` | AnalyseErgebnis-Refactoring | 03.05. |
+
+Siehe `historie/patches/README.md` fuer Details zur Methode.
 
 Jedes Skript hat eingebauten Backup-Mechanismus, Syntax-Check und
 Smoke-Test. Sie sind nicht reproduzierbar wiederholt ausfuehrbar (da
