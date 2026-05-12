@@ -248,18 +248,48 @@ aber lokal vorhanden:
 - Zonen-Suffix `[hoehen_und_gz]` ausblenden
 - Karten-Marker eventuell kleiner
 
-## Status Iteration 5 (Konzept fertig, 1 Modul umgesetzt)
+## Status Iteration 5 (Stand 12.05.2026)
+
+**Iteration 5 ist ABGESCHLOSSEN** - alle 4 geplanten Module plus
+3 Bonus-Module umgesetzt an einem Tag (~11h Session).
 
 Detail siehe `docs/konzept_gemeinde_analyse.md`.
 
-**Bereits umgesetzt am 30.04.2026**:
-- `datenquellen/gwr.py` - GWR-API integriert (1 von 4 Modulen)
+**Umgesetzt**:
 
-**Noch zu tun (Anfang Juni 2026)**:
-- `datenquellen/parzellen_liste.py` - alle Parzellen einer Gemeinde
-- `analyse_parzelle.py` - Eintrittspunkt fuer Parzellennummer/EGRID
-- `gemeinde_analyse.py` - Massen-Pipeline mit Throttling
+- [x] `datenquellen/gwr.py` (30.04. vorgebaut, 12.05. EGRID-Fix)
+  - `gebaeude_zu_adresse()` fuer Einzel-Analyse
+  - `gebaeude_zu_egrid()` fuer Massen-Analyse (NEU 12.05.)
+  - `_identify_features()` als gemeinsamer Helper
+- [x] `datenquellen/parzellen_liste.py` (12.05.)
+  - Praefix-Baum-Suche umgeht SearchAPI-Limit von 50 Treffern
+  - Oberhofen: 1176 Parzellen via 161 API-Calls in 126 Sek
+- [x] `datenquellen/tlm3d.py` (12.05., BONUS)
+  - `TlmStrassenQuelle` (offizielle TLM3D-Strassen)
+  - `ArealstatistikQuelle` (BFS-Bodenbedeckung 2023)
+  - Gemeinsame `_MapServerIdentifyBasis`
+- [x] `analyse_adresse.py` (12.05. erweitert)
+  - `analysiere_per_egrid()` als Massen-Analyse-Eintrittspunkt
+  - `AnalyseErgebnis` um 4 BB-Felder erweitert
+- [x] `gemeinde_cache.py` (12.05.)
+  - SQLite-Cache via Pickle-Serialisierung (Strategie A)
+  - Wiederaufnahme nach Abbruch, idempotent
+- [x] `klassifikation.py` (12.05.)
+  - 7 Geschaeftslogik-Kategorien + 2 Bodenbedeckungs-Filter
+  - Schwellen als Konstanten (am Schwager zu verifizieren)
+- [x] `gemeinde_analyse.py` (12.05.)
+  - Haupt-Pipeline mit Throttling, Retry, Progress-Logging mit ETA
+  - CLI mit argparse, KeyboardInterrupt-sicher
+- [x] `excel_export.py` (12.05.)
+  - 6 Sheets, gestylte Header, Freeze-Panes, GRUDIS-Links
 
-Neu in `src/bauzonenradar/ausgabe/`:
-- `excel_export.py` - Rangliste als XLSX
-- `csv_export.py` - Rangliste als CSV
+**Pilot-Lauf Oberhofen am Thunersee** (12.05.2026):
+- 1176 Parzellen, 41 Min, 0 Fehler
+- 170 hochwertige Kandidaten identifiziert
+- 23 False-Positives durch Bodenbedeckungs-Filter eliminiert
+- Verifikation 7 Stichproben gegen map.geo.admin.ch
+
+**Bekannte Limitationen** (Iter 6 oder Folgeprojekt):
+- Schmale Waldparzellen (Zentroid am Rand) nicht erwischt
+- GWR-Polygon-Bug bei Hauptgebaeude weit vom Zentroid
+- Loesung: Polygon-Intersection mit Parzellengeometrie

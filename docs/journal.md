@@ -18,6 +18,200 @@ liefern die Quellen-Wahrheit fuer Daten und Reihenfolge.
 
 ---
 
+## 12. Mai 2026 - Iteration 5 komplett (~11h)
+
+Massive Tagesarbeit, Iter 5 von 1/4 Modulen auf 4/4 + Bonus.
+Ablauf grob: parzellen_liste -> gemeinde_analyse -> excel_export ->
+GWR-Bug entdeckt + gefixt -> Verifikation -> Bodenbedeckungs-Filter.
+
+### Iter-5-Module fertig
+
+**parzellen_liste.py mit Praefix-Baum (180 Zeilen)**
+
+Problem: swisstopo SearchAPI limitiert auf 50 Treffer pro Anfrage.
+Loesung: rekursive Praefix-Suche (`Oberhofen`, dann `Oberhofen 1`,
+`Oberhofen 10`, etc.) mit Deduplizierung via EGRID-Set.
+Resultat fuer Oberhofen: 1176 Parzellen via 161 API-Calls in 126 Sek.
+
+**gemeinde_cache.py (520 Zeilen)**
+
+SQLite-Cache fuer komplette AnalyseErgebnisse via pickle-Serialisierung
+(Strategie A - vollstaendige Serialisierung). Wiederaufnahme nach
+Abbruch klappt, Cache ueberlebt Strg+C, neue Eintraege idempotent.
+
+**klassifikation.py (250 Zeilen, mit v2)**
+
+Sieben Geschaeftslogik-Kategorien:
+VERDICHTUNG, NEUGESCHAEFT, ERSATZNEUBAU, UNAUFFAELLIG, AUSGEREIZT,
+AUSSCHLUSS_REGLEMENT, AUSSCHLUSS_ZU_KLEIN.
+Wichtig: nutzt die ECHTE Ausschoepfung aus GWR (Ist/Soll * 100),
+nicht das `ausschoepfungsgrad_prozent`-Feld (basiert auf 25%-
+Platzhalter und ist deshalb fuer Iter 5 unbrauchbar).
+Schwellen als Konstanten - am Schwager-Termin zu verifizieren.
+
+**gemeinde_analyse.py (340 Zeilen)**
+
+Haupt-Pipeline: parzellen_liste -> pro Parzelle Cache-Check ->
+analysiere_per_egrid -> klassifiziere -> Cache-Schreiben.
+Throttling 0.7 Sek zwischen Live-Calls (nicht bei Cache-Hits),
+Retry 3x mit 2s-Delay bei API-Fehler, Progress-Logging alle 25
+Parzellen mit ETA, KeyboardInterrupt-sicher.
+CLI-Flags: --kanton, --no-cache, --refresh-aelter-als TAGE,
+--limit N, --throttling SEK.
+
+**excel_export.py (470 Zeilen)**
+
+XLSX-Export aus dem KantonsCache mit 6 Sheets:
+Statistik / Verdichtung / Neugeschaeft / Ersatzneubau / Ausgereizt /
+Alle. Header gestylt (Dunkelblau + weiss + bold), Borders, Auto-
+Spaltenbreite, Freeze-Panes, GRUDIS-Direktlinks pro Parzelle.
+
+### GWR-Bug entdeckt + gefixt
+
+Erster voller Lauf Oberhofen 1176 Parzellen lieferte:
+- 489 NEUGESCHAEFT (41% aller Parzellen leeres Bauland!?)
+- 0 VERDICHTUNG, 0 ERSATZNEUBAU, 0 AUSGEREIZT
+Statistisch unmoeglich fuer ein 2400-Einwohner-Dorf.
+
+Ursache: `analysiere_per_egrid()` rief
+`gwr.gebaeude_zu_adresse('Oberhofen Parz. N')` - das ist kein
+echter Adress-String, GWR fand 0 Treffer fuer alle bebauten Parzellen.
+Konsequenz: alle bebauten Parzellen ohne Adress-Label landeten in
+NEUGESCHAEFT.
+
+Loesung: neue Methode `gebaeude_zu_egrid(egrid, koordinate_lv95)`
+in gwr.py. Nutzt swisstopo MapServer-identify Endpoint
+(`ech/MapServer/identify`, tolerance=500) mit Punkt-Geometrie und
+filtert die Response nach `properties.egrid`. Kein zweiter API-Call
+zum MapServer noetig - identify liefert alle Gebaeude-Properties
+direkt (egid, garea, gastw, gbaup, etc.).
+
+Smoke-Test Schulthesserstrasse 38 (CH569646354766):
+Soll 624 m^2, Ist GWR 202 m^2, Bauperiode 8011 (vor 1919), Klassifikation
+ERSATZNEUBAU. Voller Re-Run nach Cache-Loeschen ergab:
+- VERDICHTUNG: 0 -> 53
+- ERSATZNEUBAU: 1 -> 40
+- AUSGEREIZT: 0 -> 75
+- NEUGESCHAEFT: 489 -> 285
+- 168 hochwertige Kandidaten identifiziert
+
+Performance unveraendert (1.83 Sek/Parzelle) - GWR-Call laeuft
+parallel zur OEREB-Latenz.
+
+### Verifikation 7 Stichproben via map.geo.admin.ch
+
+Nach dem GWR-Fix das Excel angeschaut. Top NEUGESCHAEFT-Eintraege
+sind verdaechtig: alle Mischzone M2, gleiche Soll-Werte. Stichprobe
+verifiziert auf der swisstopo-Karte:
+- Parz 1 (25789 m^2 M2): STRASSE
+- Parz 677 (17801 m^2 W1): WALD
+- Parz 370 (13994 m^2 W1): WALD
+- Parz 375 (11541 m^2 M2): WALD
+- Parz 44 (5491 m^2 W1): STRASSE
+- Parz 35 (4614 m^2 M2): bebaut, GWR-Datenluecke
+- Parz 100 (969 m^2 W2): bebaut, GWR-Datenluecke
+
+Erkenntnis: 5/7 sind Strassen oder Wald, die im OEREB einen
+Bauzonen-Eintrag haben (Datenluecke der OEREB-Quelle). 2/7 sind
+bebaut, aber GWR ordnet die Gebaeude nicht via EGRID zu (Polygon-
+Problem bei Grenzfaellen).
+
+### Bodenbedeckungs-Filter (~3h)
+
+Neue Datenquelle `src/bauzonenradar/datenquellen/tlm3d.py` (288 Zeilen):
+- `TlmStrassenQuelle`: Layer `ch.swisstopo.swisstlm3d-strassen`,
+  offizielle TLM3D-Strassen, 100% zuverlaessig
+- `ArealstatistikQuelle`: Layer `ch.bfs.arealstatistik-bodenbedeckung`,
+  NOLC04-Codes, Daten 2023, 100x100m-Raster, mit Wasser-False-Positive-
+  Bug bei Ufer-Parzellen - deshalb konservativ als 'Verdacht' behandelt
+
+Beide nutzen MapServer-identify (wie GWR). Sweet-spot Tolerance fuer
+Arealstatistik bei 50m gefunden (10m=0 Treffer, 100m+=Nachbar-Parzellen).
+
+Zwei neue Klassifikationen:
+- AUSSCHLUSS_VERKEHR: TLM-Strasse + Arealstat=Befestigt
+  (Code 11) + Flaeche>1500 + Geb=0 -> 99% sicher Strasse (4 Indikatoren)
+- AUSSCHLUSS_WALD_VERDACHT: Arealstat=Wald (Code 41-47) + Flaeche>2000
+  + Geb=0 -> grosse Waldparzellen. 'VERDACHT' weil Arealstatistik
+  nicht 100% verlaesslich (Wasser-Bug, alte Erhebung 1981 in
+  Edge-Cases sichtbar).
+
+Voller Re-Run Nr. 3 mit Bodenbedeckungs-Filter (1176 Parzellen, 41 Min):
+- VERDICHTUNG: 55, NEUGESCHAEFT: 257, ERSATZNEUBAU: 38,
+  UNAUFFAELLIG: 132, AUSGEREIZT: 77,
+  AUSSCHLUSS_VERKEHR: 20 (NEU), AUSSCHLUSS_WALD_VERDACHT: 3 (NEU),
+  AUSSCHLUSS_REGLEMENT: 506, AUSSCHLUSS_ZU_KLEIN: 88
+- 23 False-Positives erfolgreich umklassifiziert
+- 170 hochwertige Kandidaten identifiziert
+
+### Bekannte Limitationen (Iter 6)
+
+- Schmale Waldparzellen (<2000 m^2 oder Zentroid am Rand) werden
+  von der Arealstatistik nicht erwischt - braucht Polygon-Intersection
+- GWR-Polygon-Bug: bei bebauten Parzellen wo das Hauptgebaeude weit
+  weg vom Zentroid ist, findet identify mit tolerance=500 das
+  Gebaeude nicht. Loesung in Iter 6 via geometrische Suche
+- Arealstatistik 1981 ist veraltet - bei Ufer-Parzellen kommt
+  manchmal "Wasser" zurueck, deshalb 'VERDACHT'-Suffix
+
+### Erkenntnisse
+
+- **Konservatives Filtern ist besser als aggressives.** 23 echte
+  Treffer sind wertvoller als 80 mit False Positives. AUSSCHLUSS_VERKEHR
+  verlangt 4 Indikatoren gleichzeitig (TLM + Areal + Flaeche + Geb=0).
+- **Datenqualitaet ist ein Engineering-Befund**, kein Bug. Strassen
+  mit Bauzonen-Eintrag im Kataster sind ein OEREB-Datenproblem, nicht
+  unseres. Tool dokumentiert die Limitation transparent.
+- **GWR via EGRID ist deutlich robuster als GWR via Adresse.** Bei
+  Massen-Analyse gibt es kein echtes Adress-Label, nur Parzellen-
+  Nummern. EGRID + Koordinate ist der richtige Eintrittspunkt.
+- **Visuelle Verifikation auf map.geo.admin.ch ist Teil der Pipeline.**
+  Pruefungs-Highlight: "Wir haben das Tool gegen die Karte verifiziert
+  und einen weiteren Datenfehler im OEREB-Datensatz identifiziert."
+- **MapServer-identify als zentraler Pattern** fuer alle swisstopo-
+  Layer (GWR, TLM3D-Strassen, Arealstatistik). Einheitliche
+  HTTP-Logik in `_MapServerIdentifyBasis`.
+
+### Code-Bilanz
+
+Heute neu:
+- src/bauzonenradar/datenquellen/parzellen_liste.py (180 Zeilen)
+- src/bauzonenradar/gemeinde_cache.py (520 Zeilen)
+- src/bauzonenradar/klassifikation.py (250 Zeilen)
+- src/bauzonenradar/gemeinde_analyse.py (340 Zeilen)
+- src/bauzonenradar/excel_export.py (470 Zeilen)
+- src/bauzonenradar/datenquellen/tlm3d.py (288 Zeilen)
+- gwr.py erweitert (gebaeude_zu_egrid + _identify_features)
+- analyse_adresse.py erweitert (AnalyseErgebnis +4 Felder, BB-Aufruf)
+
+Total: ~2300 produktive Zeilen, 9 Commits.
+
+### Test-Resultate Oberhofen am Thunersee (1176 Parzellen)
+
+| Klassifikation | Anzahl | Anteil |
+|---|---:|---:|
+| AUSSCHLUSS_REGLEMENT | 506 | 43% |
+| NEUGESCHAEFT | 257 | 22% |
+| UNAUFFAELLIG | 132 | 11% |
+| AUSSCHLUSS_ZU_KLEIN | 88 | 7% |
+| AUSGEREIZT | 77 | 7% |
+| VERDICHTUNG | 55 | 5% |
+| ERSATZNEUBAU | 38 | 3% |
+| AUSSCHLUSS_VERKEHR | 20 | 2% |
+| AUSSCHLUSS_WALD_VERDACHT | 3 | 0.3% |
+
+170 hochwertige Kandidaten (Verdichtung + Ersatzneubau + Ausgereizt)
+zur weiteren Pruefung, 257 Neugeschaeft mit Datenluecken-Verdacht.
+
+### Naechste Schritte
+
+- Mail an Fabienne mit Excel-Anhang (Beispiel Oberhofen)
+- Schwager-Termin: Schwellen-Verifikation + Fragen zu GWR-Polygon-Bug
+- Beispiel-XLSX in docs/beispiele/ ablegen (versioniert)
+- Iter 6: Polygon-Intersection fuer GWR + Wald
+
+---
+
 ## 22. April 2026 (Dienstag) - Projekt-Setup und erster Proof-of-Concept
 
 **Dauer**: ein Arbeitstag

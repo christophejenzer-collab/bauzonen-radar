@@ -10,7 +10,7 @@ Iteration 1: Pipeline               [ABGESCHLOSSEN] Maerz/April 2026
 Iteration 2: Potenzialberechnung    [ABGESCHLOSSEN] April 2026
 Iteration 3: Verifikation           [ABGESCHLOSSEN] 28.+29.04.2026
 Iteration 4: Webseite (Streamlit)   [ABGESCHLOSSEN] 03.-11.05.2026
-Iteration 5: Gemeinde-Analyse       [LAUFEND]       1 von 4 Modulen fertig (GWR)
+Iteration 5: Gemeinde-Analyse       [ABGESCHLOSSEN] 12. Mai 2026
 Iteration 6: Generalprobe           [GEPLANT]       Mitte Juni 2026
 ```
 
@@ -146,7 +146,7 @@ Bestandsbauten.
 - Zonen-Suffix `[hoehen_und_gz]` ausblenden fuer Endanwender
 - Karten-Marker eventuell kleiner
 
-## Iteration 5: Gemeinde-Analyse (laufend)
+## Iteration 5: Gemeinde-Analyse (abgeschlossen)
 
 **Zeitraum**: Begonnen 30. April 2026, geplant Anfang Juni 2026
 
@@ -157,14 +157,17 @@ Kandidaten ausgeben.
 **Detail-Konzept**: siehe `docs/konzept_gemeinde_analyse.md`
 (708 Zeilen, empirisch verifiziert mit 4 API-Spikes)
 
-**Status der vier geplanten Module**:
+**Status der vier geplanten Module + Bonus**:
 
 | Modul | Status | Stand |
 |---|---|---|
-| `gwr.py` | ✅ FERTIG | 30.04.2026, vorgebaut + integriert |
-| `parzellen_liste.py` | offen | geplant Anfang Juni |
-| `gemeinde_analyse.py` | offen | geplant Anfang Juni |
-| Excel-Export | offen | geplant Anfang Juni |
+| `gwr.py` (inkl. GWR-Fix) | ✅ FERTIG | 30.04. vorgebaut, 12.05. EGRID-Fix |
+| `parzellen_liste.py` | ✅ FERTIG | 12.05.2026 (Praefix-Baum) |
+| `gemeinde_analyse.py` | ✅ FERTIG | 12.05.2026 (Throttling+Cache+ETA) |
+| `excel_export.py` | ✅ FERTIG | 12.05.2026 (6 Sheets) |
+| `tlm3d.py` (BONUS) | ✅ FERTIG | 12.05.2026 (BB-Filter) |
+| `klassifikation.py` (BONUS) | ✅ FERTIG | 12.05.2026 (7+2 Kategorien) |
+| `gemeinde_cache.py` (BONUS) | ✅ FERTIG | 12.05.2026 (SQLite) |
 
 **`gwr.py` (am 30.04.2026 erledigt)**:
 - ~330 Zeilen, Vollausbau mit Caching, Retry, Throttling
@@ -176,14 +179,34 @@ Kandidaten ausgeben.
 - Stresstest 50 Adressen: 96% Erfolg, 2.2 Min Laufzeit (+30 Sek vs. ohne GWR)
 - Plausibilitaets-Konflikt zwischen Schaetzung und Realitaet sichtbar
 
-**Noch zu tun in Iter 5**:
-- Modul `parzellen_liste.py`: alle Parzellen einer Gemeinde holen
-  (mit nummerischer Suchstrategie wegen 50-Treffer-Limit)
-- Modul `gemeinde_analyse.py`: Massen-Pipeline mit Throttling +
-  SQLite-Cache + Wiederaufnahme nach Abbruch
-- Excel-Export mit den im Konzept definierten Spalten
-- Test-Lauf mit Oberhofen am Thunersee als Pilot-Gemeinde
-- Aufwand-Schaetzung Restarbeit: ca. 1.5 Tage Entwicklung
+**Erledigt am 12.05.2026 (ganztaegige Session, ~11h)**:
+- `parzellen_liste.py` mit rekursivem Praefix-Baum
+  (Oberhofen: 1176 Parzellen via 161 API-Calls in 126 Sek)
+- `gemeinde_analyse.py` Haupt-Pipeline mit Throttling, Retry,
+  Progress-Logging mit ETA, KeyboardInterrupt-Handling
+- `gemeinde_cache.py` SQLite-Cache mit Pickle-Serialisierung
+- `klassifikation.py` mit 7 Kategorien (am Schwager zu verifizieren)
+- `excel_export.py` mit 6 Sheets + GRUDIS-Links
+- **GWR-Bug entdeckt + gefixt**: `gebaeude_zu_egrid()` via
+  MapServer-identify - vorher fanden alle EGRID-basierten Aufrufe
+  0 Treffer wegen kuenstlichem Adress-Label
+- **Verifikation 7 Stichproben** auf map.geo.admin.ch entdeckt
+  OEREB-Datenluecken (Strassen + Wald als Bauzonen)
+- **BONUS Bodenbedeckungs-Filter** mit TLM3D-Strassen +
+  BFS-Arealstatistik integriert: 2 neue Kategorien
+  AUSSCHLUSS_VERKEHR + AUSSCHLUSS_WALD_VERDACHT (konservativ)
+
+**Pilot-Lauf Oberhofen am Thunersee (1176 Parzellen, 41 Min, 0 Fehler)**:
+- VERDICHTUNG 55 / NEUGESCHAEFT 257 / ERSATZNEUBAU 38 /
+  AUSGEREIZT 77 / UNAUFFAELLIG 132
+- AUSSCHLUSS_REGLEMENT 506 / AUSSCHLUSS_ZU_KLEIN 88 /
+  AUSSCHLUSS_VERKEHR 20 / AUSSCHLUSS_WALD_VERDACHT 3
+- **170 hochwertige Kandidaten** identifiziert
+
+**Bekannte Limitationen (Iter 6 oder Folgeprojekt)**:
+- Schmale Waldparzellen werden nicht erwischt (Zentroid am Rand)
+- GWR-Polygon-Bug: Hauptgebaeude weit vom Zentroid nicht erfasst
+- Loesung: Polygon-Intersection in Iter 6 / nach 17.06.
 
 **Use-Case**: Architekten und Investoren bekommen eine Top-50-Liste
 der Parzellen mit dem groessten Verdichtungs-Potenzial in einer
@@ -222,9 +245,10 @@ fuer manuelle Eigentuemer-Abfragen.
 
 ## Naechste Termine
 
-- **Naechste Woche**: Termin mit Schwager (Reglement-Verifikation,
-  Annahmen-Plausibilisierung, Iter-5-Strategie)
-- **Anfang Juni 2026**: Iteration 5 abschliessen (parzellen_liste,
-  gemeinde_analyse, Excel-Export)
-- **Mitte Juni 2026**: Iteration 6 (Generalprobe)
+- **Naechste Tage**: Mail an Fabienne mit Excel-Anhang
+  (Pilot-Beispiel Oberhofen)
+- **Naechste Woche**: Schwager-Termin: Schwellen-Verifikation
+  (MIN_RESERVE_M2 etc.) + Diskussion GWR-Polygon-Bug
+- **Mitte Juni 2026**: Iteration 6 (Generalprobe + optional
+  Polygon-Intersection)
 - **17. Juni 2026**: Abgabe und Praesentation

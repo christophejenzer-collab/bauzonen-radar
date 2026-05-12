@@ -1,3 +1,74 @@
+\## ✅ Neue Funktionalitäten (12.05.2026)
+
+\*\*Massen-Analyse einer ganzen Gemeinde\*\*
+Statt einzelne Adressen abzufragen, kann jetzt eine komplette Gemeinde
+in einem Durchgang analysiert werden. Pilotlauf Oberhofen am Thunersee
+(1176 Parzellen) lief in 41 Minuten fehlerfrei durch und identifizierte
+170 hochwertige Verdichtungs-, Ersatzneubau- und Bestandsschutz-Kandidaten.
+
+\*\*Strukturierte Excel-Auswertung mit sechs Themen-Reitern\*\*
+Die Ergebnisse einer Gemeinde-Analyse werden als Excel-Datei mit
+sechs Reitern bereitgestellt: Statistik-Übersicht, Verdichtung,
+Neugeschäft, Ersatzneubau, Ausgereizt und Gesamtliste. Pro Parzelle
+sind Direktlinks zu GRUDIS für die manuelle Eigentümer-Abfrage enthalten.
+
+\*\*Geschäftslogische Klassifikation aller Parzellen\*\*
+Jede Parzelle wird automatisch einer von sieben Kategorien zugeordnet
+(Verdichtung, Neugeschäft, Ersatzneubau, Ausgereizt, Unauffällig,
+Ausschluss Reglement, Ausschluss zu klein). Die Schwellenwerte sind
+als nachvollziehbare Konstanten dokumentiert und werden mit einem
+Fach-Architekten verifiziert.
+
+\*\*Bodenbedeckungs-Filter zur Datenbereinigung\*\*
+Strassen-Parzellen und grosse Waldflächen, die im Bauzonen-Kataster
+fälschlich als Bauzone gelten, werden über die offizielle Strassen-
+Datenbank (swissTLM3D) und die BFS-Arealstatistik erkannt und sauber
+ausgeschlossen. Im Pilotlauf wurden 23 Falsch-Treffer im "Neugeschäft"
+korrekt umklassifiziert.
+
+\## 🔧 Verbesserungen \& Qualität
+
+\*\*GWR-Anbindung über EGRID statt Adress-Label\*\*
+Die Gebäudedaten werden jetzt direkt über die Grundstück-ID und die
+Koordinate abgefragt — viel zuverlässiger als der vorherige Weg über
+das Adress-Label. Bebaute Parzellen werden so korrekt erkannt, auch
+wenn keine Postadresse vorliegt (z.B. bei der Massen-Analyse).
+
+\*\*Lokales Zwischen­speichern aller Analysen (SQLite)\*\*
+Jede Parzelle wird einmal analysiert und im lokalen Cache abgelegt.
+Wiederholte Läufe oder Abbrüche während einer Massen-Analyse können
+nahtlos fortgesetzt werden, ohne dass die externen APIs erneut
+belastet werden.
+
+\*\*Drossel- und Wiederholungs-Logik bei externen APIs\*\*
+Zwischen Live-Abfragen wird gewartet (0.7 Sek), bei API-Fehlern wird
+bis zu dreimal mit ansteigender Wartezeit wiederholt. Eine Massen-
+Analyse läuft so auch bei kurzzeitigen Netz- oder Server-Problemen
+durch.
+
+\*\*Visuelle Verifikation mit der amtlichen Karte\*\*
+Die Resultate einer Stichprobe wurden gegen map.geo.admin.ch geprüft.
+Dabei wurden zwei Datenquellen-Lücken sauber identifiziert und im
+Tool transparent ausgewiesen: Strassen mit Bauzonen-Eintrag im
+Kataster sowie vereinzelte fehlende Gebäudezuordnungen im GWR.
+
+\## ⚠️ Hinweise
+
+\*\*Bekannte Datenquellen-Lücken transparent gekennzeichnet\*\*
+Schmale Waldparzellen und vereinzelte bebaute Parzellen mit
+ungewöhnlicher Geometrie können von der Bodenbedeckungs- bzw.
+GWR-Abfrage nicht erkannt werden. Sie verbleiben in der Kategorie
+"Neugeschäft" und sind als Punkte für eine geometrische Verfeinerung
+in der nächsten Iteration vorgemerkt.
+
+\*\*Schwellenwerte der Klassifikation sind vorläufig\*\*
+Mindestgrössen, Reserve-Schwellen und Bauperioden-Grenzen sind als
+gut begründete Anfangswerte gesetzt und werden in einem Fachgespräch
+mit einem Architekten verifiziert, bevor das Tool produktiv genutzt
+wird.
+
+---
+
 \## ✅ Neue Funktionalitäten (11.05.2026)
 
 
