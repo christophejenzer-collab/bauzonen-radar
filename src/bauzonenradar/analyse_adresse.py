@@ -640,37 +640,34 @@ def analysiere_per_egrid(egrid, koordinate_lv95=None, adresse_label=None):
             ergebnis.warnungen.append(ergebnis.bkp_meldung)
             bkp_quelle = None
 
-    # --- Schritt 4: GWR-Lookup ---
-    # Nur moeglich wenn Adresse-Label vorhanden (sonst kein GWR-Eintrittspunkt)
-    if GWR_VERFUEGBAR and adresse_label:
+    # --- Schritt 4: GWR-Lookup via EGRID + Koordinate ---
+    if GWR_VERFUEGBAR and ergebnis.egrid and koordinate_lv95:
         ergebnis.gwr_abgefragt = True
         try:
             gwr = GwrQuelle()
-            gebaeude = gwr.gebaeude_zu_adresse(adresse_label)
+            gebaeude = gwr.gebaeude_zu_egrid(ergebnis.egrid, koordinate_lv95)
             if gebaeude:
-                gebaeude_parzelle = [g for g in gebaeude if g.egrid == parzelle.egrid]
-                if gebaeude_parzelle:
-                    ergebnis.gwr_gefunden = True
-                    ergebnis.gwr_gebaeude = gebaeude_parzelle
-                    summe = 0.0
-                    hat_summe = False
-                    for g in gebaeude_parzelle:
-                        if g.grundflaeche_m2 is not None and g.geschosse is not None:
-                            gf = g.geschossflaeche_m2
-                            if gf is not None:
-                                summe += gf
-                                hat_summe = True
-                    if hat_summe:
-                        ergebnis.gwr_summe_geschossflaeche_m2 = summe
-                else:
-                    ergebnis.gwr_meldung = (
-                        "Keine GWR-Gebaeudedaten fuer diese Parzelle (evtl. unbebaut)."
-                    )
+                ergebnis.gwr_gefunden = True
+                ergebnis.gwr_gebaeude = gebaeude
+                summe = 0.0
+                hat_summe = False
+                for g in gebaeude:
+                    if g.grundflaeche_m2 is not None and g.geschosse is not None:
+                        gf = g.geschossflaeche_m2
+                        if gf is not None:
+                            summe += gf
+                            hat_summe = True
+                if hat_summe:
+                    ergebnis.gwr_summe_geschossflaeche_m2 = summe
+            else:
+                ergebnis.gwr_meldung = (
+                    "Keine GWR-Gebaeudedaten fuer diese Parzelle (evtl. unbebaut)."
+                )
         except Exception as fehler:
             ergebnis.gwr_meldung = f"GWR-Anfrage uebersprungen ({fehler.__class__.__name__})"
     else:
         ergebnis.gwr_meldung = (
-            "GWR uebersprungen (kein Adress-Label - typisch fuer leere Parzellen)"
+            "GWR uebersprungen (keine Koordinate verfuegbar)"
         )
 
     # --- Schritt 5: Potenzialberechnung ---

@@ -186,6 +186,7 @@ class GwrQuelle:
 
         self._cache_adresse: dict[str, list[GwrGebaeude]] = {}
         self._cache_feature: dict[str, GwrGebaeude] = {}
+        self._cache_egrid: dict[str, list[GwrGebaeude]] = {}
 
     # ----- Oeffentliche API ---------------------------------------------
 
@@ -250,6 +251,90 @@ class GwrQuelle:
                 gesehen.add(g.egid)
                 eindeutig.append(g)
         return eindeutig
+
+
+    def gebaeude_zu_egrid(self, egrid, koordinate_lv95=None):
+        """
+        Holt alle Gebaeude einer Parzelle via EGRID + Koordinate.
+
+        Strategie: MapServer-identify mit Punkt-Geometrie + Toleranz.
+        Liefert Features direkt mit allen Gebaeude-Properties - kein
+        zweiter API-Call zum MapServer noetig.
+
+        Args:
+            egrid: Eidg. Grundstueck-ID (z.B. "CH569646354766")
+            koordinate_lv95: (east, north) Tuple, typischerweise aus
+                            parzellen_liste
+
+        Returns:
+            Liste von GwrGebaeude die zum EGRID gehoeren.
+            Leer wenn unbebaut oder GWR keine Daten hat.
+        """
+        if egrid in self._cache_egrid:
+            return self._cache_egrid[egrid]
+
+        if koordinate_lv95 is None or len(koordinate_lv95) != 2:
+            self._cache_put(self._cache_egrid, egrid, [])
+            return []
+
+        try:
+            features = self._identify_features(koordinate_lv95, tolerance=500)
+        except GwrFehler:
+            # API-Fehler -> leer zurueck, naechster Aufruf versucht es erneut
+            return []
+
+        gebaeude: list[GwrGebaeude] = []
+        for feature in features:
+            props = feature.get("properties") or {}
+            # Filter: nur Gebaeude die zum gesuchten EGRID gehoeren
+            if props.get("egrid") != egrid:
+                continue
+            try:
+                g = self._parse_attrs(props)
+                if g.egid:
+                    gebaeude.append(g)
+            except (KeyError, ValueError, TypeError):
+                continue
+
+        self._cache_put(self._cache_egrid, egrid, gebaeude)
+        return gebaeude
+
+    def _identify_features(self, koordinate_lv95, tolerance=500):
+        """Identify-Endpoint des MapServer fuer ein Punkt + Toleranz.
+
+        Args:
+            koordinate_lv95: (east, north)
+            tolerance: in Metern (500 = grosszuegig fuer typische Parzellen)
+
+        Returns:
+            Liste von Feature-Dicts mit 'properties'.
+        """
+        east, north = koordinate_lv95
+        # Bbox um den Punkt fuer mapExtent (1 km)
+        ext_east_min = east - 500
+        ext_north_min = north - 500
+        ext_east_max = east + 500
+        ext_north_max = north + 500
+        params = {
+            "geometryType": "esriGeometryPoint",
+            "geometry": f"{east},{north}",
+            "geometryFormat": "geojson",
+            "imageDisplay": "1000,1000,96",
+            "mapExtent": f"{ext_east_min},{ext_north_min},{ext_east_max},{ext_north_max}",
+            "tolerance": str(int(tolerance)),
+            "layers": "all:ch.bfs.gebaeude_wohnungs_register",
+            "sr": "2056",
+            "returnGeometry": "false",
+        }
+        url = (
+            "https://api3.geo.admin.ch/rest/services/ech/MapServer/identify?"
+            + urllib.parse.urlencode(params)
+        )
+        daten = self._http_get_json(url)
+        results = daten.get("results")
+        if not isinstance(results, list):
+            return []
+        return results
 
     def geschossflaeche_pro_parzelle(self, egrid: str) -> int | None:
         """
