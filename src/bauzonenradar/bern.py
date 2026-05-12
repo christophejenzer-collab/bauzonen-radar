@@ -55,6 +55,34 @@ class BernOerebQuelle:
             parzelle.adresse = adresse
             parzelle.koordinaten_lv95 = koord
         return parzelle
+
+    def egrid_zu_parzelle(self, egrid, koordinate_lv95=None, adresse_label=None):
+        """
+        Pipeline EGRID -> Parzelle ohne Geocoding-Vorlauf.
+
+        Analog zu adresse_zu_parzelle(), aber ueberspringt die Schritte 1+2
+        (Geocoding und GetEGRID) da der EGRID bereits bekannt ist.
+        Eintrittspunkt fuer Iter-5-Massen-Analyse via parzellen_liste.
+
+        Args:
+            egrid: Eidg. Grundstueck-ID (z.B. CH382046359635)
+            koordinate_lv95: Optional - falls aus parzellen_liste bekannt
+            adresse_label: Optional - frei waehlbare Anzeige-Adresse
+
+        Returns:
+            Parzelle-Objekt oder None bei Fehler.
+        """
+        xml_bytes = self._get_extract(egrid)
+        if not xml_bytes:
+            return None
+        parzelle = self._parse_extract(xml_bytes)
+        if parzelle:
+            if adresse_label:
+                parzelle.adresse = adresse_label
+            if koordinate_lv95:
+                parzelle.koordinaten_lv95 = koordinate_lv95
+        return parzelle
+
 # ----- Oeffentliche Zugriffe fuer Diagnose/Tools -------------------
 
     def geocode(self, adresse: str) -> tuple[float, float] | None:

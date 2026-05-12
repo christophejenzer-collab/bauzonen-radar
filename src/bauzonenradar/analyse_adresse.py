@@ -533,6 +533,176 @@ def drucke_bericht(ergebnis: AnalyseErgebnis) -> None:
 # CLI-Eintrittspunkt
 # ---------------------------------------------------------------------------
 
+
+# ---------------------------------------------------------------------------
+# EGRID-basierter Eintrittspunkt fuer Iter 5 Massen-Analyse
+# ---------------------------------------------------------------------------
+def analysiere_per_egrid(egrid, koordinate_lv95=None, adresse_label=None):
+    """Fuehrt die vollstaendige Analyse fuer einen EGRID durch.
+
+    Im Gegensatz zu analysiere() braucht hier keine Adresse - direkt
+    via EGRID in die OEREB-Pipeline. Eintrittspunkt fuer Iter 5
+    Massen-Analyse einer Gemeinde via parzellen_liste.
+
+    Args:
+        egrid: Eidg. Grundstueck-ID (z.B. "CH382046359635")
+        koordinate_lv95: Optional - (east, north) in LV95, falls bekannt
+        adresse_label: Optional - Anzeige-Adresse (z.B. "Oberhofen Parz. 309")
+
+    Returns:
+        AnalyseErgebnis-Objekt mit allen gesammelten Daten.
+
+    Im Gegensatz zu analysiere() wird:
+    - der Geocoding-Schritt uebersprungen (EGRID bereits bekannt)
+    - der GWR-Lookup nur durchgefuehrt wenn adresse_label vorhanden
+      (oder Parzelle nach OEREB-Parse eine Adresse hat)
+    """
+    # Adresse-Label fuer Anzeige verwenden (Pflichtfeld AnalyseErgebnis)
+    adresse_anzeige = adresse_label or f"EGRID {egrid}"
+    ergebnis = AnalyseErgebnis(adresse_eingabe=adresse_anzeige)
+
+    # --- Schritt 1: Parzelle via EGRID laden (kein Geocoding-Vorlauf!) ---
+    try:
+        quelle = BernOerebQuelle()
+        parzelle = quelle.egrid_zu_parzelle(
+            egrid,
+            koordinate_lv95=koordinate_lv95,
+            adresse_label=adresse_label,
+        )
+    except Exception as fehler:
+        ergebnis.fehler = f"OEREB-Abfrage fehlgeschlagen: {fehler}"
+        return ergebnis
+
+    if not parzelle:
+        ergebnis.fehler = f"Keine Parzelle gefunden fuer EGRID {egrid}."
+        return ergebnis
+
+    ergebnis.parzelle = parzelle
+    ergebnis.parzelle_kurzbericht = parzelle.kurzbericht()         if hasattr(parzelle, "kurzbericht") else ""
+    ergebnis.gemeinde = getattr(parzelle, "gemeinde", None)
+    ergebnis.parzellen_nummer = getattr(parzelle, "parzellennummer", None)         or getattr(parzelle, "nummer", None)
+    ergebnis.parzellen_flaeche_m2 = getattr(parzelle, "flaeche_m2", None)         or getattr(parzelle, "flaeche", None)
+    ergebnis.egrid = getattr(parzelle, "egrid", None)
+
+    if koordinate_lv95:
+        ergebnis.koordinate_lv95 = koordinate_lv95
+
+    # --- Schritt 2: Baureglement laden ---
+    reglement = None
+    try:
+        reglement = Baureglement.laden(parzelle.gemeinde)
+        ergebnis.reglement = reglement
+        ergebnis.reglement_geladen = True
+        ergebnis.reglement_stand = reglement.stand
+        ergebnis.reglement_struktur = reglement.struktur
+    except FileNotFoundError:
+        ergebnis.reglement_meldung = (
+            f"Kein Baureglement fuer '{parzelle.gemeinde}' verfuegbar. "
+            f"Potenzialberechnung wird nicht moeglich sein."
+        )
+        ergebnis.warnungen.append(ergebnis.reglement_meldung)
+
+    # --- Schritt 3: BKP-Daten (Stadt Bern) ---
+    bkp_quelle = None
+    if (reglement is not None
+            and parzelle.gemeinde == "Bern"
+            and BKP_VERFUEGBAR
+            and koordinate_lv95 is not None):
+        ergebnis.bkp_abgefragt = True
+        try:
+            bkp_quelle = BernBkpQuelle()
+            auskunft = bkp_quelle.hole_auskunft(*koordinate_lv95)
+            if auskunft.gefunden:
+                ergebnis.bkp_gefunden = True
+                if auskunft.grundzone:
+                    g = auskunft.grundzone
+                    ergebnis.bkp_nutzungszone = (
+                        f"{g.nutzungszone_kuerzel} ({g.nutzungszone_beschrieb})"
+                    )
+                    ergebnis.bkp_bauklasse = (
+                        f"{g.bauklasse_kuerzel} ({g.bauklasse_beschrieb})"
+                    )
+                if auskunft.bauweise:
+                    b = auskunft.bauweise
+                    ergebnis.bkp_bauweise = b.bauweise_beschrieb
+                    ergebnis.bkp_gebaeudelaenge_m = b.gebaeudelaenge
+                    ergebnis.bkp_gebaeudetiefe_m = b.gebaeudetiefe
+                    ergebnis.bkp_gebaeudelaenge_unbeschraenkt = b.gebaeudelaenge_unbeschraenkt
+                    ergebnis.bkp_gebaeudetiefe_unbeschraenkt = b.gebaeudetiefe_unbeschraenkt
+                else:
+                    ergebnis.bkp_meldung = (
+                        "Bauweise: keine Daten (z.B. BK_E oder Altstadt)"
+                    )
+            else:
+                ergebnis.bkp_meldung = "Keine BKP-Daten gefunden fuer diese Koordinate."
+        except Exception as fehler:
+            ergebnis.bkp_meldung = f"BKP-Anfrage fehlgeschlagen: {fehler}"
+            ergebnis.warnungen.append(ergebnis.bkp_meldung)
+            bkp_quelle = None
+
+    # --- Schritt 4: GWR-Lookup ---
+    # Nur moeglich wenn Adresse-Label vorhanden (sonst kein GWR-Eintrittspunkt)
+    if GWR_VERFUEGBAR and adresse_label:
+        ergebnis.gwr_abgefragt = True
+        try:
+            gwr = GwrQuelle()
+            gebaeude = gwr.gebaeude_zu_adresse(adresse_label)
+            if gebaeude:
+                gebaeude_parzelle = [g for g in gebaeude if g.egrid == parzelle.egrid]
+                if gebaeude_parzelle:
+                    ergebnis.gwr_gefunden = True
+                    ergebnis.gwr_gebaeude = gebaeude_parzelle
+                    summe = 0.0
+                    hat_summe = False
+                    for g in gebaeude_parzelle:
+                        if g.grundflaeche_m2 is not None and g.geschosse is not None:
+                            gf = g.geschossflaeche_m2
+                            if gf is not None:
+                                summe += gf
+                                hat_summe = True
+                    if hat_summe:
+                        ergebnis.gwr_summe_geschossflaeche_m2 = summe
+                else:
+                    ergebnis.gwr_meldung = (
+                        "Keine GWR-Gebaeudedaten fuer diese Parzelle (evtl. unbebaut)."
+                    )
+        except Exception as fehler:
+            ergebnis.gwr_meldung = f"GWR-Anfrage uebersprungen ({fehler.__class__.__name__})"
+    else:
+        ergebnis.gwr_meldung = (
+            "GWR uebersprungen (kein Adress-Label - typisch fuer leere Parzellen)"
+        )
+
+    # --- Schritt 5: Potenzialberechnung ---
+    try:
+        berechner = PotenzialBerechner()
+        potenzial = berechner.berechne(parzelle, reglement, bkp_quelle=bkp_quelle)
+        ergebnis.potenzial_ergebnis = potenzial
+        ergebnis.textbericht = potenzial.textbericht()
+
+        # GUI-Aliase befuellen (gleiche Logik wie analysiere())
+        ergebnis.datenqualitaet = (
+            potenzial.datenqualitaet.value
+            if hasattr(potenzial.datenqualitaet, "value")
+            else str(potenzial.datenqualitaet)
+        )
+        ergebnis.zulaessig_m2 = getattr(potenzial, "theoretisch_zulaessig_m2", None)
+        ergebnis.ausschoepfung_prozent = getattr(potenzial, "ausschoepfungsgrad_prozent", None)
+        ergebnis.theoretisch_zulaessig_m2 = getattr(potenzial, "theoretisch_zulaessig_m2", None)
+        ergebnis.ausschoepfungsgrad_prozent = getattr(potenzial, "ausschoepfungsgrad_prozent", None)
+        ergebnis.reserve_prozent = getattr(potenzial, "reserve_prozent", None)
+        ergebnis.zonen_betrachtet = list(getattr(potenzial, "zonen_betrachtet", []) or [])
+        ergebnis.zone = ergebnis.zonen_betrachtet[0] if ergebnis.zonen_betrachtet else None
+        ergebnis.arealbonus_anwendbar = bool(getattr(potenzial, "arealbonus_anwendbar", False))
+        ergebnis.bemerkungen = list(getattr(potenzial, "bemerkungen", []) or [])
+
+    except Exception as fehler:
+        ergebnis.potenzial_meldung = f"Potenzialberechnung fehlgeschlagen: {fehler}"
+        ergebnis.warnungen.append(ergebnis.potenzial_meldung)
+
+    return ergebnis
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         print("Verwendung: python analyse_adresse.py \"Strasse Nr, PLZ Ort\"")
