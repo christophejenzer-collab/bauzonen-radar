@@ -278,7 +278,7 @@ class GwrQuelle:
             return []
 
         try:
-            features = self._identify_features(koordinate_lv95, tolerance=500)
+            features = self._identify_features(koordinate_lv95, tolerance=100)
         except GwrFehler:
             # API-Fehler -> leer zurueck, naechster Aufruf versucht es erneut
             return []
