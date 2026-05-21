@@ -42,8 +42,7 @@ DEFAULT_AUSGABE_DIR = Path("ausgaben")
 CACHE_DIR = Path("cache")
 
 GRUDIS_BASIS_URL = (
-    "https://www.geo.apps.be.ch/de/applikationen/"
-    "grundstuecksinformation.html?egrid={egrid}"
+    "https://map.geo.admin.ch/?swisssearch={egrid}"
 )
 
 # Header-Styling
@@ -163,12 +162,21 @@ def _freeze_header(sheet) -> None:
 PARZELLEN_HEADER = [
     "Parz. Nr.", "EGRID", "Zone", "Flaeche (m²)",
     "Soll (m²)", "Ist GWR (m²)", "Reserve (m²)", "Reserve %",
-    "Geb.", "Datenqualitaet", "Klassifikation", "GRUDIS",
+    "Geb.", "Datenqualitaet", "Klassifikation", "Karte",
 ]
 
 
 def _parzelle_zu_row(p: dict) -> list:
     """Konvertiert ein Parzellen-dict in eine Excel-Row."""
+    # Reserve% aus GWR-Reserve (reserve_m2 / Soll), nicht aus Modell-
+    # Schaetzung. So konsistent zur Reserve(m2)-Spalte. Negativ = ueberbaut.
+    _soll = _try_float(p.get("theoretisch_zulaessig_m2"))
+    _res_m2 = _try_float(p.get("reserve_m2"))
+    if _soll and _soll > 0 and _res_m2 is not None:
+        _reserve_proz = round(_res_m2 / _soll * 100, 1)
+    else:
+        _reserve_proz = None
+
     return [
         p.get("parzellen_nummer") or "",
         p.get("egrid") or "",
@@ -177,7 +185,7 @@ def _parzelle_zu_row(p: dict) -> list:
         _try_int(p.get("theoretisch_zulaessig_m2")),
         _try_int(p.get("gwr_summe_geschossflaeche_m2")),
         _try_float(p.get("reserve_m2")),
-        _try_float(p.get("reserve_prozent")),
+        _reserve_proz,
         _try_int(p.get("anzahl_gebaeude")),
         p.get("datenqualitaet") or "",
         p.get("klassifikation") or "",
@@ -219,7 +227,7 @@ def _schreibe_parzellen_sheet(
             # GRUDIS-Link als Hyperlink
             if spalten_index == len(PARZELLEN_HEADER) and wert:
                 cell.hyperlink = wert
-                cell.value = "→ GRUDIS"
+                cell.value = "→ Karte"
                 cell.font = Font(color="0563C1", underline="single")
 
     _autosize_spalten(sheet)

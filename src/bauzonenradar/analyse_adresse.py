@@ -587,7 +587,7 @@ def analysiere_per_egrid(egrid, koordinate_lv95=None, adresse_label=None):
     ergebnis.gemeinde = getattr(parzelle, "gemeinde", None)
     ergebnis.parzellen_nummer = getattr(parzelle, "parzellennummer", None)         or getattr(parzelle, "nummer", None)
     ergebnis.parzellen_flaeche_m2 = getattr(parzelle, "flaeche_m2", None)         or getattr(parzelle, "flaeche", None)
-    ergebnis.egrid = getattr(parzelle, "egrid", None)
+    ergebnis.egrid = getattr(parzelle, "egrid", None) or egrid
 
     if koordinate_lv95:
         ergebnis.koordinate_lv95 = koordinate_lv95

@@ -87,7 +87,7 @@ MAX_PRAEFIX_TIEFE = 5
 # Maximale Anzahl API-Calls als Sicherheitsnetz
 # 10^1 + 10^2 + 10^3 + 10^4 + 10^5 = 111'110 theoretisches Max
 # In der Praxis: ca. 100-200 Calls pro Gemeinde
-MAX_API_CALLS = 500
+MAX_API_CALLS = 3000
 
 # User-Agent
 USER_AGENT = "Bauzonen-Radar/1.0 (Iter5 Massenanalyse)"
@@ -210,6 +210,22 @@ def _parse_parzellen_treffer(treffer: dict, gemeinde: str) -> Optional[Parzellen
     if not detail_tokens:
         return None
     parzellen_nummer = detail_tokens[0]
+
+    # Gemeindename exakt pruefen (Praefix-Filter)
+    # detail-Format: "<nummer> <gemeinde-mehrteilig> <bfs> <egrid>"
+    # Gemeindename = Tokens zwischen Parzellennummer (Idx 0) und BFS-Zahl.
+    # Verhindert dass "Thun" auch Thundorf/Thunstetten matcht.
+    try:
+        _egrid_idx = detail_tokens.index(egrid_match.group(1))
+    except ValueError:
+        _egrid_idx = len(detail_tokens)
+    # BFS-Zahl ist das numerische Token direkt vor dem EGRID
+    _bfs_idx = _egrid_idx - 1 if _egrid_idx >= 2 else _egrid_idx
+    _gem_tokens = detail_tokens[1:_bfs_idx]  # zwischen Nummer und BFS
+    _gem_im_detail = " ".join(_gem_tokens).strip().lower()
+    _gem_gesucht = gemeinde.strip().lower()
+    if _gem_im_detail and _gem_im_detail != _gem_gesucht:
+        return None  # Fremdgemeinde (z.B. thundorf bei Suche nach thun)
 
     # BFS-Nummer = letztes numerisches Token vor EGRID
     bfs_nummer: Optional[int] = None
