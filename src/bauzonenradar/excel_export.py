@@ -87,7 +87,7 @@ def lade_parzellen_aus_cache(
             datenqualitaet, zone, theoretisch_zulaessig_m2,
             gwr_summe_geschossflaeche_m2, reserve_m2, reserve_prozent,
             ausschoepfungsgrad_prozent, anzahl_gebaeude,
-            klassifikation, fehler, abfrage_datum
+            klassifikation, fehler, abfrage_datum, daten_json
         FROM parzellen
         WHERE gemeinde = ?
         ORDER BY parzellen_nummer
@@ -162,8 +162,52 @@ def _freeze_header(sheet) -> None:
 PARZELLEN_HEADER = [
     "Parz. Nr.", "EGRID", "Zone", "Flaeche (m²)",
     "Soll (m²)", "Ist GWR (m²)", "Reserve (m²)", "Reserve %",
-    "Geb.", "Datenqualitaet", "Klassifikation", "Karte",
+    "Geb.", "Baujahr", "Datenqualitaet", "Klassifikation", "Karte",
 ]
+
+
+
+# ---------------------------------------------------------------------------
+# Baujahr-Ermittlung aus daten_json (aeltestes Gebaeude)
+# ---------------------------------------------------------------------------
+_BAUPERIODE_MAP = {
+    8011: 1900, 8012: 1930, 8013: 1953, 8014: 1965, 8015: 1975,
+    8016: 1983, 8017: 1988, 8018: 1993, 8019: 1998, 8020: 2003,
+    8021: 2008, 8022: 2013, 8023: 2020,
+}
+
+
+def _aeltestes_baujahr_aus_json(p: dict):
+    """Liefert das aelteste Baujahr einer Parzelle aus daten_json.
+
+    Nutzt zuerst das echte baujahr-Feld, sonst den bauperiode_code.
+    Returns int (Jahr) oder None.
+    """
+    import json as _json
+    roh = p.get("daten_json")
+    if not roh:
+        return None
+    try:
+        d = _json.loads(roh) if isinstance(roh, str) else roh
+    except (ValueError, TypeError):
+        return None
+    gebaeude = d.get("gwr_gebaeude") or []
+    jahre = []
+    for g in gebaeude:
+        bj = g.get("baujahr")
+        if isinstance(bj, int) and 1800 <= bj <= 2100:
+            jahre.append(bj)
+            continue
+        bp = g.get("bauperiode_code")
+        if bp is not None:
+            try:
+                jahr = _BAUPERIODE_MAP.get(int(bp))
+            except (ValueError, TypeError):
+                jahr = None
+            if jahr:
+                jahre.append(jahr)
+    return min(jahre) if jahre else None
+
 
 
 def _parzelle_zu_row(p: dict) -> list:
@@ -187,6 +231,7 @@ def _parzelle_zu_row(p: dict) -> list:
         _try_float(p.get("reserve_m2")),
         _reserve_proz,
         _try_int(p.get("anzahl_gebaeude")),
+        _aeltestes_baujahr_aus_json(p),
         p.get("datenqualitaet") or "",
         p.get("klassifikation") or "",
         _grudis_link(p["egrid"]) if p.get("egrid") else "",
