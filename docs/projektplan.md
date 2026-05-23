@@ -1,6 +1,6 @@
-# Projektplan: Bauzonen-Radar
+﻿# Projektplan: Bauzonen-Radar
 
-Stand: 11. Mai 2026.
+Stand: 23. Mai 2026.
 Abgabe: 17. Juni 2026.
 
 ## Iterationen im Ueberblick
@@ -11,7 +11,8 @@ Iteration 2: Potenzialberechnung    [ABGESCHLOSSEN] April 2026
 Iteration 3: Verifikation           [ABGESCHLOSSEN] 28.+29.04.2026
 Iteration 4: Webseite (Streamlit)   [ABGESCHLOSSEN] 03.-11.05.2026
 Iteration 5: Gemeinde-Analyse       [ABGESCHLOSSEN] 12. Mai 2026
-Iteration 6: Generalprobe           [GEPLANT]       Mitte Juni 2026
+Iteration 6: Grossstadt + Konzept   [ABGESCHLOSSEN] 20.-23.05.2026
+Iteration 7: Indikator + Generalprobe [GEPLANT]     Juni 2026
 ```
 
 ## Iteration 1: Pipeline (abgeschlossen)
@@ -213,19 +214,84 @@ der Parzellen mit dem groessten Verdichtungs-Potenzial in einer
 Gemeinde - sortierbar und filterbar in Excel, mit GRUDIS-Direktlinks
 fuer manuelle Eigentuemer-Abfragen.
 
-## Iteration 6: Generalprobe (geplant)
 
-**Zeitraum**: Mitte Juni 2026
+## Iteration 6: Grossstadt-Tauglichkeit + Konzept-Klaerung (abgeschlossen)
 
-**Ziel**: Praesentation einueben und Edge-Cases abdecken.
+**Zeitraum**: 20.-23. Mai 2026 (mehrtaegig)
 
-**Inhalte**:
+**Ziel**: Die Massen-Analyse vom Dorf (Oberhofen) auf eine ganze Stadt
+(Thun) skalieren - und dabei die Tragfaehigkeit der Soll-Berechnung
+klaeren.
+
+**Detail**: siehe `docs/journal.md`, Eintrag 20.-23.05.2026.
+
+**Erledigt (committed + verifiziert)**:
+
+| Thema | Commit | Inhalt |
+|---|---|---|
+| GWR-tolerance-Cap | 435d518 | identify-tolerance 500->100, Gebaeude in dichten Quartieren gefunden (60/60) |
+| Grossstadt-Bugs | 082e542 | egrid-Fallback, Gemeinde-Filter (Thundorf raus), MAX_API_CALLS 3000, Karten-Link |
+| Reserve-% | 082e542 | GWR-konsistent statt Modell-Schaetzung, negative Werte ehrlich |
+| Baujahr-Spalte | 1327ddc | aeltestes GWR-Baujahr im Export (Hebel-Indikator) |
+| KLEINPARZELLE | 2414788 | faktische Kategorie 200-500 m2, ausserhalb Fokus |
+
+**Vollstaendiger Thun-Lauf (8534 Parzellen, 0 Fehler, ~4h30)**:
+- VERDICHTUNG 890 / NEUGESCHAEFT 354 / ERSATZNEUBAU 1514 /
+  AUSGEREIZT 1752 / UNAUFFAELLIG 1271
+- AUSSCHLUSS_REGLEMENT 1824 / ZU_KLEIN 800 / VERKEHR 123 /
+  WALD_VERDACHT 6 / FEHLER 440 (~5%)
+- Grossstadt-Tauglichkeit damit nachgewiesen, alle EGRID eindeutig
+  (kein Thundorf-Fremdtreffer mehr)
+
+**Externe Aenderung dokumentiert**: Kanton BE hat die freie Grundbuch-
+Direktabfrage (geo.apps.be.ch) zum 1.9.2025 abgeschafft (jetzt GRUDIS
+public mit AGOV-Login). Tool nutzt stattdessen den login-freien eidg.
+Kartendienst map.geo.admin.ch/?swisssearch=<EGRID>.
+
+**Schluessel-Erkenntnis (konzeptionell)**: Die Soll-Berechnung im
+Hoehensystem (Thun BR 2022 u.a.) ist ohne Annahme nicht eindeutig
+bestimmbar - es gibt keine flaechenbezogene Ausnuetzungs-/Geschoss-
+flaechenziffer (nur Hoehen, Geschosse, Grenzabstaende, Gruenflaechen-
+ziffer). Jede geometrische Annahme kippt bei einer Parzellenklasse
+(Kollaps bei kleinen, Deckel bei grossen). Konsequenz: Das Tool wird
+als **faktenbasierter Indikator** konzipiert (Ranking aus harten
+Signalen: GWR-Ist, Baujahr, Geschosszahl, Flaeche, Gruenflaechen-
+ziffer), nicht als exakter Soll-Rechner. Die geometrische Soll-
+Heuristik wurde bewusst zurueckgenommen. Recherche bestaetigt die
+Richtung (ARE/GFR-Methodik arbeitet mit Ziffern + Ausschoepfungsgraden,
+nicht mit geometrischer Nachbildung).
+
+**Verifikation**: Architekt (Schwager) bestaetigte den Grenzabstand-
+Befund und den Fokus ab 500 m2; Methodik-Frage (GFZ) gestellt, Antwort
+ausstehend.
+
+**Offen (in Iteration 7)**:
+- Indikator-Konzept auf rein faktischen Signalen ausarbeiten
+  (Abstimmung mit RE / Fabienne)
+- Architekt-Antwort zur Soll-Methodik einarbeiten
+- Erst danach Umbau des Berechnungskerns
+
+## Iteration 7: Indikator-Konzept + Generalprobe (geplant)
+
+**Zeitraum**: Juni 2026
+
+**Ziel**: Den faktenbasierten Indikator konzipieren und umsetzen, dann
+die Praesentation einueben.
+
+**Inhalte Indikator-Konzept**:
+- Faktische Signale definieren und gewichten (GWR-Ist vs. Geschosszahl,
+  Baujahr, Flaeche, Gruenflaechenziffer)
+- Trennung wahre Gegebenheiten (Schicht 1) / Indikator-Heuristik
+  (Schicht 2) sauber im Code abbilden
+- Architekt-Antwort zur Methodik einarbeiten
+- Abstimmung mit Fabienne (RE-relevant)
+- Expansion vorbereiten (Bern Stadt als naechste Gemeinde)
+
+**Inhalte Generalprobe**:
 - Pitch-Text auf 5 Minuten trimmen
-- Live-Demo-Adressen auswaehlen und proben
-  (idealerweise eine pro Datenqualitaets-Stufe)
-- Live-Demo Gemeinde-Analyse (z.B. Oberhofen)
+- Live-Demo-Adressen auswaehlen (eine pro Datenqualitaets-Stufe)
+- Live-Demo Gemeinde-Analyse (Oberhofen oder Thun)
 - GWR-Plausibilitaets-Konflikt als Demo-Highlight
-  (Frutigenstrasse 25: 1080 m^2 Soll vs. 1520 m^2 Ist in der GUI)
 - Drei moegliche Code-Fragen vorbereiten
 - Backup-Plan falls Internet/OEREB-Webservice down
 - README finalisieren mit GUI-Screenshots
@@ -242,13 +308,13 @@ fuer manuelle Eigentuemer-Abfragen.
 | GWR-Daten luckenhaft | Klare Markierung "GWR-Daten unvollstaendig (fehlt: Feld)" |
 | Massen-Suche limitiert auf 50 Treffer | Nummerische Suchstrategie (verifiziert in Iter-5-Konzept) |
 | Iter 5 zu spaet fertig | GWR-Modul ist isoliert nutzbar, Massen-Analyse kann notfalls verschoben werden |
+| Soll im Hoehensystem nicht exakt bestimmbar | Tool als faktenbasierter Indikator konzipiert, keine Pseudo-Praezision |
 
 ## Naechste Termine
 
-- **Naechste Tage**: Mail an Fabienne mit Excel-Anhang
-  (Pilot-Beispiel Oberhofen)
-- **Naechste Woche**: Schwager-Termin: Schwellen-Verifikation
-  (MIN_RESERVE_M2 etc.) + Diskussion GWR-Polygon-Bug
-- **Mitte Juni 2026**: Iteration 6 (Generalprobe + optional
-  Polygon-Intersection)
+- **Erledigt 22.-23.05.**: Thun-Massenanalyse, Excel an Fabienne,
+  Schwager-Fragenliste verschickt
+- **Ausstehend**: Architekt-Antwort zur Soll-Methodik (GFZ-Frage)
+- **Naechster Schritt**: Indikator-Konzept mit Fabienne abstimmen
+- **Juni 2026**: Iteration 7 (Indikator-Umbau + Generalprobe)
 - **17. Juni 2026**: Abgabe und Praesentation
