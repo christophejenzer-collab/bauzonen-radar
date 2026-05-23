@@ -313,6 +313,7 @@ def _sheet_statistik(wb: Workbook, parzellen: list[dict], gemeinde: str, kanton:
         ("AUSSCHLUSS_VERKEHR", "Ausschluss: Verkehrsflaeche (TLM+Areal)"),
         ("AUSSCHLUSS_WALD_VERDACHT", "Ausschluss: Wald-Verdacht (Arealstatistik)"),
         ("AUSSCHLUSS_REGLEMENT", "Ausschluss: Reglement-Sperre"),
+        ("KLEINPARZELLE", "Kleinparzelle (200-500 m2, neutral)"),  # KLEINPARZELLE-Filter
         ("AUSSCHLUSS_ZU_KLEIN", "Ausschluss: Parzelle zu klein"),
         ("AUSSCHLUSS_FEHLER", "Ausschluss: Analyse-Fehler"),
     ]

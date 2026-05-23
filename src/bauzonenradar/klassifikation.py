@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 MIN_PARZELLEN_FLAECHE_M2 = 200.0
+MIN_PARZELLEN_FLAECHE_FOKUS = 500.0  # < dieser Flaeche -> KLEINPARZELLE (neutral, kein Fokus)
 SCHWELLE_AUSGEREIZT_PROZENT = 95.0
 MIN_RESERVE_M2 = 100.0
 MIN_RESERVE_M2_NEUGESCHAEFT = 200.0
@@ -56,6 +57,7 @@ KAT_AUSSCHLUSS_ZU_KLEIN = "AUSSCHLUSS_ZU_KLEIN"
 KAT_AUSSCHLUSS_FEHLER = "AUSSCHLUSS_FEHLER"
 KAT_AUSSCHLUSS_VERKEHR = "AUSSCHLUSS_VERKEHR"
 KAT_AUSSCHLUSS_WALD_VERDACHT = "AUSSCHLUSS_WALD_VERDACHT"
+KAT_KLEINPARZELLE = "KLEINPARZELLE"  # 200-500 m2: neutral, ausserhalb Fokus
 
 # Bodenbedeckungs-Schwellen (Iter 5)
 MIN_FLAECHE_VERKEHR_AUSSCHLUSS = 1500.0  # m^2 - kleinere koennten Garten + Gehweg sein
@@ -199,6 +201,9 @@ def klassifiziere(ergebnis) -> str:
     flaeche = ergebnis.parzellen_flaeche_m2 or 0.0
     if flaeche < MIN_PARZELLEN_FLAECHE_M2:
         return KAT_AUSSCHLUSS_ZU_KLEIN
+    # 3b. Kleinparzelle (200-500 m2): neutral, kein Verdichtungs-Fokus
+    if flaeche < MIN_PARZELLEN_FLAECHE_FOKUS:
+        return KAT_KLEINPARZELLE
 
     # 4. Theoretisch zulaessig muss bekannt sein
     zulaessig = ergebnis.theoretisch_zulaessig_m2
