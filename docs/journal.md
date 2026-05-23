@@ -17,6 +17,158 @@ schritte mit chronologischer Strukturierung. Die Git-Commits
 liefern die Quellen-Wahrheit fuer Daten und Reihenfolge.
 
 ---
+## 20.-23. Mai 2026 - Iteration 6: Grossstadt-Tauglichkeit + Konzept-Klaerung
+
+Mehrtaegige Session (20.-23.05.). Ziel war zunaechst, die Massen-Analyse
+von Oberhofen (Dorf) auf eine ganze Stadt (Thun) zu skalieren. Dabei
+traten mehrere Bugs auf, die im Dorf nie sichtbar waren. Am Ende stand
+eine wichtigere, konzeptionelle Erkenntnis als jeder einzelne Fix: Die
+geometrische Soll-Berechnung ist im Hoehensystem nicht ohne Annahme
+bestimmbar - das Tool muss als faktenbasierter Indikator gedacht werden,
+nicht als exakter Soll-Rechner.
+
+Quellen-Wahrheit fuer Reihenfolge und Inhalt: Commits 435d518, 082e542,
+1327ddc, 2414788.
+
+### GWR-tolerance-Cap-Bug (Commit 435d518)
+Beim Test in dichten Berner Quartieren (Buempliz, Wabern, Spiegel)
+fanden sich Gebaeude nicht. Ursache: Der MapServer-identify-Aufruf
+(gebaeude_zu_egrid in gwr.py) nutzte tolerance=500 - in dichten Gebieten
+ueberschritt das den Treffer-Cap der API (201 Treffer), wodurch die
+eigene Parzelle herausfiel. Fix: tolerance 500 -> 100. Verifikation an
+60 EFH-Parzellen: 60/60 Gebaeude gefunden (vorher 3/50). Befunde
+dokumentiert: gastw-Datenluecke (Geschosszahl teils fehlend),
+gkat-1080-Filter (unterirdische Bauten korrekt ohne Geschossflaeche).
+
+### Vier Grossstadt-Bugs: Thun-Massenanalyse (Commit 082e542)
+Der erste Versuch, ganz Thun zu analysieren, deckte vier Bugs auf:
+
+**1. EGRID-Fallback (analyse_adresse.py):** analysiere_per_egrid() setzte
+ergebnis.egrid nur aus parzelle.egrid. Bei Thun lieferte OEREB teils kein
+egrid -> ergebnis.egrid=None -> Cache-Speichern wurde geskippt
+("Ergebnis ohne EGRID - skip"). Fix: uebergebener egrid-Parameter als
+Fallback.
+
+**2. Gemeinde-Filter (parzellen_liste.py):** Die SearchAPI macht
+Praefix-Matching auf Gemeindenamen. "Thun" matchte auch Thundorf (TG,
+BFS 4611), Thunstetten (BFS 342), Oberhofen (BFS 934). Von 50 rohen
+Treffern bei "Thun 4" waren nur 2 echtes Thun (BFS 942). Fix: Gemeindename
+im detail-Feld der Suchergebnisse exakt pruefen, Fremdgemeinden verwerfen.
+
+**3. MAX_API_CALLS 500 -> 3000 (parzellen_liste.py):** Wegen der vielen
+Fremdtreffer reichten 500 API-Calls nicht, um ganz Thun einzusammeln.
+(Ein Zwischenversuch, die Verzweigung nach gefilterten statt rohen
+Treffern zu steuern, stoppte den Baum zu frueh bei 176 Parzellen und
+wurde rueckgaengig gemacht - die wenigen echten Treffer auf einer Ebene
+heissen nicht, dass darunter wenige liegen.)
+
+**4. Karten-Link (excel_export.py):** Die alte URL geo.apps.be.ch
+existiert nicht mehr (DNS_PROBE_FINISHED_NXDOMAIN). Recherche ergab: Der
+Kanton Bern hat die freie Grundbuch-Direktabfrage zum 1.9.2025
+abgeschafft - Eigentumsauskunft laeuft jetzt nur noch ueber GRUDIS public
+mit AGOV-Login (kein Direkt-Deeplink mehr moeglich). Ersetzt durch den
+login-freien eidg. Kartendienst map.geo.admin.ch/?swisssearch=<EGRID>.
+Spalte "GRUDIS" -> "Karte". Dies ist eine dokumentierbare Anpassung an
+eine externe Aenderung, kein Eigenverschulden.
+
+### Reserve-%-Fix: GWR-konsistent (Teil von 082e542)
+Die Excel-Spalte "Reserve %" zeigte zusammenhanglose Werte (z.B. Reserve
+-16 m2 aber +40%). Ursache: reserve_prozent wurde im Backend aus der
+internen Modell-Schaetzung (geschaetzt_realisiert_m2) berechnet, waehrend
+die Spalten Soll/Ist/Reserve(m2) die echten GWR-Daten nutzen -> beide
+drifteten auseinander. Fix nur im Export: Reserve% direkt aus
+reserve_m2/Soll. Negative Werte werden ehrlich gezeigt (ueberbaut/
+Bestandsschutz) - gut fuer die Rangliste, da ueberbaute Parzellen ans
+Ende sortieren. Die Klassifikation selbst war korrekt (nutzt echte
+Ausschoepfung Ist/Soll), nur die Anzeige-Spalte war irrefuehrend.
+
+### Vollstaendiger Thun-Lauf: 8534 Parzellen
+Nach den Fixes lief ganz Thun durch: 8974 Parzellen analysiert (8709 live
++ 265 cache), 0 Fehler, ~4h30 Laufzeit. Nach Dedup 8534 eindeutige EGRID,
+kein Thundorf mehr. Klassifikation: VERDICHTUNG 890, NEUGESCHAEFT 354,
+ERSATZNEUBAU 1514, UNAUFFAELLIG 1271, AUSGEREIZT 1752, AUSSCHLUSS_
+REGLEMENT 1824, ZU_KLEIN 800, FEHLER 440 (~5%), VERKEHR 123,
+WALD_VERDACHT 6. Damit ist die Grossstadt-Tauglichkeit nachgewiesen.
+
+### Baujahr-Spalte (Commit 1327ddc)
+Auf Wunsch des Architekten (Alter der Bausubstanz = Hebel-Indikator bei
+Verdichtung) wurde eine Baujahr-Spalte ergaenzt. Das Baujahr steckt
+bereits in daten_json (gwr_gebaeude); kein Re-Run noetig, nur die
+Export-Query um daten_json erweitert + Helper fuer das aelteste Baujahr
+(echtes baujahr-Feld, sonst bauperiode_code gemappt). Resultat Thun:
+884/890 VERDICHTUNG mit Baujahr (99%), davon 540 vor 1980 - genau die
+Objekte mit hohem Ersatzneubau-Hebel.
+
+### Schwager-Verifikation: Soll-Grenzabstand
+Fragenliste zum Soll-Bug an den Architekten (Schwager) verschickt, mit
+echten Thun-Zahlen: 829/1752 AUSGEREIZT-Parzellen (47%) haben Flaeche
+<500 m2, 266 mit Soll <50 m2, 55 mit Soll <10 m2 (faktisch 0). Antwort:
+Bei kleinen/aneinandergebauten Parzellen sollte der seitliche
+Grenzabstand wegfallen (dort wird angebaut), vorne+hinten der grosse UND
+kleine Grenzabstand voll zaehlen. Ausdruecklich "kein Generalrezept".
+Zusatz: Fokus ab 500 m2, kleinere neutral; Baujahr im Export erwuenscht.
+
+### KLEINPARZELLE-Indikator (Commit 2414788)
+Neue Kategorie KLEINPARZELLE fuer Parzellen 200-500 m2: neutral,
+ausserhalb der Fokus-Sheets (Verdichtung/Neugeschaeft/Ersatzneubau), aber
+sichtbar im "Alle"-Sheet. Umsetzt den Architekten-Hinweis (kleine
+Grundstuecke weniger interessant, aber nicht weglassen). Die Schwelle
+(<500 m2) ist ein FAKTISCHER Indikator - sie beruht allein auf der
+amtlich vermessenen Parzellenflaeche, nicht auf einer geschaetzten Soll-
+Berechnung. Damit bleibt sie auch bei Expansion auf andere Gemeinden
+(Bern etc.) gueltig. Re-Klassifikation Thun: ~800 fruehere AUSGEREIZT/
+UNAUFFAELLIG-Kleinparzellen jetzt sauber abgegrenzt.
+
+### Konzeptionelle Klaerung: faktischer Indikator statt erfundenes Soll
+Die wichtigste Erkenntnis dieser Iteration. Ein Versuch, die Schwager-
+Geometrie (seitlicher Grenzabstand weg) umzusetzen, deckte ein zweites,
+groesseres Soll-Problem auf: Bei grossen Parzellen deckelt der
+Geometrie-Begrenzer (max_gebaeudelaenge x Breite) das Soll auf feste
+Werte (z.B. 1080 m2 unabhaengig von der Parzellengroesse), weil das
+Modell nur EIN Gebaeude rechnet. 343 grosse Parzellen waren so betroffen.
+
+Recherche zur etablierten Methodik (ARE/GFR, Raum+, bauzonenkapazitaet.ch)
+zeigte: Die offizielle Schaetzung arbeitet mit Ausnuetzungs-/Geschoss-
+flaechenziffern und Ausschoepfungsgraden, nicht mit geometrischer
+Nachbildung. Pruefung der eigenen Reglement-Daten ergab aber: Thun
+(BR 2022) hat KEINE gueltige AZ/GFZ mehr - System "hoehen_und_gz", nur
+Hoehen, Geschosse, Grenzabstaende, Gruenflaechenziffer (0.45). Der alte
+AZ-Wert 0.5 ist nur historischer Vergleichswert.
+
+Schlussfolgerung: Die zulaessige Geschossflaeche ist im Hoehensystem
+ohne Annahme nicht eindeutig bestimmbar - sie haengt davon ab, wie ein
+konkretes Gebaeude auf die konkrete Parzelle gesetzt wird (Architekt:
+"kein Generalrezept"). Jede geometrische Annahme kippt bei irgendeiner
+Parzellenklasse (Kollaps bei kleinen, Deckel bei grossen). Das ist keine
+Schwaeche des Codes, sondern Eigenschaft des Baurechts.
+
+Konsequenz fuer das Konzept: Klare Trennung von (1) wahren Gegebenheiten
+(GWR-Ist, Baujahr, Geschosszahl, Parzellenflaeche, Reglement-Kennzahlen,
+Gruenflaechenziffer - alles Fakten) und (2) Indikator (transparente
+Heuristik, die auf Schicht 1 aufbaut). Der Indikator soll kuenftig ein
+Ranking aus mehreren faktischen Signalen sein, nicht eine einzelne
+erfundene Soll-Zahl. Das ist robuster, ehrlicher und skaliert ueber
+Gemeindegrenzen (wichtig fuer die geplante Bern-Expansion).
+
+Daher wurde der Soll-Geometrie-Fix bewusst zurueckgenommen (git checkout
+potenzial.py) - er verbessert nur die Kruecke und loest das Deckel-
+Problem nicht. KLEINPARZELLE blieb erhalten (faktischer Indikator).
+
+### Stand am Ende der Iteration
+Committed und verifiziert: GWR-tolerance, Grossstadt-Tauglichkeit
+(4 Bugs), Reserve-%, Baujahr-Spalte, KLEINPARZELLE. Thun + Oberhofen
+laufen sauber durch, Excel mit funktionierenden Karten-Links.
+
+Offen (bewusst, konzeptionell - nicht im Code):
+- Architekt-Antwort zur Soll-Methodik (GFZ-Frage gestellt)
+- Indikator-Konzept auf rein faktischen Signalen, Abstimmung mit RE
+  (Fabienne)
+- Erst danach Umbau des Berechnungskerns
+
+Erkenntnis des Tages: An der richtigen Stelle innehalten und das Konzept
+klaeren ist mehr wert als eine weitere Heuristik einzubauen.
+
+---
 
 ## 12. Mai 2026 - Iteration 5 komplett (~11h)
 
