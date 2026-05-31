@@ -9,8 +9,6 @@
 bauzonen-radar/
 |-- README.md                       Einstiegs-Doku, Test-Adressen, Beispiele
 |-- requirements.txt                Python-Abhaengigkeiten
-|-- start.ps1                       venv aktivieren, in Modul-Ordner wechseln
-|-- demo.ps1                        Regressionstest fuer Test-Adressen
 |-- .gitignore                      Repo-Ausschluesse
 |
 |-- docs/

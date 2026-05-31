@@ -149,8 +149,8 @@ sich eine Detailpruefung.
 
 **Tests**:
 
-* Regressionstest 12 Adressen (`tests\test_zwoelf_adressen.ps1`)
-* Stresstest 50 Adressen (`tests\test_fuenfzig_adressen.ps1`) -
+* Regressionstest 12 Adressen (`tests/test_zwoelf_adressen.ps1`)
+* Stresstest 50 Adressen (`tests/test_fuenfzig_adressen.ps1`) -
   96% Erfolg, 2.2 Min Laufzeit
 * Pilot-Laeufe Oberhofen + Thun (jeweils 0 Fehler)
 
@@ -223,55 +223,127 @@ Bemerkenswert: GWR zeigt 1520 m^2 effektive Bebauung, die Schaetzung
 gibt 1080 m^2 als Soll an. Das verdeutlicht den Plausibilitaets-Konflikt
 und ist genau der Mehrwert, den die GWR-Integration bringt.
 
+---
+
 ## Schnellstart
 
 ### Voraussetzungen
 
-* Python 3.13
-* Windows mit PowerShell 7 (oder Linux/Mac mit angepassten Skripten)
-* Internetverbindung (fuer swisstopo + OEREB + GWR)
+* **Python 3.13** (oder neuer)
+* **Internetverbindung** (das Tool ruft swisstopo + OEREB + GWR live ab)
+* Plattform: Windows, Linux oder macOS
 
-### Installation
+Pruefen ob Python installiert ist:
+
+```
+python --version
+```
+
+Erwartete Ausgabe: `Python 3.13.x`. Falls nicht installiert: von
+<https://www.python.org/downloads/> herunterladen und installieren.
+
+### Schritt 1: Repository klonen
 
 ```
 git clone https://github.com/christophejenzer-collab/bauzonen-radar.git
 cd bauzonen-radar
+```
+
+### Schritt 2: Virtuelle Umgebung anlegen
+
+Eine venv (virtuelle Umgebung) isoliert die Projekt-Pakete von anderen
+Python-Installationen.
+
+```
 python -m venv .venv
+```
+
+### Schritt 3: Virtuelle Umgebung aktivieren
+
+**Auf Windows (PowerShell):**
+
+```
 .\.venv\Scripts\Activate.ps1
+```
+
+**Auf Windows (CMD):**
+
+```
+.venv\Scripts\activate.bat
+```
+
+**Auf Linux oder macOS:**
+
+```
+source .venv/bin/activate
+```
+
+Wenn das geklappt hat, steht jetzt `(.venv)` am Anfang der Eingabezeile.
+
+### Schritt 4: Abhaengigkeiten installieren
+
+```
 pip install -r requirements.txt
 ```
 
-### Einzelfall-Analyse
+Dauert ca. 30 Sekunden.
+
+### Schritt 5: Erste Analyse durchfuehren
+
+Eine konkrete Adresse analysieren:
 
 ```
-.\start.ps1
-python src\bauzonenradar\analyse_adresse.py "Frutigenstrasse 25, 3604 Thun"
+python -m bauzonenradar.analyse_adresse "Frutigenstrasse 25, 3604 Thun"
 ```
 
-### Streamlit-GUI (Einzelfall mit visueller Aufbereitung)
+Erwartete Ausgabe: ein strukturierter Bericht mit Parzellen-Infos,
+GWR-Bebauung und Empfehlungs-Block. Laufzeit ca. 5-10 Sekunden.
+
+### Tip: Streamlit-GUI fuer visuelle Analyse
+
+Statt CLI gibt es eine Web-Oberflaeche mit Karte und Plausibilitaets-
+Konflikt-Box:
 
 ```
-streamlit run src\bauzonenradar\gui\frontend.py
+streamlit run src/bauzonenradar/gui/frontend.py
 ```
 
-### Massen-Analyse (ganze Gemeinde)
+Oeffnet automatisch <http://localhost:8501> im Browser.
+
+### Tip: Massen-Analyse einer ganzen Gemeinde
 
 ```
 python -m bauzonenradar.gemeinde_analyse --gemeinde "Oberhofen am Thunersee"
+```
+
+Laufzeit fuer Oberhofen (1176 Parzellen) ca. 40 Minuten. Das Ergebnis
+landet als Excel-Datei im Ordner `ausgaben/`.
+
+Fuer eine Grossstadt:
+
+```
 python -m bauzonenradar.gemeinde_analyse --gemeinde "Thun" --throttling 1.0
 ```
 
-Ausgabe als Excel-Datei unter `ausgaben/bauzonen_radar_<gemeinde>_<datum>.xlsx`.
+Laufzeit fuer Thun (8534 Parzellen) ca. 4-5 Stunden. Das Tool kann
+zwischendurch mit Strg+C abgebrochen werden und beim naechsten
+Aufruf nahtlos fortgesetzt werden (SQLite-Cache).
 
-### Tests
+### Tests ausfuehren
+
+Regressionstest mit 12 verifizierten Adressen:
 
 ```
-# Regressionstest mit zwoelf Adressen
-.\tests\test_zwoelf_adressen.ps1
-
-# Stresstest mit fuenfzig Adressen (~2-3 Minuten)
-.\tests\test_fuenfzig_adressen.ps1
+.\tests\test_zwoelf_adressen.ps1     # Windows
 ```
+
+Stresstest mit 50 Adressen (ca. 2-3 Minuten):
+
+```
+.\tests\test_fuenfzig_adressen.ps1   # Windows
+```
+
+---
 
 ## Test-Adressen
 
@@ -305,8 +377,6 @@ Vollstaendige Architektur-Karte: [docs/struktur.md](docs/struktur.md).
 bauzonen-radar/
 |-- README.md                       Diese Datei
 |-- requirements.txt                Python-Abhaengigkeiten
-|-- start.ps1                       venv aktivieren, in Modul-Ordner wechseln
-|-- demo.ps1                        Regressionstest fuer Test-Adressen
 |
 |-- docs/                           Vollstaendige Projekt-Dokumentation
 |   |-- konzept.md                          Hauptkonzept
@@ -319,8 +389,7 @@ bauzonen-radar/
 |   |-- anforderungen_*.md                  Anforderungen Backend/Frontend
 |   |-- requirements_*.md                   Technische Requirements Backend/Frontend
 |   |-- releasenotes_*.md                   Releasenotes Backend/Frontend
-|   |-- code_walkthrough_*.md               Code-Erklaerungen fuer Verteidigung
-|   `-- archiv/                             Lokale Geschichts-Sammlung (gitignored)
+|   `-- code_walkthrough_*.md               Code-Erklaerungen fuer Verteidigung
 |
 |-- daten/baureglemente/
 |   |-- bern.json
