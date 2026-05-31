@@ -1,3 +1,35 @@
+\## ✅ Neue Funktionalitäten (23.05.2026)
+
+\*\*Grossstadt-Tauglichkeit (Stadt Thun)\*\*
+Die Massen-Analyse läuft jetzt auch für ganze Städte. Pilotlauf
+Stadt Thun mit 8534 Parzellen lief in 4h30 fehlerfrei durch und
+identifizierte 890 Verdichtungs-, 354 Neugeschäft- und 1514
+Ersatzneubau-Kandidaten.
+
+\*\*Baujahr-Spalte im Excel-Export\*\*
+Jede Parzelle zeigt jetzt das älteste GWR-Baujahr (mit Bauperiode-
+Code als Fallback). Bei Verdichtungs-Objekten lassen sich so alte
+Bausubstanzen mit hohem Ersatzneubau-Hebel direkt erkennen
+(Thun: 540 von 890 Verdichtungs-Objekten vor 1980 gebaut).
+
+\*\*Neue Kategorie KLEINPARZELLE\*\*
+Parzellen zwischen 200 und 500 m² werden neu als KLEINPARZELLE
+klassifiziert: neutral, ausserhalb der Fokus-Reiter (Verdichtung/
+Neugeschäft/Ersatzneubau), aber sichtbar in der Gesamtliste.
+Umsetzt den Architekten-Hinweis: kleine Grundstücke sind für die
+Verdichtungs-Analyse weniger relevant, sollen aber nicht
+weggelassen werden.
+
+\*\*Karten-Link auf map.geo.admin.ch\*\*
+Der Karten-Direktlink in der Excel zeigt jetzt auf den eidg.
+Kartendienst (login-frei). Der vorherige Berner Grundbuch-Link
+existiert nicht mehr — der Kanton BE hat die freie Direktabfrage
+zum 1.9.2025 abgeschafft (Eigentumsauskunft jetzt nur noch über
+GRUDIS public mit AGOV-Login). Saubere Anpassung an externe
+Änderung.
+
+---
+
 \## ✅ Neue Funktionalitäten (12.05.2026)
 
 \*\*Massen-Analyse einer ganzen Gemeinde\*\*
@@ -72,7 +104,6 @@ wird.
 \## ✅ Neue Funktionalitäten (11.05.2026)
 
 
-
 \*\*Vollständige GUI-Anbindung des Backends\*\*
 
 Die Streamlit-GUI greift jetzt zuverlässig auf alle berechneten
@@ -84,7 +115,6 @@ Reserve, Zonenangaben und Empfehlungs-Status werden direkt aus dem
 Analyse-Ergebnis ausgelesen und im Frontend visualisiert.
 
 
-
 \*\*Plausibilitäts-Konflikt zwischen Soll und Ist sichtbar\*\*
 
 Wenn die effektive Bestandsbebauung (aus dem Gebäuderegister) den
@@ -94,9 +124,7 @@ berechneten theoretischen Wert übersteigt, wird dies jetzt automatisch
 als Hinweis dargestellt — wichtig für Bestandsbauten mit Bestandesschutz.
 
 
-
 \## 🔧 Verbesserungen \& Qualität
-
 
 
 \*\*Konsolidierte Datenstruktur\*\*
@@ -108,7 +136,6 @@ einheitlichen Feldnamen direkt im Analyse-Ergebnis verfügbar. Damit
 können Frontends ohne Umwege auf die Daten zugreifen.
 
 
-
 \*\*Live-Verifikation mit vier Test-Adressen\*\*
 
 Alle drei Datenqualitäts-Pfade (verbindlich / geschätzt / nicht möglich)
@@ -118,9 +145,7 @@ und ein Edge-Case (über 200% Ausschöpfung) wurden mit echten Daten
 in der GUI verifiziert.
 
 
-
 \## ⚠️ Hinweise
-
 
 
 \*\*Frontend-Backend-Kompatibilität\*\*
@@ -129,14 +154,9 @@ Bestehende Skripte, die den Textbericht oder die Original-Felder nutzen,
 
 funktionieren unverändert weiter — die neuen Felder sind additiv ergänzt.
 
-
-
 ---
 
-
-
 \## ✅ Neue Funktionalitäten (03.05.2026)
-
 
 
 \*\*Strukturiertes Analyse-Ergebnis\*\*
@@ -150,7 +170,6 @@ Zonenangaben, Berechnung, Empfehlung, GWR-Daten und Geokoordinaten
 sind direkt zugreifbar.
 
 
-
 \*\*WGS84-Koordinaten für Karten-Visualisierung\*\*
 
 Zu jeder analysierten Adresse wird automatisch die Position in
@@ -158,7 +177,6 @@ Zu jeder analysierten Adresse wird automatisch die Position in
 WGS84-Koordinaten berechnet, sodass die Parzelle direkt auf einer
 
 Karte dargestellt werden kann.
-
 
 
 \*\*Robusterer Adress-Workflow\*\*
@@ -170,9 +188,7 @@ unvollständigen GWR-Daten läuft die Pipeline weiter und liefert
 soweit möglich Teilergebnisse mit klaren Status-Hinweisen.
 
 
-
 \## 🔧 Verbesserungen \& Qualität
-
 
 
 \*\*Trennung Berechnung und Ausgabe\*\*
@@ -182,7 +198,6 @@ Die Logik der Berechnung ist sauber getrennt von der Bericht-Ausgabe.
 Damit können verschiedene Oberflächen (CLI, Web) dieselbe Analyse
 
 nutzen, ohne den Berechnungs-Code anzupassen.
-
 
 
 \*\*Verifikation auf 12 Test-Adressen\*\*
@@ -196,9 +211,7 @@ Planungspflicht-Zonen, fehlende Reglemente) sind durch automatisierten
 Stresstest abgedeckt.
 
 
-
 \## ⚠️ Hinweise
-
 
 
 \*\*Backup-Dateien lokal\*\*
@@ -209,11 +222,7 @@ erstellt (`analyse\_adresse.py.bak\_potenzial\_ergebnis`). Diese liegt
 
 nur lokal und wird nicht ins Repository übernommen.
 
-
-
 ---
-
-
 
 ✅ Neue Funktionalitäten
 
