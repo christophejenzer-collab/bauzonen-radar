@@ -1,296 +1,276 @@
 # Projekt-Struktur
 
-**Stand**: 11. Mai 2026 (vor Iter-4-Abschluss)
+**Stand**: 23. Mai 2026 (nach Iteration 6)
 **Erstellt mit**: `Get-ChildItem -Recurse -File` aus PowerShell
 
 ## Visualisierung
 
 ```
 bauzonen-radar/
+|-- README.md                       Einstiegs-Doku, Test-Adressen, Beispiele
+|-- requirements.txt                Python-Abhaengigkeiten
+|-- start.ps1                       venv aktivieren, in Modul-Ordner wechseln
+|-- demo.ps1                        Regressionstest fuer Test-Adressen
+|-- .gitignore                      Repo-Ausschluesse
 |
-+-- README.md                   Projektbeschreibung
-+-- requirements.txt            Python-Abhaengigkeiten
-+-- .gitignore                  Git-Ausschluesse mit fixtures-Whitelist
-+-- start.ps1                   PowerShell-Helper: venv + cd ins Modul
-+-- demo.ps1                    Demo-Aufrufe fuer Test-Adressen
+|-- docs/
+|   |-- konzept.md                          Pflicht-Konzeptdokument
+|   |-- konzept_gemeinde_analyse.md         Iter-5/6-Konzept (empirisch verifiziert)
+|   |-- projektplan.md                      Iterations-Roadmap
+|   |-- journal.md                          Chronologisches Arbeitsjournal
+|   |-- struktur.md                         Diese Datei
+|   |-- fachliche_grundlagen.md             IVHB, Berner Systemwechsel, Indikator-Erkenntnis
+|   |-- glossar.md                          Begriffsdefinitionen
+|   |-- start_cheatsheet.md                 Persoenliche Befehls-Sammlung
+|   |-- anforderungen_backend.md            Funktionale + nicht-funktionale Anforderungen (Backend)
+|   |-- anforderungen_frontend.md           Anforderungen Streamlit-GUI (Fabienne)
+|   |-- requirements_backend.md             Backend-Schnittstelle fuer GUI
+|   |-- requirements_frontend.md            Streamlit-GUI-Requirements (Fabienne)
+|   |-- releasenotes_backend.md             Backend-Versionierung
+|   |-- releasenotes_frontend.md            Frontend-Versionierung (Fabienne)
+|   `-- archiv/                             LOKAL (gitignored): PoC, alte Strukturbaeume
 |
-+-- historie/
-|   +-- patches/                      6 alte Patch-Skripte aus Iter 2-4
-|       +-- README.md                 Erklaerung der Patches
-|       +-- patch_*.ps1               6 Skripte (siehe Tabelle unten)
+|-- daten/baureglemente/
+|   |-- bern.json                           Stadt Bern (BK 2-6, BK E, ZoeN, Altstadt)
+|   |-- thun.json                           Stadt Thun (BR 2022, Hoehen+GZ)
+|   `-- oberhofen_am_thunersee.json         Oberhofen (BR 2012/2024, Hoehen-System)
 |
-+-- src/
-|   `-- bauzonenradar/          Hauptpaket
-|       +-- __init__.py
-|       +-- analyse_adresse.py  Hauptprogramm mit AnalyseErgebnis-Datenklasse
-|       +-- baureglement.py     Reglement-Loader (JSON pro Gemeinde)
-|       +-- bern.py             OEREB-Adapter (auch fuer andere Gemeinden)
-|       +-- bern_bkp.py         BKP-API Stadt Bern (parzellenscharfe Werte)
-|       +-- modelle.py          Datenklassen (Parzelle, Restriction, etc.)
-|       +-- xml_speichern.py    XML-Helper
-|       |
-|       +-- analyse/
-|       |   +-- __init__.py
-|       |   `-- potenzial.py    Potenzialberechnung mit drei Bemessungssystemen
-|       |
-|       +-- ausgabe/            (leer, Platzhalter fuer Output-Module Iter 5)
-|       |   `-- __init__.py
-|       |
-|       +-- datenquellen/       Externe Datenquellen
-|       |   +-- __init__.py     Exports: GwrQuelle, GwrGebaeude, Exception-Klassen
-|       |   `-- gwr.py          GWR-API (Eidg. Geb.- u. Wohnungsregister)
-|       |
-|       `-- gui/                Streamlit-GUI (Iteration 4)
-|           +-- __init__.py
-|           `-- frontend.py     Streamlit-App von Fabienne
+|-- tests/
+|   |-- test_zwoelf_adressen.ps1            Regressionstest 12 Adressen
+|   |-- test_fuenfzig_adressen.ps1          Stresstest 50 Adressen
+|   |-- test_bern_batch.py                  Stadt-Bern-spezifische Batch-Tests
+|   |-- __init__.py
+|   `-- fixtures/                           OEREB-XML-Snapshots (getrackt via Whitelist)
+|       |-- README.md
+|       |-- extract_koeniz.xml
+|       |-- pruefen.xml
+|       `-- thun.xml
 |
-+-- daten/
-|   `-- baureglemente/
-|       +-- bern.json
-|       +-- oberhofen_am_thunersee.json
-|       `-- thun.json
-|
-+-- docs/
-|   +-- konzept.md                       Hauptkonzept
-|   +-- konzept_gemeinde_analyse.md      Iteration-5-Konzept (verifiziert)
-|   +-- projektplan.md                   Iteration-Roadmap
-|   +-- fachliche_grundlagen.md          IVHB, Berner Systemwechsel
-|   +-- journal.md                       Chronologisches Arbeitsjournal
-|   +-- struktur.md                      Diese Datei
-|   +-- anforderungen_backend.md         RE-Doku Backend (Fabienne)
-|   +-- anforderungen_frontend.md        RE-Doku Frontend (Fabienne)
-|   +-- requirements_backend.md          Requirements Backend (Fabienne)
-|   +-- requirements_frontend.md         Requirements Frontend (Fabienne)
-|   +-- glossar.md                       Fachbegriffe (Fabienne)
-|   +-- releasenotes_backend.md          Releasenotes Backend
-|   +-- releasenotes_frontend.md         Releasenotes Frontend (Fabienne)
-|   +-- start_cheatsheet.md              Persoenliche Quick-Start-Befehle (lokal)
-|   `-- archiv/                          LOKAL: PoC, alte Snapshots, Backups
-|
-`-- tests/
-    +-- __init__.py
-    +-- test_zwoelf_adressen.ps1         Stichproben 12 Adressen
-    +-- test_fuenfzig_adressen.ps1       Stresstest 50 Adressen
-    +-- test_bern_batch.py               Stadt-Bern-spezifische Batch-Tests
-    +-- test_output_nach_fix.txt         Verifikations-Snapshot vom 29.04.
-    `-- fixtures/                        OEREB-XML-Snapshots (TRACKED via Whitelist)
-        +-- README.md
-        +-- extract_koeniz.xml
-        +-- extract_pruefen.xml
-        `-- extract_thun.xml
+`-- src/bauzonenradar/
+    |-- __init__.py
+    |-- modelle.py                          Datenklassen (Parzelle, Restriction, ...)
+    |-- bern.py                             OEREB-Webservice-Anbindung
+    |-- bern_bkp.py                         BKP-API Stadt Bern (parzellenscharf)
+    |-- baureglement.py                     Reglement-Lade-Modul
+    |-- analyse_adresse.py                  Einzelfall-Hauptprogramm + AnalyseErgebnis
+    |-- gemeinde_analyse.py                 Massen-Analyse-Pipeline (Iter 5)
+    |-- gemeinde_cache.py                   SQLite-Cache fuer AnalyseErgebnisse (Iter 5)
+    |-- klassifikation.py                   Klassifikations-Logik (Iter 5+6)
+    |-- excel_export.py                     Excel-Output mit Karten-Links + Baujahr (Iter 5+6)
+    |-- analyse/
+    |   `-- potenzial.py                    Potenzialberechnung mit Empfehlungs-Block
+    |-- datenquellen/
+    |   |-- gwr.py                          GWR-API (Eidg. Geb.- und Wohnungsregister)
+    |   |-- parzellen_liste.py              Praefix-Baum-Suche (Iter 5)
+    |   `-- tlm3d.py                        TLM3D-Strassen + Arealstatistik (Iter 5)
+    |-- ausgabe/
+    |   `-- (Platzhalter fuer kuenftige Ausgabe-Module)
+    `-- gui/
+        `-- frontend.py                     Streamlit-GUI (Fabienne, Iter 4)
 ```
 
 ## Lokale, nicht-getrackte Dateien
 
-Folgende Dateien sind via `.gitignore` aus dem Repo ausgeschlossen,
-aber lokal vorhanden zur Arbeitserleichterung:
+Folgende Dateien existieren lokal, sind aber via `.gitignore` aus
+dem Repo ausgeschlossen:
 
-- `src/bauzonenradar/gui/app_christophe_test.py` - Test-Kopie fuer
-  parallele Frontend-Tests (vor Fabiennes Push). Kann geloescht werden,
-  ist nicht mehr noetig seit das Repo gepushed wurde.
-- `docs/archiv/output_baumgarten_thun.md` - Output-Snapshot interessanter
-  Adressen mit Naturgefahren und Ortsbildschutz, historisches Material.
-- `docs/archiv/backup_vor_aufraeumen_*.zip` - Sicherheits-Backups
-  beim Aufraeumen.
+- `app_christophe_test.py` (lokale Frontend-Test-Datei)
+- `analyse_adresse.py.bak_*` (vereinzelte Code-Backups)
+- `ausgaben/` (Excel-Outputs der Massen-Analyse, gross + flutet das Repo)
+- `cache/cache_*.db` (SQLite-Caches der Gemeinde-Analyse)
+- `docs/archiv/` (PoC, alte Strukturbaeume, interessante Output-Snapshots)
 
 ## Module im Detail
 
 ### `analyse_adresse.py` (refactored 03.05., gefixt 11.05.)
 
-Hauptprogramm und Eintrittspunkt fuer die ganze Pipeline. Seit
-03.05. gilt eine klare **Trennung Berechnung/Ausgabe**:
+Hauptprogramm fuer den Einzelfall-Modus. Liefert ein `AnalyseErgebnis`-
+Objekt mit allen Daten der Pipeline (~40 Felder inkl. GUI-Aliase) und
+trennt klar zwischen `analysiere()` (reine Logik) und
+`drucke_bericht()` (CLI-Output). Damit nutzt die GUI dieselbe Logik
+wie die CLI - Separation of Concerns als zentrale Architektur-
+Entscheidung.
 
-```
-analysiere(adresse) -> AnalyseErgebnis    # reine Logik, kein Print
-drucke_bericht(ergebnis) -> None           # CLI-Output
-main()                                     # ruft beide nacheinander
-```
-
-`AnalyseErgebnis` ist eine Datenklasse mit ~40 Feldern, die alle
-Pipeline-Daten sammelt:
+Wichtige Felder im `AnalyseErgebnis`:
 - Adresse, Status, Fehler, Warnungen
 - Parzelle (gemeinde, parzellen_nummer, parzellen_flaeche_m2, egrid)
-- Koordinaten (LV95 und WGS84)
-- Reglement-Status
-- BKP-Daten (Stadt Bern)
-- GWR-Daten (Liste der Gebaeude, Summe Geschossflaeche)
+- Koordinaten (LV95 und WGS84 fuer Karten)
+- Reglement, BKP-, GWR-Daten
 - Potenzial (datenqualitaet, zulaessig_m2, ausschoepfung_prozent, ...)
-- GUI-Aliase (theoretisch_zulaessig_m2, ausschoepfungsgrad_prozent,
-  reserve_prozent, zonen_betrachtet, zone, arealbonus_anwendbar,
-  bemerkungen) - direkt aus PotenzialErgebnis befuellt
-- Original-Textbericht fuer Debug
+- 7 GUI-Aliase ergaenzt am 11.05. (theoretisch_zulaessig_m2 etc.)
 
-So koennen GUI (Streamlit) und CLI dieselbe `analysiere()`-Funktion
-nutzen, ohne Berechnungslogik zu duplizieren. **Separation of
-Concerns**.
-
-Pipeline-Aufruf (CLI):
-```bash
-python src\bauzonenradar\analyse_adresse.py "Frutigenstrasse 25, 3604 Thun"
-```
+Iter-6-Erweiterung (20.05.): `analysiere_per_egrid()` mit egrid-
+Fallback fuer Massen-Analyse, wenn OEREB selber kein egrid liefert.
 
 ### `bern.py`
-Trotz des Namens ist dies der **generische OEREB-Adapter**. Holt
-Parzellendaten via OEREB-Webservice fuer alle BE-Gemeinden, nicht
-nur Bern. Refactoring-Kandidat fuer spaeter (z.B. nach `oereb.py`
-verschieben).
+
+OEREB-Webservice-Anbindung (`oereb2.apps.be.ch`). XML-Parser fuer
+GetEGRID + GetExtract. Erkennt Gefahrengebiete, Baulinien, Flaechen,
+vereinfachte Grundnutzungs-Form, Spezialregimes.
 
 ### `bern_bkp.py`
-Stadt-Bern-spezifischer Adapter fuer den parzellenscharfen
-Bauklassenplan via ArcGIS-REST-API von `map.bern.ch`. Liefert
-echte Bauweise (offen/geschlossen) und Gebaeudemasse pro Parzelle.
 
-### `datenquellen/gwr.py` (NEU 30.04.2026)
-Adapter fuer das Eidgenoessische Gebaeude- und Wohnungsregister
-ueber api3.geo.admin.ch. Vollausbau ~330 Zeilen mit:
-- `GwrGebaeude`-Datenklasse
-- Zwei-Stufen-Workflow (SearchAPI -> MapServer)
-- Caching, Retry-Logic, Throttling fuer Massen-Abfragen
-- Aggregation `geschossflaeche_pro_parzelle()` fuer mehrere Gebaeude
-- 3 Exception-Klassen
+ArcGIS REST-API Anbindung an `map.bern.ch/Bauklassenplan`. Liefert
+parzellenscharfe Werte fuer Bauweise (Layer 88) und Grundzonen
+(Layer 95) der Stadt Bern. Pure Standard-Library, keine Zusatz-
+Abhaengigkeit. `Bauparameter.mit_bkp_daten()` integriert das.
+
+### `datenquellen/gwr.py` (vorgebaut 30.04.2026)
+
+Eidg. Gebaeude- und Wohnungsregister via swisstopo MapServer.
+~330 Zeilen mit Caching, Retry, Throttling. Zwei Stufen:
+- `GwrQuelle.gebaeude_zu_adresse()`: SearchAPI -> MapServer (Einzelfall)
+- `gebaeude_zu_egrid()` (NEU 12.05.): MapServer-identify mit
+  Punkt-Geometrie (fuer Massen-Analyse)
+
+Iter-6-Fix (20.05.): tolerance 500 -> 100, damit in dichten Stadt-
+quartieren die eigene Parzelle nicht aus dem 201-Treffer-Cap der
+API herausfaellt.
 
 ### `analyse/potenzial.py`
-Drei-System-Berechnungslogik (AZ, GFZo, hoehen_und_gz). Drei
-Datenqualitaeten (VERBINDLICH, GROBSCHAETZUNG, NICHT_MOEGLICH).
-Empfehlungs-Block mit ASCII-Balken. Drei-Begrenzer-Logik
-(Geometrie/Parzelle/GZ).
+
+Potenzialberechnung mit Drei-Pfad-Logik (VERBINDLICH / GROBSCHAETZUNG
+/ NICHT_MOEGLICH). Drei-Begrenzer-Logik bei Schaetzungen (Geometrie /
+Parzelle / GZ - kleinster gewinnt). Empfehlungs-Block mit ASCII-
+Balken und vier Lagebeurteilungs-Stufen.
 
 ### `baureglement.py`
-Laedt Reglement-JSON pro Gemeinde, erkennt Synonyme automatisch,
-liefert Parameter fuer die Potenzialberechnung.
 
-### `gui/frontend.py` (NEU 03.05.2026 - Fabienne)
+Lade-Logik fuer die Reglement-JSONs. Erkennt Synonyme von Zonen-
+Namen (OEREB-Schreibweisen vs. Reglement-Schreibweisen), unterstuetzt
+mehrere Bemessungssysteme pro Reglement.
 
-Streamlit-GUI fuer Endanwender. Importiert `analysiere()` direkt
-aus `analyse_adresse.py` und rendert das `AnalyseErgebnis` grafisch:
+### `gui/frontend.py` (Fabienne, 03.05.2026)
 
-- Adress-Eingabefeld + "Analysieren"-Button
-- Sektion **Lage**: Karte mit `st.map()` und WGS84-Koordinaten
-- Sektion **Parzelle**: Gemeinde, Flaeche, Zone(n), Datenqualitaets-Badge
-- Sektion **Bebauungspotenzial**: Zulaessig / Ausschoepfung / Reserve
-  als Kennzahlen plus Progress-Bars und Lagebeurteilung
-- Sektion **GWR**: Tabelle der Bestandsgebaeude plus
-  Plausibilitaets-Konflikt-Box bei GWR-Diskrepanz
+Streamlit-GUI ~370 Zeilen mit eigenstaendigem Design:
+- Inter-Schrift, Schwarz/Rot-Akzent, ruhige Typografie
+- Drei Sektionen: Lage (Karte) / Parzelle / Bebauungspotenzial / GWR
+- Plausibilitaets-Konflikt-Box bei GWR-Diskrepanz (Iter-4-Highlight)
+- Defensive Programmierung mit Variant-Detection
 
-Eigenes CSS mit Inter-Schrift, Schwarz/Rot-Akzent, ruhiger
-professioneller Anmutung. Keine Streamlit-Default-Optik.
+### `gemeinde_analyse.py` (NEU 12.05.2026, Iter 5)
 
-Aufruf (aus Projekt-Root):
-```powershell
-streamlit run src\bauzonenradar\gui\frontend.py
-```
+Massen-Analyse-Pipeline. Liest die Parzellen-Liste, ruft pro
+Parzelle Cache-Check -> analysiere_per_egrid -> klassifiziere ->
+Cache-Schreiben. Throttling 0.7s zwischen Live-Calls (nicht bei
+Cache-Hits), Retry 3x bei API-Fehler, Progress-Logging mit ETA,
+KeyboardInterrupt-sicher.
+
+CLI-Flags: `--kanton`, `--no-cache`, `--refresh-aelter-als TAGE`,
+`--limit N`, `--throttling SEK`.
+
+### `gemeinde_cache.py` (NEU 12.05.2026, Iter 5)
+
+SQLite-Cache fuer komplette `AnalyseErgebnisse`. Flache Felder fuer
+schnelle Queries + `daten_json`-Spalte mit Pickle-Serialisierung
+des vollen Objekts. Wiederaufnahme nach Abbruch klappt, Cache
+ueberlebt Strg+C.
+
+### `klassifikation.py` (NEU 12.05.2026, erweitert 23.05.)
+
+Geschaeftslogik-Kategorien:
+- VERDICHTUNG (bebaut + Reserve)
+- NEUGESCHAEFT (leer + Bauland)
+- ERSATZNEUBAU (alt + Reserve)
+- AUSGEREIZT (Bestandsschutz)
+- UNAUFFAELLIG
+- **KLEINPARZELLE** (200-500 m2, neutral - NEU Iter 6)
+- AUSSCHLUSS_REGLEMENT, AUSSCHLUSS_ZU_KLEIN, AUSSCHLUSS_FEHLER,
+  AUSSCHLUSS_VERKEHR, AUSSCHLUSS_WALD_VERDACHT
+
+Nutzt die ECHTE Ausschoepfung aus GWR (Ist/Soll * 100), nicht das
+Backend-Platzhalter-Feld.
+
+### `excel_export.py` (NEU 12.05.2026, erweitert 23.05.)
+
+XLSX-Export aus dem `KantonsCache` mit 6 Sheets: Statistik,
+Verdichtung, Neugeschaeft, Ersatzneubau, Ausgereizt, Alle.
+
+Iter-6-Erweiterungen:
+- Karten-Link auf `map.geo.admin.ch/?swisssearch=<EGRID>`
+  (`geo.apps.be.ch` wurde vom Kanton BE zum 1.9.2025 abgeschafft)
+- Reserve-% GWR-konsistent (negative Werte ehrlich gezeigt)
+- Baujahr-Spalte aus `daten_json` (aeltestes Gebaeude pro Parzelle)
+
+### `datenquellen/parzellen_liste.py` (NEU 12.05.2026, gefixt 22.05.)
+
+Praefix-Baum-Suche ueber die swisstopo SearchAPI. Sammelt rekursiv
+alle Parzellen einer Gemeinde via Praefix-Anfragen (`Oberhofen`,
+dann `Oberhofen 1`, `Oberhofen 10`, ...). Deduplizierung via EGRID-
+Set.
+
+Iter-6-Fixes (20.-22.05.):
+- Gemeindename-Filter (verwirft Fremdtreffer wie Thundorf bei "Thun")
+- `MAX_API_CALLS` 500 -> 3000 fuer Grossstadt-Tauglichkeit
+
+### `datenquellen/tlm3d.py` (NEU 12.05.2026, Iter 5 Bonus)
+
+Bodenbedeckungs-Filter:
+- `TlmStrassenQuelle`: Layer `ch.swisstopo.swisstlm3d-strassen`,
+  offizielle TLM3D-Strassen
+- `ArealstatistikQuelle`: Layer `ch.bfs.arealstatistik-bodenbedeckung`,
+  NOLC04-Codes
+
+Erkennt Strassen (4 Indikatoren noetig, konservativ) und Wald-
+Verdacht ('VERDACHT' weil Arealstatistik nicht 100% verlaesslich).
 
 ## Reglement-Daten
 
-| Gemeinde | Datei | Stand | Struktur |
+| Gemeinde | Datei | System | Status |
 |---|---|---|---|
-| Bern | `bern.json` | 2026-04-28 | bauklassen + nutzungszonen |
-| Thun | `thun.json` | 2026-04-29 | kombiniert (kein BK) |
-| Oberhofen am Thunersee | `oberhofen_am_thunersee.json` | 2026-04-27 | kombiniert |
+| Stadt Bern | `bern.json` | hoehen_und_gz + GFZo + BK_E | komplett |
+| Stadt Thun | `thun.json` | hoehen_und_gz + AZ-Vergleich | komplett |
+| Oberhofen | `oberhofen_am_thunersee.json` | hoehen_und_gz ohne GZ | komplett |
 
 ## Test-Suiten
 
-| Datei | Zweck | Stand |
+| Test | Datei | Zweck |
 |---|---|---|
-| `test_zwoelf_adressen.ps1` | Regressions-Test mit 12 fixen Adressen | aktiv |
-| `test_fuenfzig_adressen.ps1` | Stresstest mit 50 Adressen | aktiv |
-| `test_bern_batch.py` | Stadt-Bern-spezifische Batch-Tests | aktiv |
-| `test_output_nach_fix.txt` | Snapshot-Verifikation Bug-Fix-Welle | Verifikations-Snapshot |
-| `fixtures/extract_*.xml` | OEREB-XML-Snapshots fuer Offline-Demos | erhalten via Whitelist |
-
-## Patch-Skripte (im Repo, dokumentarisch)
-
-Patch-Skripte aus Iter 2-4 sind in `historie/patches/` erhalten als
-**Beleg fuer iterative Entwicklung**:
-
-| Skript | Zweck | Datum |
-|---|---|---|
-| `historie/patches/patch_potenzial.ps1` | Bug-Fixes Begrenzer-Logik | 29.04. |
-| `historie/patches/patch_begrenzer_bugs.ps1` | Bug-Fixes max_gebaeudelaenge=None | 29.04. |
-| `historie/patches/patch_thun_json.ps1` | thun.json-Erweiterung WA-Slash + ZPP | 29.04. |
-| `historie/patches/patch_gwr_integration.ps1` | GWR-Modul-Anbindung | 01.05. |
-| `historie/patches/patch_gwr_unvollstaendig.ps1` | GWR-Anzeige bei unvollstaendigen Daten | 01.05. |
-| `historie/patches/patch_potenzial_ergebnis.ps1` | AnalyseErgebnis-Refactoring | 03.05. |
-
-Siehe `historie/patches/README.md` fuer Details zur Methode.
-
-Jedes Skript hat eingebauten Backup-Mechanismus, Syntax-Check und
-Smoke-Test. Sie sind nicht reproduzierbar wiederholt ausfuehrbar (da
-sie auf bestimmten Vorgaenger-Code bauen), zeigen aber den
-nachvollziehbaren Entwicklungsweg.
+| Regression 12 Adressen | `tests/test_zwoelf_adressen.ps1` | Sicherstellen dass die bekannten Adressen weiter durchlaufen |
+| Stresstest 50 Adressen | `tests/test_fuenfzig_adressen.ps1` | Massentest gegen die API (96% Erfolg) |
+| Bern-Batch | `tests/test_bern_batch.py` | Stadt-Bern-spezifische Detailtests |
+| Pilot Oberhofen | (Massen-Lauf) | 1176 Parzellen, 41 Min, 0 Fehler |
+| Pilot Thun | (Massen-Lauf) | 8534 Parzellen, 4h30, 0 Fehler |
+| OEREB-XML-Snapshots | `tests/fixtures/*.xml` | Offline-Demo-Faehigkeit |
 
 ## Lokales Archiv (`docs/archiv/`)
 
-Dieser Ordner ist via `.gitignore` aus dem Repo ausgeschlossen,
-aber lokal vorhanden:
+Per `.gitignore` ausgeschlossen, lokal vorhanden:
 
-- `proof_of_concept.py` (frueher POC)
-- `Strukturbaum-bauzonen-radar.txt` (alte Baum-Datei)
-- `extract_beispiel.xml` (Test-XML aus fruehen Tagen)
-- `test_zwoelf_adressen.py` (alte Python-Version)
-- `aufraeumen_30_04_2026.ps1` (Aufraeum-Skript)
-- `output_baumgarten_thun.md` (interessante Outputs)
-- `backup_vor_aufraeumen_*.zip` (ZIP-Sicherungen des Aufraeumens)
+- `proof_of_concept.py`
+- `Strukturbaum-bauzonen-radar.txt`
+- `extract_beispiel.xml`
+- `test_zwoelf_adressen.py` (Python-Version, ersetzt durch PowerShell)
+- `output_baumgarten_thun.md` (interessante Output-Snapshots)
 
-## Status Iteration 4 (Stand 11.05.2026)
+## Status Iteration 4 (abgeschlossen 11.05.2026)
 
-**Iteration 4 ist im Wesentlichen ABGESCHLOSSEN:**
+Streamlit-GUI live, Backend-API stabil, drei Datenqualitaets-Pfade
+in der GUI verifiziert, Plausibilitaets-Konflikt-Box als Pruefungs-
+Highlight.
 
-- [x] Streamlit-GUI mit eigenem CSS-Design (Fabienne)
-- [x] AnalyseErgebnis-Datenklasse fuer GUI/CLI-Trennung
-- [x] Alle drei Datenqualitaets-Pfade in GUI sichtbar
-- [x] Plausibilitaets-Konflikt-Box bei GWR-Diskrepanz
-- [x] WGS84-Karte mit Marker (Karten-Sektion)
-- [x] Tabellarische GWR-Anzeige mit Aggregation
-- [x] Live-Test mit 4 Adressen erfolgreich (11.05.)
+## Status Iteration 5 (abgeschlossen 12.05.2026)
 
-**Verbleibende kleinere Punkte (optional / Phase 3 Generalprobe)**:
-- Negative Reserve bei >100% Ausschoepfung visuell sauberer
-- Zonen-Suffix `[hoehen_und_gz]` ausblenden
-- Karten-Marker eventuell kleiner
+Massen-Analyse-Pipeline komplett (parzellen_liste, gemeinde_analyse,
+gemeinde_cache, klassifikation, excel_export). Bonus: Bodenbedeckungs-
+Filter (tlm3d) + GWR-Fix per EGRID. Pilot Oberhofen erfolgreich
+(1176 Parzellen, 170 hochwertige Kandidaten).
 
-## Status Iteration 5 (Stand 12.05.2026)
+## Status Iteration 6 (abgeschlossen 23.05.2026)
 
-**Iteration 5 ist ABGESCHLOSSEN** - alle 4 geplanten Module plus
-3 Bonus-Module umgesetzt an einem Tag (~11h Session).
+Grossstadt-Tauglichkeit nachgewiesen (Thun 8534 Parzellen, 0 Fehler).
+Vier Bugs gefixt (GWR-tolerance, EGRID-Fallback, Gemeinde-Filter,
+MAX_API_CALLS), Reserve-% GWR-konsistent, Baujahr-Spalte, neuer
+Karten-Link (`map.geo.admin.ch`), KLEINPARZELLE als faktischer
+Fokus-Indikator (200-500 m2 neutral).
 
-Detail siehe `docs/konzept_gemeinde_analyse.md`.
+Konzeptionelle Klaerung: Die Konflikt-Visualisierung zwischen
+Schaetzung (Soll) und Realitaet (GWR-Ist) ist der zentrale Indikator
+des Tools - keine Pseudo-Praezision bei der Soll-Berechnung im
+Hoehensystem (Architekten-verifiziert: "kein Generalrezept").
 
-**Umgesetzt**:
+## Status Iteration 7 (geplant, Juni 2026)
 
-- [x] `datenquellen/gwr.py` (30.04. vorgebaut, 12.05. EGRID-Fix)
-  - `gebaeude_zu_adresse()` fuer Einzel-Analyse
-  - `gebaeude_zu_egrid()` fuer Massen-Analyse (NEU 12.05.)
-  - `_identify_features()` als gemeinsamer Helper
-- [x] `datenquellen/parzellen_liste.py` (12.05.)
-  - Praefix-Baum-Suche umgeht SearchAPI-Limit von 50 Treffern
-  - Oberhofen: 1176 Parzellen via 161 API-Calls in 126 Sek
-- [x] `datenquellen/tlm3d.py` (12.05., BONUS)
-  - `TlmStrassenQuelle` (offizielle TLM3D-Strassen)
-  - `ArealstatistikQuelle` (BFS-Bodenbedeckung 2023)
-  - Gemeinsame `_MapServerIdentifyBasis`
-- [x] `analyse_adresse.py` (12.05. erweitert)
-  - `analysiere_per_egrid()` als Massen-Analyse-Eintrittspunkt
-  - `AnalyseErgebnis` um 4 BB-Felder erweitert
-- [x] `gemeinde_cache.py` (12.05.)
-  - SQLite-Cache via Pickle-Serialisierung (Strategie A)
-  - Wiederaufnahme nach Abbruch, idempotent
-- [x] `klassifikation.py` (12.05.)
-  - 7 Geschaeftslogik-Kategorien + 2 Bodenbedeckungs-Filter
-  - Schwellen als Konstanten (am Schwager zu verifizieren)
-- [x] `gemeinde_analyse.py` (12.05.)
-  - Haupt-Pipeline mit Throttling, Retry, Progress-Logging mit ETA
-  - CLI mit argparse, KeyboardInterrupt-sicher
-- [x] `excel_export.py` (12.05.)
-  - 6 Sheets, gestylte Header, Freeze-Panes, GRUDIS-Links
-
-**Pilot-Lauf Oberhofen am Thunersee** (12.05.2026):
-- 1176 Parzellen, 41 Min, 0 Fehler
-- 170 hochwertige Kandidaten identifiziert
-- 23 False-Positives durch Bodenbedeckungs-Filter eliminiert
-- Verifikation 7 Stichproben gegen map.geo.admin.ch
-
-**Bekannte Limitationen** (Iter 6 oder Folgeprojekt):
-- Schmale Waldparzellen (Zentroid am Rand) nicht erwischt
-- GWR-Polygon-Bug bei Hauptgebaeude weit vom Zentroid
-- Loesung: Polygon-Intersection mit Parzellengeometrie
+Generalprobe vorbereiten, Pitch trimmen, Demo-Adressen waehlen,
+README finalisieren. Optional Architekt-Antwort zur Soll-Methodik
+einarbeiten.

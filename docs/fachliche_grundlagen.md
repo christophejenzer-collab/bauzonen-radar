@@ -1,399 +1,429 @@
 # Fachliche Grundlagen: Bauzonen-Radar
 
 Sammlung der baurechtlichen Recherche fuer das Projekt.
-Stand: 28. April 2026.
+Stand: 23. Mai 2026.
 
 ## Schweizer Baurecht im Ueberblick
 
-Das Baurecht in der Schweiz ist dreistufig:
+Das Schweizer Baurecht ist hochkomplex. Die wichtigsten Punkte:
 
-1. **Bund**: Raumplanungsgesetz (RPG), Raumplanungsverordnung (RPV)
-2. **Kanton**: Baugesetz (BauG), Bauverordnung (BauV)
-3. **Gemeinde**: Baureglement (BR), Zonenplan, Sondernutzungsplaene
+- Drei Bemessungssysteme sind parallel im Einsatz (AZ, GFZo, Hoehen+GZ)
+- Jede Gemeinde hat ihr eigenes Reglement, gewachsen ueber Jahrzehnte
+- Kantonale Uebergangsphasen: das BernerSchweizweite IVHB-Konkordat
+  (2014) verlangt einen Wechsel weg von der AZ
+- Spezialregimes fuer Altstaedte, Schutzgebiete, Zonen mit
+  Planungspflicht (ZPP/UeO)
+- Bestandsschutz: gebaute Realitaet weicht oft vom heute rechtlich
+  Zulaessigen ab
 
-Fuer das Bebauungspotenzial einer konkreten Parzelle ist primaer
-das Gemeinde-Baureglement massgebend, eingebettet in die
-kantonalen Vorgaben.
+Eine korrekte Umsetzung verlangt: exakte Werte aus offiziellen
+Reglementen, IVHB-konforme Interpretation, Kenntnis der kantonalen
+Uebergangsregelung, Erkennen von Spezialregimes.
 
 ## Drei Bemessungssysteme
 
 ### AZ - Klassische Ausnuetzungsziffer
 
-Verhaeltnis der zulaessigen Geschossflaeche zur Parzellenflaeche.
-AZ = 0.5 bedeutet: Auf einer 1000 m^2 Parzelle duerfen 500 m^2
-Geschossflaeche realisiert werden. Verbreitetes altes System,
-wird zunehmend durch GFZo abgeloest.
+Aeltestes System der Schweiz. AZ x Parzellenflaeche = maximale
+Geschossflaeche. Einfach zu rechnen, aber durch das IVHB-Konkordat
+in Ablösung. Im Kanton Bern noch in einzelnen Gemeinden gueltig,
+zunehmend durch GFZo ersetzt.
 
 ### GFZo - Geschossflaechenziffer oberirdisch
 
-Aehnlich wie AZ, aber:
-- Nur oberirdische Geschossflaeche
-- Definitionen nach Interkantonaler Vereinbarung ueber die
-  Harmonisierung der Baubegriffe (IVHB)
-- Im Kanton Bern eingefuehrt mit der BMBV-Verordnung
-- Stadt Bern verwendet GFZo seit BO 2006
+IVHB-konformes Mass: ueberirdische Geschossflaeche pro Parzelle.
+Etwas komplexer als AZ (Unterscheidung Untergeschosse, anrechenbare
+Flaechen nach IVHB), aber flaechenbezogen und damit eindeutig
+berechenbar. Stadt Bern nutzt GFZo im Bauklassenplan.
 
 ### Hoehen + GZ - Steuerung ueber Gebaeudemasse
 
-Statt einer Flaechen-Kennzahl werden steuern:
-- Maximale Vollgeschosse
-- Fassadenhoehen (traufseitig, giebelseitig)
-- Maximale Gebaeudelaenge
-- Grenzabstaende klein und gross
-- Optional: Gruenflaechenziffer (mindestens unversiegelt zu
-  haltende Flaeche)
-
-Stadt Thun verwendet dieses System seit BR 2022.
-Oberhofen verwendet es seit BR 2012, allerdings ohne GZ.
+Dichte wird ueber Gebaeudehoehe, Geschosszahl, Grenzabstaende und
+(optional) Gruenflaechenziffer gesteuert. Es gibt **kein flaechen-
+bezogenes Limit** fuer die Geschossflaeche. Verbreitet in neueren
+Reglementen wie Thun BR 2022 oder Oberhofen. Vorteil: gestalterisch
+flexibler. Nachteil fuer ein Tool wie dieses: die "zulaessige
+Geschossflaeche" ist im Einzelfall nicht eindeutig bestimmbar -
+sie haengt davon ab, wie ein konkretes Gebaeude auf die konkrete
+Parzelle gesetzt wird.
 
 ## Schaetz-Berechnung im Hoehen-System
 
-Ein Hoehen-System gibt keine direkte Quadratmeter-Zahl her, weil
-die zulaessige Geschossflaeche vom konkreten Volumen-Konzept
-abhaengt. Das Tool macht eine konservative Schaetzung mit klar
-dokumentierten Annahmen:
+Da im Hoehen-System keine direkte flaechenbezogene Kennzahl
+existiert, schaetzt das Tool das Soll ueber eine geometrische
+Drei-Begrenzer-Logik. Das Resultat wird **explizit als Schaetzung
+markiert** (Datenqualitaet: GROBSCHAETZUNG).
 
 ### Berechnungsformel
 
 ```
-Grundflaeche = min(
-    GL x angenommene Breite,
-    Parzelle - Grenzabstaende ringsum (quadratisch approximiert),
-    Parzelle x (1 - GZ) wenn GZ vorhanden
-)
+nutzbare_lange_seite = lange_seite - 2 * grosser_grenzabstand
+nutzbare_kurze_seite = kurze_seite - 2 * kleiner_grenzabstand
+grundflaeche_geometrie = nutzbare_lange_seite * nutzbare_kurze_seite
 
-Geschossflaeche = Grundflaeche x Vollgeschosse
-                + Grundflaeche x 60% (bei Schraegdach moeglich)
+grundflaeche_parzelle  = parzellenflaeche * (1 - gruenflaechenziffer)
+grundflaeche_gz        = grundflaeche_parzelle / geschosszahl
+
+grundflaeche_zulaessig = min(geometrie, parzelle, gz)
+geschossflaeche        = grundflaeche_zulaessig * geschosszahl
 ```
+
+Der kleinste der drei Begrenzer gewinnt - das ist die konservative
+Schaetzung.
 
 ### Annahmen
 
-- **Gebaeudebreite-Default**: 12 m, gekappt durch GL
-- **Dachgeschoss-Anrechnung**: 60% bei Schraegdach (Fh tr/gi
-  vorhanden), 0% bei reinem Flachdach
-- **Parzellen-Geometrie**: quadratisch approximiert
-- **Grenzabstaende**: ringsum subtrahiert
+- Parzellen-Form: Rechteck mit Verhaeltnis 1:1.5 (statt Quadrat -
+  verhindert dass eine Seite negativ wird bei langen Parzellen)
+- Grenzabstaende werden auf allen vier Seiten voll abgezogen
+- `max_gebaeudelaenge_m=None` (unbeschraenkt) wird als float("inf")
+  behandelt (statt Crash)
+- Wenn Ist-Bebauung unbekannt: 25%-Platzhalter (realistischer fuer
+  Schweizer Wohnzonen als die fruehere 40%-Annahme)
 
 ### Plausibilitaetscheck
 
-Falls in der JSON ein `vergleichswert_az_alt` hinterlegt ist, wird
-der Schaetz-Wert mit dem alten AZ-Recht verglichen:
+Wenn fuer die Zone ein historischer AZ-Wert hinterlegt ist
+(`vergleichswert_az_alt`), vergleicht das Tool die Schaetzung
+gegen die AZ-basierte Berechnung. Bei Abweichung mehr als Faktor
+1.8x oder weniger als 0.7x gibt es eine Warnung im Output.
 
-```
-AZ-Referenz = Parzellenflaeche x AZ-alt
-Faktor = Schaetzung / AZ-Referenz
-```
-
-Bewertung:
-- Faktor < 0.7: "auffaellig niedrig" (Annahme zu konservativ?)
-- Faktor 0.7-1.8: "plausibel im erwartbaren Bereich"
-- Faktor > 1.8: "auffaellig hoch" (Begrenzung in Praxis durch
-  andere Faktoren?)
+Im Einzelfall-Modus wird zusaetzlich der GWR-Ist-Wert angezeigt -
+wenn der die Schaetzung deutlich uebersteigt, ist das ein klares
+Signal fuer Bestandsschutz (Plausibilitaets-Konflikt-Box).
 
 ### Wichtig: Datenqualitaets-Markierung
 
-Schaetz-Werte werden im Output **klar von verbindlichen
-Berechnungen unterschieden**:
-- Header-Banner mit Warnung
-- "GROBSCHAETZUNG" statt "Theoretisch zulaessig"
-- Status "SCHAETZWERT" statt "GERING/MITTEL/HOCH"
-- Berechnungsbasis transparent
-- Annahmen offen kommuniziert
-- Reserve und Ausschoepfungsgrad werden nur als Empfehlungs-Block
-  ausgegeben (klar als Schaetzung markiert)
+Bei einer Schaetzung wird das im Output **deutlich markiert** mit
+Banner und einer Berechnungsbasis, die alle Annahmen offenlegt.
+Architekten und Investoren sollen klar sehen, ob sie einer Zahl
+trauen koennen.
+
+Drei Stufen:
+
+- **VERBINDLICH**: AZ oder GFZo vorhanden -> exakte Berechnung
+- **GROBSCHAETZUNG**: Hoehen-System -> konservative Schaetzung mit
+  klarer Markierung
+- **NICHT_MOEGLICH**: Spezialregime (z.B. ZPP) -> keine Pseudo-
+  zahlen, Verweis auf Bauverwaltung
 
 ## Empfehlungs-Block mit visueller Lagebeurteilung
 
-Damit Endanwender (Architekten, Investoren) das Tool-Ergebnis
-schnell erfassen koennen, wird jede Analyse mit einem visuellen
-Empfehlungs-Block abgeschlossen.
+Jede Einzelanalyse mundet in einen klar markierten Empfehlungs-Block
+mit ASCII-Fortschrittsbalken zur visuellen Lagebeurteilung.
 
 ### Bauland-Reserve in Prozent
 
 ```
-Bauland-Reserve = max(0, 100% - Ausschoepfungsgrad)
+reserve_prozent = 100 - ausschoepfungsgrad_prozent
 ```
 
-Bei Schaetzungen wird der Wert auf 0-100% gekappt, damit
-Vergleiche zweier Schaetzungen (Soll- und Ist-Schaetzung) keine
-unsinnigen Werte produzieren.
+Anschauliche Kennzahl: 65% Reserve heisst, der Anwender kann die
+Parzelle noch zu 65% des theoretischen Potenzials weiterentwickeln.
 
 ### ASCII-Fortschrittsbalken
 
 ```
-[################----]  80.0%   (Ausschoepfung)
-[####----------------]  20.0%   (Bauland-Reserve)
+Ausschoepfung:    [################----]  80.0%
+Bauland-Reserve:  [####----------------]  20.0%
 ```
 
-20 Zeichen breit. `#` fuer gefuellt, `-` fuer leer. Aufloesung von
-5% pro Balken-Zeichen.
+20 Zeichen breit, Hash-Zeichen fuer den ausgeschoepften Anteil,
+Bindestriche fuer die Reserve. Auf der Konsole und in der GUI
+gleich lesbar.
 
 ### Vier Lagebeurteilungen
 
-| Bauland-Reserve | Lagebeurteilung |
-|---|---|
-| >= 60% | HOHES Verdichtungs-Potenzial - attraktive Bauland-Reserve |
-| 30-60% | MITTLERES Verdichtungs-Potenzial - lohnt Detailpruefung |
-| 10-30% | GERINGES Verdichtungs-Potenzial - primaer Bestandsoptimierung |
-| < 10% | PRAKTISCH AUSGESCHOEPFT - kein nennenswertes Verdichtungs-Potenzial |
+- **>= 60%**: HOHES Verdichtungs-Potenzial (attraktive Reserve)
+- **30-60%**: MITTLERES Verdichtungs-Potenzial (lohnt Detailpruefung)
+- **10-30%**: GERINGES Verdichtungs-Potenzial (Bestandsoptimierung)
+- **< 10%**: PRAKTISCH AUSGESCHOEPFT (kein nennenswertes Potenzial)
 
 ### Bei Schaetzungen wird "(geschaetzt)" angehaengt
 
-Beispiel-Output bei Florastrasse 5 (Wohnen W3, 46% ausgeschoepft):
-
 ```
-EMPFEHLUNG (Grobschaetzung - nur als Orientierung)
-======================================================================
-  Ausschoepfung:    [#########-----------]  45.8%
-  Bauland-Reserve: [###########---------]  54.2%
-
-  -> MITTLERES Verdichtungs-Potenzial - lohnt Detailpruefung (geschaetzt)
-======================================================================
+HOHES Verdichtungs-Potenzial - attraktive Bauland-Reserve (geschaetzt)
 ```
+
+Damit ist auf den ersten Blick sichtbar, ob die Lagebeurteilung auf
+verbindlichen Werten oder einer Grobschaetzung beruht.
 
 ## Stadt Bern
 
 ### Quelle
 
-- Bauordnung der Stadt Bern (BO 2006), Stand 28.09.2023
-- URL: https://stadtrecht.bern.ch/lexoverview-home/lex-721_1
-- PDF: https://oerebfiles.apps.be.ch/35101/5072/Bern_SSSB_721_1_Bauordnung_der_Stadt_Bern.pdf
+- Bauordnung BO 2006, Stand 2023:
+  https://stadtrecht.bern.ch/lexoverview-home/lex-721_1
+- Bauklassenplan BKP via ArcGIS REST-API:
+  https://map.bern.ch/arcgis/rest/services/Geoportal/Bauklassenplan/MapServer
 
 ### Bauklassen 2-6
 
-- Art. 46 BO: Tabelle mit FH (Fassadenhoehe), FHA (FH Anbau),
-  kGA (kleiner Grenzabstand), gGA (grosser Grenzabstand)
-- gGA variiert mit Gebaeudelaenge - zweidimensionale Tabelle
-- TODO: Variable gGA noch nicht in Code umgesetzt
+Hoehen+GZ-System mit parzellenscharfen Werten aus dem BKP fuer:
+- Bauweise (Layer 88): offen / geschlossen / Reihen / verdichtet
+- Grundzonen (Layer 95): max. Gebaeudelaenge, Gebaeudetiefe
+
+Die Bauklasse selbst legt Geschosszahl, Hoehe, Gruenflaechenziffer
+fest. Die parzellenscharfen Werte aus dem BKP ergaenzen das um die
+konkrete Geometrie.
 
 ### Bauklasse E
 
-- Art. 56-57 BO: Erhaltung der bestehenden Bebauungsstruktur
-- GFZo 0.5 (zwei Geschosse) oder 0.6 (drei und mehr Geschosse)
-- Beispiel Thunstrasse 40, 3005 Bern: GFZo 0.5
+Erhaltungsbauklasse mit GFZo 0.5 (Art. 23 BO). Verbindliche
+Berechnung moeglich. Beispiel: Thunstrasse 40 -> 237 m^2 Parzelle x
+0.5 = 118 m^2 zulaessig.
 
 ### Zonen mit Nutzungsplanung (ZoeN)
 
-- Art. 24 BO: Sondernutzungen mit individueller GFZo
-- FA = 0.1 (Freihaltezonen)
-- FB = 0.6
-- FC = 1.2
-- FD = projekt-abhaengig
+Spezialregime: Konkrete Werte stehen erst in der UeO (Ueberbauungs-
+ordnung) fest. Datenqualitaet -> NICHT_MOEGLICH, Verweis auf
+Bauverwaltung.
 
 ### Arbeitszonen
 
-- Art. 58 BO: FH/FHA pro Bauklasse 1-6
+Eigene Bauklassen mit eigenen Werten. In `bern.json` als separate
+Eintraege hinterlegt.
 
 ### Altstadt-Spezialregimes
 
-- Art. 76-86 BO
-- Untere Altstadt: UNESCO-Welterbe, strenge Vorschriften
-- Obere Altstadt: Laubenfluchtlinien, Sandstein-Pflicht
-- Biberschwanzziegel als Pflichtmaterial fuer Daecher
+Untere und Obere Altstadt: UNESCO-Welterbe, Laubenfluchtlinien,
+Hoehenfluchtlinien. Datenqualitaet -> NICHT_MOEGLICH bzw.
+Spezialvermerk.
 
 ### Offene Punkte
 
-GFZo-Werte pro Zone-Bauklasse-Kombination liegen im
-**Bauklassenplan (BKP)**, nicht in der BO. Schwager (Architekt)
-soll diese Werte aus seiner Bueropraxis liefern. Erfassungs-Excel
-ist vorbereitet.
+- Variable gGA (Gruenflaechen-Geschossanrechnung) aus Art. 46 BO:
+  fuer Iter 7 oder Folgeprojekt
+- Subtypen FA-FD der ZoeN: aktuell als ZoeN allgemein behandelt
 
 ## Stadt Thun
 
 ### Quelle
 
-- Baureglement (BR) der Stadt Thun, Februar 2025
-- Ortsplanungsrevision OPR 2022
-- URL: https://www.thun.ch/verwaltung/stadtplanung/ortsplanungsrevision
+- Baureglement 2022 + Ortsplanungsrevision:
+  https://www.thun.ch/verwaltung/stadtplanung/ortsplanungsrevision
 
 ### Wesentliche Aenderung gegenueber BR 2002
 
-- AZ in Wohnzonen abgeschafft
-- Steuerung ueber Hoehen, Grenzabstaende, Gebaeudelaenge,
-  Gruenflaechenziffer
+Mit BR 2022 hat Thun die klassische Ausnuetzungsziffer abgeschafft.
+System ist `hoehen_und_gz` ohne flaechenbezogene Kennzahl. Der alte
+AZ-Wert (0.5 in vielen Wohnzonen) ist nur noch als
+`vergleichswert_az_alt` im JSON enthalten - nicht mehr rechtsgueltig.
+
+Konsequenz fuer das Tool: alle Thun-Parzellen laufen in den
+GROBSCHAETZUNG-Pfad (Drei-Begrenzer-Logik), nicht in den VERBINDLICH-
+Pfad.
 
 ### Art. 42 - Tabelle (in thun.json hinterlegt)
 
-| Zone | VG | kA | gA | GL | Fh tr | Fh gi | GZ | AZ alt |
-|---|---|---|---|---|---|---|---|---|
-| W2 | 2 | 4 | 8 | 15 | 7.0 | 11.0 | 0.45 | 0.5 |
-| W3 | 3 | 4 | 10 | 25 | 8.0 | 12.0 | 0.45 | 0.7 |
-| W4 | 4 | 5 | 12 | 30 | 11.0 | 15.0 | 0.40 | 0.9 |
-| WA3 | 3 | 4 | 10 | 25 | 8.0 | 12.0 | 0.30 | 0.8 |
-| WA4 | 4 | 5 | 12 | 30 | 11.0 | 15.0 | 0.25 | 1.0 |
-| WA5 | 5 | 6 | 14 | 40 | 14.0 | 18.0 | 0.20 | 1.2 |
-| Arbeiten A | 4 | 5 | 12 | 50 | 11.0 | 15.0 | 0.15 | - |
+Alle Wohnzonen W1-W4, Wohn-/Mischzonen WA2-WA5 (mit Slash-
+Schreibweise als Synonym), Mischzonen M1-M5. Pro Zone: max. Hoehe,
+Vollgeschoss-Zahl, kleiner/grosser Grenzabstand,
+Gruenflaechenziffer 0.45.
 
 ### Spezialfaelle
 
-- **Strukturgebiet**: Beirat Stadtbild kann Vorgaben machen, die
-  das BR aushebeln. Tool erkennt das automatisch.
-- **Arealbonus**: Ab 3000 m^2 Parzelle plus ein Vollgeschoss
-  bewilligungsfaehig (in WA5 hinterlegt).
+- Strukturgebiet: Bestandsmasse statt Reglement-Masse
+- Arealbonus: max. 10% Mehrausnuetzung bei integrierter Planung
+- Zone mit Planungspflicht (ZPP): NICHT_MOEGLICH, UeO erforderlich
+- Slash-Synonyme: "Wohnen/Arbeiten WA4" matcht "Wohnen + Arbeiten WA4"
 
 ## Oberhofen am Thunersee
 
 ### Quelle
 
-- Baureglement (BR) der Einwohnergemeinde Oberhofen am Thunersee
-  vom 14. Mai 2012
-- Nachfuehrung bis 31. Dezember 2024
-- AGR-genehmigt (Amt fuer Gemeinden und Raumordnung)
-- URL: https://www.oberhofen.ch/verwaltung/reglemente-verordnungen
-- PDF: https://www.oberhofen.ch/images/files/Reglemente-und-Verordnungen/Bau/AGR-Gemeindebaureglement.pdf
+- Baureglement 2012, revidiert 2024:
+  https://www.oberhofen.ch/verwaltung/reglemente-verordnungen
 
 ### System
 
-Hoehen-System ohne GZ. Steuerung ueber:
-- Vollgeschosse
-- Fassadenhoehen
-- Gebaeudelaenge
-- Grenzabstaende
-- Erstwohnungsanteil 80% (EWA)
+`hoehen_und_gz` **ohne Gruenflaechenziffer** (Sonderfall). Steuerung
+nur ueber Gebaeudehoehe, Geschosszahl, Grenzabstaende. Schaetzung
+laeuft nur ueber die geometrischen Begrenzer.
 
 ### Art. 212 - Tabelle
 
-| Zone | kA | gA | GL | Fh tr | Fh gi | VG |
-|---|---|---|---|---|---|---|
-| W1 | 3.0 | 6.0 | 20.0 | 6.0 | 9.0 | 1 |
-| W2 | 4.0 | 8.0 | 20.0 | 7.0 | 10.0 | 2 |
-| W3 | 4.0 | 8.0 | 25.0 | 9.5 | 13.0 | 3 |
-| M2 | 2.0 | 6.0 | 20.0 | 8.5 | 13.5 | 2 |
-
-Plus Fussnoten:
-- Reduktion gA an Steilhaengen um 2.0 m
-- Bei Bauten am Hang +1.0 m Mehrhoehe (ausser Hangseite)
-- W2 gegenueber Rebbauzone 10.0 m Abstand
-- M2 seeseitig max. 15.0 m Gebaeudebreite
+Wohnzonen W1-W3 mit den ueblichen Parametern. Misch- und Arbeits-
+zonen separat hinterlegt.
 
 ### Weitere Zonen
 
-- Zonen fuer oeffentliche Nutzungen (ZOEN 1-11): Schule, Kirche,
-  Schloessli, Laendte, Mehrzweckhalle usw.
-- Zehn Zonen mit Planungspflicht (ZPP A-J)
-- Sechs Ortsbildschutzgebiete (O I bis O VI)
-- Landwirtschaftszone (LWZ)
-- Rebbauzone (RB) - Bauverbot
-- Gruenzone (GR) - Freihaltezone
+- Dorfkernzonen mit Bestandsschutz
+- Landwirtschaftszone (ausserhalb Bauzone, NICHT_MOEGLICH)
+- Verkehrszonen, Gruenzonen
 
 ### Dachgestaltung (Art. 414)
 
-- Satteldach: Neigung 22-40 Grad
-- Flachdach grundsaetzlich nicht zulaessig (nur in ZOEN/ZPP/UeO)
-- Dachvorspruenge traufseitig 0.2-2.5 m
-- Dachaufbauten max. 35% der Fassadenbreite (50% bei
-  qualifiziertem Verfahren)
+Spezielle Bestimmungen fuer Dachformen und -neigungen, im Tool
+nicht direkt abgebildet (waere fuer Detailpruefung beim Architekten).
 
 ## Naturgefahren
 
-OEREB liefert Naturgefahrengebiete als separate Restrictions:
-- Mittlere Gefaehrdung
-- Geringe Gefaehrdung
-- Restgefahrengebiet
+OEREB-Auszug liefert Naturgefahren-Layer:
+- Gefahrenstufe 1 (gering) bis 3 (erheblich)
+- Naturgefahr-Art (Wasser, Rutsch, Sturz, Lawine)
 
-Tool gibt Warnung aus: "Bebaubarkeit muss im Detail geprueft
-werden."
+Das Tool listet alle Naturgefahren-Eintraege im Output. Bei
+Gefahrenstufe 2/3 ist im Reglement-Bereich eine zusaetzliche
+Bewilligung erforderlich - Hinweis im Output.
 
 ## Spezialfaelle
 
 ### Strukturgebiet (Thun)
 
-Spezielle Ueberlagerung der Stadt Thun. Beirat Stadtbild kann
-gestalterische Vorgaben machen, die das BR aushebeln. Tool
-erkennt das anhand der OEREB-Legende und gibt Hinweis aus.
+In bestimmten Quartieren (Innenstadt, historische Aussenviertel)
+gelten **Bestandsmasse statt Reglement-Masse**. Die zulaessige
+Bebauung orientiert sich am Bestand der Parzelle. Im Tool als
+Spezialfall erkannt, Hinweis im Output.
 
 ### Arealbonus
 
-Schwellenwerte sind reglements- bzw. gemeindespezifisch:
-- Thun BR 2022: 3000 m^2 → +1 Geschoss (in WA-Zonen)
-- Oberhofen: kein Arealbonus
+Bei integrierter Planung mehrerer Parzellen kann ein Arealbonus
+(typisch +10% Hoehe oder Geschossflaeche) gewaehrt werden. Im Tool
+als Hinweis sichtbar, Berechnung nicht automatisch eingerechnet.
 
 ### Baulinien
 
-OEREB liefert Baulinien als Restrictions. Tool gibt Hinweis aus,
-dass die effektive Bauflaeche kleiner als die Gesamtflaeche ist.
+OEREB-Layer "Baulinien" und "Strassen-Baulinien". Wenn die Parzelle
+betroffen ist, gilt die Baulinie zusaetzlich zum Grenzabstand. Das
+Tool zeigt Baulinien im Output, rechnet sie aber nicht automatisch
+in die Geometrie ein (waere Detailpruefung).
 
 ### Laufende Aenderungen
 
-Wenn die OEREB-Daten "laufendes Verfahren" oder "geplante
-Aenderung" anzeigen, gibt das Tool eine Warnung aus.
+Reglemente werden periodisch revidiert. Das Tool fuehrt fuer jede
+Gemeinde ein eigenes JSON, das bei Reglement-Aenderungen aktualisiert
+werden muss (kein Code-Aenderung noetig).
 
 ## Bauklassenplan Stadt Bern (BKP) - ArcGIS REST-API
 
-Die Stadt Bern stellt ihren Bauklassenplan ueber einen oeffentlichen
-ArcGIS REST-Service zur Verfuegung. Das Tool fragt diesen ab, um
-parzellenscharfe Werte zu erhalten, die nicht in der Bauordnung
-selbst stehen.
-
-**Endpoint**:
-```
-https://map.bern.ch/arcgis/rest/services/Geoportal/Bauklassenplan/MapServer
-```
-
 ### Layer 88: BKP_Bauweise
 
-Liefert pro Parzelle:
-- `Bauweise_typologie_beschrieb`: "offen" oder "geschlossen"
-- `Gebaeudelaenge`: m, oder als unbeschraenkt markiert
-- `Gebaeudetiefe`: m, oder als unbeschraenkt markiert
+Felder:
+- `BAUWEISE`: offen / geschlossen / Reihen / verdichtet
+- Geometrie: Multipolygon der zusammenhaengenden Bauweise-Flaeche
 
-Beispiel Eigerstrasse 60: Bauweise offen, Laenge 70 m, Tiefe 13 m.
+Das Tool fragt mit der Parzellen-Koordinate die Bauweise ab.
 
 ### Layer 95: BKP_Grundzonen_Flaechen
 
-Liefert pro Parzelle:
-- `U_nutzungszone_beschrieb`: "W - Wohnzone", "WG - Gemischte
-  Wohnzone", "K (s) - Kernzone (staedtisch)", "D -
-  Dienstleistungszone", "OA - Obere Altstadt" usw.
-- `U_bauklasse_beschrieb`: "BK_2 - Bauklasse 2" bis "BK_6", plus
-  "BK_E - Bauklasse E" und "BK_SPEZ - Bebauung mittels spez.
-  Vorschr."
+Felder:
+- `BKP_BEZ`: BK_2, BK_3, BK_4, BK_5, BK_6, BK_E, ZoeN, Altstadt
+- `MAX_GEBL`: maximale Gebaeudelaenge in Metern
+- `MAX_GEBT`: maximale Gebaeudetiefe in Metern
+
+Das Tool fragt mit der Parzellen-Koordinate die Grundzone ab.
 
 ### Drei Faelle in der Stadt Bern
 
-Die Live-Tests deckten drei klar unterscheidbare Faelle auf:
-
-| Fall | Beispiel | Bauweise-Daten | Pfad im Tool |
-|---|---|---|---|
-| BK 2-6 mit Bauweise | Eigerstrasse 60 (BK_4) | ja | GROBSCHAETZUNG mit echten Werten |
-| BK_E (Erhaltung) | Thunstrasse 40, Optingenstrasse 30 | nein | VERBINDLICH (GFZo aus Art. 57 BO) |
-| Altstadt OA/UA | Marktgasse 25 | nein | NICHT_MOEGLICH |
-| BK_SPEZ (UeO) | Bumplitzstrasse 100, Sulgenrain 12 | nein | NICHT_MOEGLICH |
+1. **Bauklasse 2-6**: `hoehen_und_gz` aus dem JSON, ergaenzt um die
+   parzellenscharfen Werte aus dem BKP (Bauweise, max_gebaeudelaenge,
+   max_gebaeudetiefe)
+2. **Bauklasse E**: GFZo 0.5 aus dem JSON, verbindliche Berechnung
+3. **ZoeN / Altstadt**: NICHT_MOEGLICH, Verweis auf Bauverwaltung
 
 ### Wichtige Erkenntnis
 
-Der BKP liefert **keine GFZo-Werte** fuer die Bauklassen 2-6. Diese
-sind reine Hoehen-Systeme, definiert ueber Vollgeschosse +
-Fassadenhoehe + Geometrie. Nur Bauklasse E hat ueber Art. 57 BO
-einen GFZo-Wert von 0.5 (bzw. 0.6 ab 3 Geschossen).
+Stadt Bern ist die **einzige BE-Gemeinde mit einer Live-API fuer
+parzellenscharfe Bauwerte**. Andere BE-Gemeinden (auch Koeniz mit
+seinem Bauklassen-System) liefern in der Public-API nur die Zonen-
+Bezeichnung, keine konkreten Werte. Diese Gemeinden brauchen
+weiterhin manuelle JSON-Erfassung der Reglement-Werte.
 
-Das bedeutet fuer die Standard-Bauklassen 2-6 in der Stadt Bern
-liefert das Tool zwingend eine GROBSCHAETZUNG, nie eine VERBINDLICHe
-Berechnung. Die parzellenscharfen BKP-Werte fuer Gebaeudelaenge und
-Gebaeudetiefe machen diese Schaetzung aber deutlich praeziser als
-mit pauschalen Defaults.
+Schweizweite WFS-APIs wie geodienste.ch wurden geprueft: liefern
+ebenfalls nur Zonen-Bezeichnungen, keine Bauwerte.
 
 ## Quellen-Zusammenfassung
 
-| Gemeinde | Reglement | Stand | URL |
-|---|---|---|---|
-| Bern | BO 2006 | 28.09.2023 | stadtrecht.bern.ch |
-| Bern | Bauklassenplan (parzellenscharf) | 28.04.2026 (live) | map.bern.ch ArcGIS REST |
-| Thun | BR 2022 | Februar 2025 | thun.ch |
-| Oberhofen | BR 2012 | 31.12.2024 | oberhofen.ch |
+- IVHB (Interkantonale Vereinbarung ueber die Harmonisierung der
+  Baubegriffe): https://www.bpuk.ch/ivhb
+- Stadt Bern Bauordnung BO 2006:
+  https://stadtrecht.bern.ch/lexoverview-home/lex-721_1
+- Stadt Thun Ortsplanungsrevision:
+  https://www.thun.ch/verwaltung/stadtplanung/ortsplanungsrevision
+- Oberhofen Baureglement:
+  https://www.oberhofen.ch/verwaltung/reglemente-verordnungen
+- OEREB-Webservice Kanton Bern: https://www.oereb2.apps.be.ch
+- swisstopo SearchAPI: https://api3.geo.admin.ch
+- GWR (Eidg. Geb.- und Wohnungsregister) ueber api3.geo.admin.ch
+- BFS-Arealstatistik (NOLC04-Codes), swissTLM3D-Strassen
 
 ## Zu klaerende Punkte
 
-- Variable gGA aus Art. 46 BO Bern (zweidimensionale Tabelle)
-  in Code umsetzen - aktuell wird der "GL_unbeschraenkt"-Default
-  verwendet
-- Subtypen FA/FB/FC/FD der ZoeN aus dem OEREB - aktuell wird oft
-  nur "Zone im oeffentlichen Interesse" geliefert ohne Subtyp
-- Eventuell vierte Gemeinde aufnehmen (Koeniz wegen Test-Adresse
-  Spiegel)
-- Schaetz-Annahmen feinjustieren falls sich in der Praxis zeigt,
-  dass die quadratische Naeherung der Parzelle zu konservativ ist
-- Schwellenwerte der Lagebeurteilung (60/30/10) ggf. mit echten
-  Marktdaten validieren
-- Stichprobenartige Verifikation der BKP-API-Werte durch Schwager
-  (statt Erst-Erfassung, weil die API liefert)
+- Variable gGA aus Art. 46 BO Bern (verschoben fuer Folgeprojekt)
+- Subtypen FA-FD der ZoeN (verschoben)
+- Schwager-Antwort zur grundsaetzlichen Soll-Methodik (GFZ-Frage)
+  steht noch aus (siehe naechster Abschnitt)
+
+## Indikator-Erkenntnis aus Iteration 6 (23.05.2026)
+
+Beim Grossstadt-Lauf in Thun (8534 Parzellen) wurde sichtbar, dass
+die geometrische Soll-Berechnung im Hoehensystem an ihre Grenzen
+kommt:
+
+- **Bei kleinen Parzellen** kollabiert das Soll, weil die beidseitig
+  abgezogenen Grenzabstaende fast die ganze Flaeche aufzehren.
+- **Bei grossen Parzellen** wird das Soll vom Begrenzer
+  `max_gebaeudelaenge * Breite` gedeckelt - das Modell rechnet nur
+  ein einzelnes Gebaeude statt mehrerer (Arealueberbauung).
+
+### Was das Reglement (nicht) hergibt
+
+Eine Pruefung der Berner Reglement-Daten zeigte: Thun (BR 2022) hat
+**keine gueltige Ausnuetzungs- oder Geschossflaechenziffer** mehr.
+System `hoehen_und_gz` steuert die Dichte ausschliesslich ueber
+Hoehen, Geschosse, Grenzabstaende und (optional) die Gruenflaechen-
+ziffer. Der fruehere AZ-Wert (0.5 in Thun BR 2002) ist im JSON nur
+als `vergleichswert_az_alt` enthalten, nicht mehr rechtsgueltig.
+
+Konsequenz: Im Hoehensystem existiert die "zulaessige Geschoss-
+flaeche" als eindeutige Zahl gar nicht - sie haengt davon ab, wie
+ein konkretes Gebaeude auf die konkrete Parzelle gesetzt wird. Das
+ist keine Schwaeche des Codes, sondern Eigenschaft des Baurechts.
+
+### Architekt-Verifikation (Schwager, Mai 2026)
+
+Bestaetigt: "Kein Generalrezept." Bei kleinen oder aneinander-
+gebauten Parzellen sollte der seitliche Grenzabstand wegfallen,
+vorne und hinten sollten beide Grenzabstaende voll zaehlen. Aber
+selbst diese Heuristik kippt bei der naechsten Parzellenklasse.
+Fokus aus Architekten-Sicht: Parzellen ab 500 m2, kleinere neutral
+mitfuehren.
+
+Konkrete Auswirkung im Code: neue Kategorie KLEINPARZELLE (200-500
+m2, neutral - ausserhalb der Fokus-Reiter Verdichtung/Neugeschaeft/
+Ersatzneubau, aber sichtbar in der Gesamtliste).
+
+### ARE/GFR-Methodik als Referenz
+
+Die offizielle Schaetzung des Bundesamts fuer Raumentwicklung (ARE)
+arbeitet nicht mit geometrischer Nachbildung, sondern mit
+Ausnuetzungs-/Geschossflaechenziffern multipliziert mit empirischen
+Ausschoepfungsgraden (typisch 60% bei bebauten, 90% bei
+Geschossflaechen-Reserven). Diese Methode skaliert sauber, ist aber
+auf Reglemente mit GFZ angewiesen - bei reinem Hoehensystem nicht
+direkt anwendbar.
+
+### Schlussfolgerung fuer das Tool
+
+Das Tool ist als **faktenbasierter Indikator** konzipiert, nicht
+als exakter Soll-Rechner. Die zentrale Visualisierung ist die
+GWR-Plausibilitaets-Konflikt-Box: sie zeigt den Unterschied zwischen
+konservativer Schaetzung (Soll) und tatsaechlich gebauter Realitaet
+(GWR-Ist) - genau dort, wo dieser Konflikt gross ist, lohnt sich
+eine Detailpruefung.
+
+In der Massen-Analyse uebernehmen die Klassifikations-Kategorien
+(VERDICHTUNG, ERSATZNEUBAU, AUSGEREIZT, KLEINPARZELLE etc.) dieselbe
+Rolle: sie ranken Parzellen nach Hinweis-Staerke, nicht nach
+vermeintlich exaktem Soll. Die Datenqualitaets-Markierung
+(VERBINDLICH / GROBSCHAETZUNG / NICHT_MOEGLICH) sagt dem Anwender
+ehrlich, wie belastbar die Zahl im Einzelfall ist.
+
+### Offen fuer Iteration 7
+
+Die Architekt-Antwort zur grundsaetzlichen Methodik (GFZ vs.
+Geometrie) ist gestellt, aber noch nicht eingearbeitet. In Iteration
+7 kann das ggf. zu einer feineren Indikator-Logik fuehren - die
+aktuelle Architektur ist robust genug, dass kleine methodische
+Anpassungen ohne grossen Umbau moeglich sind.
