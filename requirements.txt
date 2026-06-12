@@ -1,24 +1,19 @@
-# Geodaten-Verarbeitung
-geopandas>=0.14
-shapely>=2.0
-pyproj>=3.6
+# Web-Framework
+streamlit>=1.30
 
-# WMS/WFS-Zugriff
-owslib>=0.29
+# Daten-Verarbeitung
+pandas>=2.0
 requests>=2.31
 
-# Karten und Visualisierung
+# Excel-Export
+openpyxl>=3.1
+
+# Karten
 folium>=0.15
+streamlit-folium>=0.18
 
-# GUI (eine der beiden – beim Projektstart festlegen)
-guizero>=1.5
-# streamlit>=1.30
-
-# Geocoding (Adresse → Koordinaten)
+# Geocoding
 geopy>=2.4
 
-# Tests
+# Tests (lokal, nicht zwingend fuer Cloud)
 pytest>=7.4
-
-# Optional für PDF-Export (Erweiterung)
-# reportlab>=4.0
