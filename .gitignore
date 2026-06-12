@@ -1,4 +1,4 @@
-# Python
+﻿# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -12,16 +12,13 @@ __pycache__/
 .venv/
 venv/
 env/
-
 # IDE
 .vscode/
 .idea/
 *.swp
 .DS_Store
-
 # Jupyter
 .ipynb_checkpoints/
-
 # Geodaten – NIE ins Repo!
 # Grosse Downloads bleiben lokal, werden zur Laufzeit geholt.
 daten/geo/
@@ -35,24 +32,18 @@ daten/downloads/
 *.tif
 *.tiff
 *.zip
-
 # Eigene Konfiguration / Secrets
 .env
 config.local.json
-
 # Logs
 *.log
-
 # Cache / Zwischenablagen
 cache/
 tmp/
-
 extract_beispiel.xml
-
 # Entwicklungs-XML-Dateien (ueberall im Projekt)
 **/*.xml
 extract_*.xml
-
 # Persoenliche Notizen und Arbeitsdokumente
 WORK SHEET*.txt
 persoenlich/
@@ -60,20 +51,14 @@ persoenlich/
 docs/START JenzC.txt
 tests/test_output*.txt
 tests/test_zwoelf_adressen.py
-
 # Lokales Archiv historischer Artefakte (PoC, alte Strukturbaum-Snapshots, etc.)
 docs/archiv/
-
 # Test-Fixtures: OEREB-XML-Snapshots fuer reproduzierbare Tests/Demos
 # Whitelist-Ausnahme zur Standard-XML-Sperre
 !tests/fixtures/
 !tests/fixtures/*.xml
 !tests/fixtures/*.md
 src/bauzonenradar/gui/app_christophe_test.py
-
 # Excel-Exports
 ausgaben/
-
-
 docs/start_cheatsheet.md
-

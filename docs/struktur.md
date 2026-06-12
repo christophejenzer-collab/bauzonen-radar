@@ -7,64 +7,131 @@
 
 ```
 bauzonen-radar/
-|-- README.md                       Einstiegs-Doku, Test-Adressen, Beispiele
-|-- requirements.txt                Python-Abhaengigkeiten
-|-- .gitignore                      Repo-Ausschluesse
-|
-|-- docs/
-|   |-- konzept.md                          Pflicht-Konzeptdokument
-|   |-- konzept_gemeinde_analyse.md         Iter-5/6-Konzept (empirisch verifiziert)
-|   |-- projektplan.md                      Iterations-Roadmap
-|   |-- journal.md                          Chronologisches Arbeitsjournal
-|   |-- struktur.md                         Diese Datei
-|   |-- fachliche_grundlagen.md             IVHB, Berner Systemwechsel, Indikator-Erkenntnis
-|   |-- glossar.md                          Begriffsdefinitionen
-|   |-- start_cheatsheet.md                 Persoenliche Befehls-Sammlung
-|   |-- anforderungen_backend.md            Funktionale + nicht-funktionale Anforderungen (Backend)
-|   |-- anforderungen_frontend.md           Anforderungen Streamlit-GUI (Fabienne)
-|   |-- requirements_backend.md             Backend-Schnittstelle fuer GUI
-|   |-- requirements_frontend.md            Streamlit-GUI-Requirements (Fabienne)
-|   |-- releasenotes_backend.md             Backend-Versionierung
-|   |-- releasenotes_frontend.md            Frontend-Versionierung (Fabienne)
-|   `-- archiv/                             LOKAL (gitignored): PoC, alte Strukturbaeume
-|
-|-- daten/baureglemente/
-|   |-- bern.json                           Stadt Bern (BK 2-6, BK E, ZoeN, Altstadt)
-|   |-- thun.json                           Stadt Thun (BR 2022, Hoehen+GZ)
-|   `-- oberhofen_am_thunersee.json         Oberhofen (BR 2012/2024, Hoehen-System)
-|
-|-- tests/
-|   |-- test_zwoelf_adressen.ps1            Regressionstest 12 Adressen
-|   |-- test_fuenfzig_adressen.ps1          Stresstest 50 Adressen
-|   |-- test_bern_batch.py                  Stadt-Bern-spezifische Batch-Tests
-|   |-- __init__.py
-|   `-- fixtures/                           OEREB-XML-Snapshots (getrackt via Whitelist)
-|       |-- README.md
-|       |-- extract_koeniz.xml
-|       |-- pruefen.xml
-|       `-- thun.xml
-|
-`-- src/bauzonenradar/
-    |-- __init__.py
-    |-- modelle.py                          Datenklassen (Parzelle, Restriction, ...)
-    |-- bern.py                             OEREB-Webservice-Anbindung
-    |-- bern_bkp.py                         BKP-API Stadt Bern (parzellenscharf)
-    |-- baureglement.py                     Reglement-Lade-Modul
-    |-- analyse_adresse.py                  Einzelfall-Hauptprogramm + AnalyseErgebnis
-    |-- gemeinde_analyse.py                 Massen-Analyse-Pipeline (Iter 5)
-    |-- gemeinde_cache.py                   SQLite-Cache fuer AnalyseErgebnisse (Iter 5)
-    |-- klassifikation.py                   Klassifikations-Logik (Iter 5+6)
-    |-- excel_export.py                     Excel-Output mit Karten-Links + Baujahr (Iter 5+6)
-    |-- analyse/
-    |   `-- potenzial.py                    Potenzialberechnung mit Empfehlungs-Block
-    |-- datenquellen/
-    |   |-- gwr.py                          GWR-API (Eidg. Geb.- und Wohnungsregister)
-    |   |-- parzellen_liste.py              Praefix-Baum-Suche (Iter 5)
-    |   `-- tlm3d.py                        TLM3D-Strassen + Arealstatistik (Iter 5)
-    |-- ausgabe/
-    |   `-- (Platzhalter fuer kuenftige Ausgabe-Module)
-    `-- gui/
-        `-- frontend.py                     Streamlit-GUI (Fabienne, Iter 4)
+├── README.md                          # DAU-Schnellstart 5 Schritte
+│                                       # + KI-Disclaimer
+├── .gitignore                          # Schliesst aus:
+│                                       # - **/*.xml (ausser tests/fixtures/)
+│                                       # - docs/archiv/ (lokales Archiv)
+│                                       # - docs/start_cheatsheet.md (privat)
+│                                       # - .venv/, __pycache__/, *.pyc
+│                                       # - cache/ (SQLite-Cache)
+│                                       # - ausgaben/ (Excel-Outputs)
+├── requirements.txt                    # Python-Abhaengigkeiten
+│
+├── daten/
+│   └── baureglemente/                  # JSON-Reglemente pro Gemeinde
+│       ├── bern.json                   # Stadt Bern + 25 Bauklassen
+│       ├── thun.json                   # Stadt Thun + WA-Zonen + ZPP
+│       └── oberhofen_am_thunersee.json # Oberhofen am Thunersee
+│
+├── docs/                               # Projekt-Dokumentation
+│   ├── konzept.md                      # Projekt-Konzept (Iter 4-6)
+│   ├── projektplan.md                  # Projektplan bis 17.06.
+│   ├── journal.md                      # Arbeitsjournal chronologisch
+│   ├── struktur.md                     # Dieses Dokument
+│   ├── fachliche_grundlagen.md         # IVHB, BR-Vergleich, Indikator-
+│   │                                   # Konzept (Iter-6-Erkenntnis)
+│   ├── glossar.md                      # Fachbegriffe
+│   ├── anforderungen_backend.md        # Backend-Anforderungen
+│   ├── anforderungen_frontend.md       # Frontend-Anforderungen (Fabienne)
+│   ├── requirements_backend.md         # Backend-Requirements
+│   ├── requirements_frontend.md        # Frontend-Requirements (Fabienne)
+│   ├── releasenotes_backend.md         # Backend-Releasenotes
+│   ├── releasenotes_frontend.md        # Frontend-Releasenotes
+│   ├── konzept_gemeinde_analyse.md     # Iter-5-Konzept (UMGESETZT)
+│   ├── code_walkthrough_backend.md     # NEU 31.05.: Klartext-Erklaerung
+│   │                                   # fuer Verteidigung
+│   ├── code_walkthrough_frontend.md    # NEU 31.05.: Klartext-Erklaerung
+│   │                                   # der Streamlit-GUI
+│   └── 20260615_bauzonen_radar.pptx    # NEU 08.06.: Praesentation v4
+│                                       # 14 Slides (3 versteckt fuer
+│                                       # Backup-Szenarien)
+│
+├── src/
+│   └── bauzonenradar/                  # Hauptpaket
+│       ├── __init__.py
+│       ├── analyse_adresse.py          # Hauptmodul - Einzelanalyse
+│       │                               # AnalyseErgebnis (~40 Felder)
+│       │                               # analysiere() / drucke_bericht()
+│       │                               # analysiere_per_egrid() Iter 5
+│       │                               # Separation of Concerns
+│       ├── baureglement.py             # JSON-Reglement-Loader
+│       ├── bern.py                     # OEREB-Webservice + XML-Parser
+│       │                               # fuer Stadt Bern
+│       ├── bern_bkp.py                 # Bauklassenplan-API Stadt Bern
+│       │                               # ArcGIS REST map.bern.ch
+│       ├── modelle.py                  # Datenklassen Parzelle, OEREB,
+│       │                               # Restriction, Bauklasse
+│       ├── klassifikation.py           # Iter 5: 7 Kategorien
+│       │                               # + KLEINPARZELLE (Iter 6)
+│       │                               # + AUSSCHLUSS_VERKEHR/WALD
+│       ├── gemeinde_analyse.py         # Iter 5: Massen-Pipeline
+│       │                               # SQLite-Cache integriert
+│       │                               # Throttling, Retry, ETA
+│       ├── excel_export.py             # Iter 5: 6-Sheets-Export
+│       │                               # + Karten-Link (Iter 6:
+│       │                               # map.geo.admin.ch)
+│       │                               # + Baujahr-Spalte (Iter 6)
+│       │                               # + Reserve-%-Fix (Iter 6)
+│       ├── xml_speichern.py            # XML-Snapshot-Helper
+│       │                               # fuer Test-Fixtures
+│       │
+│       ├── analyse/                    # Detail-Analyse-Module
+│       │   ├── __init__.py
+│       │   └── potenzial.py            # Potenzialberechnung
+│       │                               # 3 Bemessungssysteme
+│       │                               # 3 Datenqualitaets-Stufen
+│       │                               # Drei-Begrenzer-Logik
+│       │
+│       ├── ausgabe/                    # Ausgabe-Formate
+│       │   └── __init__.py             # Textbericht-Helper
+│       │
+│       ├── datenquellen/               # Externe APIs
+│       │   ├── __init__.py
+│       │   ├── gwr.py                  # GWR-API swisstopo
+│       │   │                           # Iter 5: gebaeude_zu_egrid()
+│       │   │                           # Iter 6: tolerance 500 -> 100
+│       │   ├── tlm3d.py                # Iter 5 BONUS:
+│       │   │                           # Bodenbedeckungs-Filter
+│       │   │                           # TLM3D-Strassen + Arealstatistik
+│       │   └── parzellen_liste.py      # Iter 5: Praefix-Baum-Suche
+│       │                               # Iter 6: Gemeinde-Filter
+│       │                               # MAX_API_CALLS 3000
+│       │
+│       └── gui/                        # Streamlit-Frontend (Fabienne)
+│           ├── __init__.py
+│           └── frontend.py             # Iter 4: ~370 Zeilen
+│                                       # CSS-Design (Inter, schwarz/rot)
+│                                       # 4 Sektionen (Lage/Parzelle/
+│                                       # Potenzial/GWR)
+│                                       # Plausibilitaets-Konflikt-Box
+│
+├── tests/                              # Tests und Fixtures
+│   ├── __init__.py
+│   ├── test_zwoelf_adressen.ps1        # Regression 12 Adressen
+│   │                                   # (Bern + Thun + Oberhofen + Edge)
+│   ├── test_fuenfzig_adressen.ps1      # Stresstest 50 Adressen (96%)
+│   ├── test_bern_batch.py              # Stadt-Bern-Detailtests
+│   ├── test_output_nach_fix.txt        # Test-Output-Snapshot vom
+│   │                                   # Regressions-Lauf (Beleg)
+│   └── fixtures/                       # OEREB-XML-Snapshots
+│       ├── README.md                   # Erklaerung der XMLs
+│       ├── extract_koeniz.xml          # Koeniz-Beispiel
+│       ├── extract_pruefen.xml         # Test-Adresse Pruefen
+│       └── extract_thun.xml            # Thun-Beispiel
+│
+└── (lokal, NICHT im Repo via .gitignore):
+    ├── .venv/                          # Python venv
+    ├── cache/                          # SQLite-Cache der Massen-Analysen
+    ├── ausgaben/                       # Excel-Outputs (bauzonen_radar_*.xlsx)
+    ├── docs/archiv/                    # Lokale Geschichts-Sammlung
+    │   ├── proof_of_concept.py
+    │   ├── Strukturbaum-bauzonen-radar.txt
+    │   ├── extract_beispiel.xml
+    │   ├── test_zwoelf_adressen.py
+    │   └── output_baumgarten_thun.md
+    ├── docs/start_cheatsheet.md        # Persoenlicher Spickzettel
+    └── verteidigungs_quiz.md           # Internes Pruefungs-Quiz
 ```
 
 ## Lokale, nicht-getrackte Dateien
@@ -267,8 +334,56 @@ Schaetzung (Soll) und Realitaet (GWR-Ist) ist der zentrale Indikator
 des Tools - keine Pseudo-Praezision bei der Soll-Berechnung im
 Hoehensystem (Architekten-verifiziert: "kein Generalrezept").
 
-## Status Iteration 7 (geplant, Juni 2026)
+## Status Iteration 7 (abgeschlossen, Juni 2026)
 
-Generalprobe vorbereiten, Pitch trimmen, Demo-Adressen waehlen,
-README finalisieren. Optional Architekt-Antwort zur Soll-Methodik
-einarbeiten.
+Pruefungs-Vorbereitung in mehreren Teilschritten:
+
+**31.05.2026 - Doku-Konsolidierung**:
+- 5 Dokumente neu/aktualisiert (konzept, struktur,
+  fachliche_grundlagen, konzept_gemeinde_analyse, releasenotes_backend)
+- 2 Code-Walkthroughs erstellt (backend + frontend) als Verteidigungs-
+  Material in Klartext fuer IT-Fremde
+- Repo-Aufraeumung gemaess Dozenten-Feedback: historie/patches/,
+  start.ps1, demo.ps1 entfernt; start_cheatsheet.md ueber .gitignore
+  lokal gehalten
+- README.md neu mit DAU-Schnellstart, KI-Disclaimer und
+  Doku-Verknuepfungen
+
+**08.06.2026 - Demo-Konzept und Praesentation v4**:
+- Konzept "Bauzonen-Radar AG" als Berater-Duo
+- 3 Investoren-Stories aus Thun-Goldiwil:
+  - VERDICHTUNG: Loetschenenweg 1 (Parz 2034, Reserve 68%)
+  - NEUGESCHAEFT: Ruettiweg/Parz 4204 (Reserve 100%, leeres Bauland)
+  - ERSATZNEUBAU: Frutigenstrasse 74 (Parz 3708, Baujahr 1900,
+    Reserve 78%, 4 Restriktionen)
+- Praesentation v4 mit 14 Slides committed: Slide 8 als Demo-Setup,
+  Slides 8a/b/c versteckt als Backup-Screenshots, Slide 8d als
+  Excel-Lookahead, Slide 9 erweitert um Iter-6-Erkenntnis und
+  KI-Punkt
+- Adressen lokal verifiziert, alle drei Tool-Outputs dokumentiert
+
+**12.06.2026 (geplant) - Generalprobe**:
+- Live-Probelauf mit Stoppuhr (strikt 10 Minuten)
+- Fotos einbauen (Slide 8 + Backup-Slides)
+- Edge-Case-Tests durchspielen
+- Backup-Plaene durchspielen
+
+**15.06.2026 12:00 - Push-Deadline**:
+- Alle Dokumente, Code, Tests, Praesentation in GitHub
+- Letzter Commit erlaubt
+
+**17.06.2026 10:00 - Praesentation**:
+- Raum o408, Praesenzpflicht
+- 10 Minuten strikt
+- Live-Demo mit Streamlit 
+
+## Status Iteration 8 (Backlog nach der Pruefung)
+
+Falls Projekt weitergefuehrt wird:
+- Direkter EGRID-Input im Streamlit-Frontend
+- pytest-Unit-Tests fuer Drei-Begrenzer-Logik
+- Result-Pattern statt Optional[float] = None
+- Polygon-Intersection statt 1:1.5-Rechteck-Annahme
+- Architekt-Antwort zur Soll-Methodik einarbeiten
+- Koeniz als 4. Gemeinde aufnehmen
+- PDF-Export der Einzelanalyse (Kundendossier)
