@@ -1,0 +1,2 @@
+Wir definieren folgendes Minimalziel, welches wir bis Kursende verbindlich erreichen wollen: 
+Eingabe einer Adresse in einer ausgewählten Gemeinde im Kanton Bern. Abruf der Parzelle und aktuellen Zone aus dem ÖREB-Kataster via WFS. Berechnung des theoretischen Potenzials anhand hinterlegter Reglement-Parameter. Vergleich mit dem Ist-Zustand aus swisstopo-Gebäudedaten. Ausgabe: Textbericht und einfache Kartenansicht. Rangliste über mehrere eingegebene Adressen.
